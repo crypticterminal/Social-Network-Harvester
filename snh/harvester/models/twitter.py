@@ -26,7 +26,9 @@ class Harvester(models.Model):
 
     rate_limit_reached = models.BooleanField()
 
-    users_to_harvest = models.ManyToManyField('User', related_name='harvester.users_to_harvest', through='Harvester_User')
+    is_active = models.BooleanField()
+
+    users_to_harvest = models.ManyToManyField('User', related_name='users_to_harvest', through='Harvester_User')
 
 class Harvester_User(models.Model):
 
