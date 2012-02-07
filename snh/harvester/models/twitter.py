@@ -1,6 +1,8 @@
 # coding=UTF-8
 
 from django.db import models
+from datetime import datetime
+import time
 
 class Harvester(models.Model):
 
@@ -44,17 +46,19 @@ class User(models.Model):
         app_label = "harvester"
 
     def __unicode__(self):
-        return self.name
+        return self.screen_name
 
-    twitter_id = models.IntegerField(null=True)
+    pmk_id =  models.AutoField(primary_key=True)
+
+    id = models.BigIntegerField(null=True)
     name = models.CharField(max_length=200)
-    screenanme = models.CharField(max_length=200)
+    screen_name = models.CharField(max_length=200)
     lang = models.CharField(max_length=200)
     description = models.CharField(max_length=200)
     url = models.ForeignKey('URL', related_name="user.url", null=True)
 
     location = models.CharField(max_length=200)
-    timezone = models.CharField(max_length=200)
+    time_zone = models.CharField(max_length=200)
     utc_offset = models.IntegerField(null=True)
 
     protected = models.BooleanField()
@@ -65,8 +69,7 @@ class User(models.Model):
     statuses_count = models.IntegerField(null=True)
     listed_count = models.IntegerField(null=True)
 
-    user_creation_date = models.DateTimeField(null=True)
-    model_update_date = models.DateTimeField(null=True)
+    created_at = models.DateTimeField(null=True)
 
     profile_background_color = models.CharField(max_length=200)
     profile_background_tile = models.BooleanField()
@@ -75,6 +78,55 @@ class User(models.Model):
     profile_sidebar_fill_color = models.CharField(max_length=200)
     profile_text_color = models.CharField(max_length=200)
 
+    model_update_date = models.DateTimeField(null=True)
+    error_triggered = models.BooleanField()
+
+    def update_from_twitter(self, twitter_model):
+        model_changed = False
+        props_to_check = [
+                            "id",
+                            "name",
+                            "screen_name",
+                            "lang",
+                            "description",
+                            "location",
+                            "time_zone",
+                            "utc_offset",
+                            "protected",
+                            "favourites_count",
+                            "followers_count",
+                            "friends_count",
+                            "statuses_count",
+                            "listed_count",
+                            "profile_background_color",
+                            "profile_background_tile",
+                            "profile_link_color",
+                            "profile_sidebar_fill_color",
+                            "profile_text_color",
+                            ]
+
+        date_to_check = ["created_at"]
+        #TODO implement FK CHECK!!
+        fk_to_check = ["url", "profile_image_url"]
+
+        for prop in props_to_check:
+            if self.__dict__[prop] != twitter_model.__dict__["_"+prop]:
+                self.__dict__[prop] = twitter_model.__dict__["_"+prop]
+                print prop, self.__dict__[prop]
+                model_changed = True
+
+        for prop in date_to_check:
+            ts = time.strftime('%Y-%m-%d %H:%M:%S', time.strptime(twitter_model.__dict__["_"+prop],'%a %b %d %H:%M:%S +0000 %Y'))
+            #TODO implement cleaner time comparison
+            if str(self.__dict__[prop]) != str(ts):
+                self.__dict__[prop] = ts
+                model_changed = True
+
+        if model_changed:
+            self.model_update_date = datetime.now()
+            print "SAVED!"
+            self.save()
+
 class Status(models.Model):
 
     class Meta:
@@ -82,16 +134,56 @@ class Status(models.Model):
 
     def __unicode__(self):
         return self.text
+    pmk_id =  models.AutoField(primary_key=True)
 
     user = models.ForeignKey('User')
 
-    status_id = models.IntegerField(null=True)
-    creation_date = models.DateTimeField(null=True)
+    id = models.BigIntegerField(null=True)
+    created_at = models.DateTimeField(null=True)
     favorited = models.BooleanField()
-    retweeted_count = models.IntegerField(null=True)
+    retweet_count = models.IntegerField(null=True)
+    retweeted = models.BooleanField()
     source = models.CharField(max_length=200)
     text = models.CharField(max_length=200)
     truncated = models.BooleanField()
+
+    model_update_date = models.DateTimeField(null=True)
+
+    #TODO HASHTAG
+
+    def update_from_twitter(self, twitter_model, user):
+        model_changed = False
+        props_to_check = [
+                            "id",
+                            "favorited",
+                            "retweet_count",
+                            "retweeted",
+                            "source",
+                            "text",
+                            "truncated",
+                            ]
+
+        date_to_check = ["created_at"]
+
+        self.user = user        
+
+        for prop in props_to_check:
+            if self.__dict__[prop] != twitter_model.__dict__["_"+prop]:
+                self.__dict__[prop] = twitter_model.__dict__["_"+prop]
+                print prop
+                model_changed = True
+
+        for prop in date_to_check:
+            ts = time.strftime('%Y-%m-%d %H:%M:%S', time.strptime(twitter_model.__dict__["_"+prop],'%a %b %d %H:%M:%S +0000 %Y'))
+            #TODO implement cleaner time comparison
+            if str(self.__dict__[prop]) != str(ts):
+                self.__dict__[prop] = ts
+                model_changed = True
+
+        if model_changed:
+            self.model_update_date = datetime.now()
+            print "SAVED!_status"
+            self.save()
     
 class URL(models.Model):
 
