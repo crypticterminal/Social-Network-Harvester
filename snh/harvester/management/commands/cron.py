@@ -31,24 +31,25 @@ class Command(BaseCommand):
 
         userlist = harvester.users_to_harvest.all()
         for user in userlist:
+            latest_statuses = []
 
-            if online and not user.error_triggered:
+            if not user.error_triggered:
                 try:
-                    latest_posts = client.GetUserTimeline(user.screen_name, include_rts=True, include_entities=True)
+
+                    latest_status = user.get_latest_status()
+                    latest_status_id = None if latest_status is None else latest_status.id
+                    latest_statuses = client.GetUserTimeline(
+                                                                screen_name=user.screen_name, 
+                                                                since_id=latest_status_id, 
+                                                                include_rts=True, 
+                                                                include_entities=True
+                                                            )
                 except twitter.TwitterError, t:
-                    latest_posts = []
                     user.error_triggered = True
                     user.save()
-                    print "error", t    
-                #output = open('devdata.pkl', 'wb')
-                #pickle.dump(latest_posts, output)
-                #output.close()
-            else:
-                pkl_file = open('devdata.pkl', 'rb')
-                latest_posts = pickle.load(pkl_file)
-                pkl_file.close()
+                    print "ERROR: the user %s was reject due to error. Please remove the error flag to retry" % user
 
-            for tw_status in latest_posts:
+            for tw_status in latest_statuses:
                 user.update_from_twitter(tw_status.user)
                 status = self.get_status(tw_status, user)      
                 
@@ -61,7 +62,7 @@ class Command(BaseCommand):
         except ObjectDoesNotExist:
             status = Status()
             status.update_from_twitter(tw_status,user)
-            print "new"
+            print "new", status
         return status
 
     def print_limit(self, client):

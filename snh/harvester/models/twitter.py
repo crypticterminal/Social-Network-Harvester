@@ -12,14 +12,14 @@ class Harvester(models.Model):
     def __unicode__(self):
         return self.name
 
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, null=True)
 
     user = models.ForeignKey('User', null=True)
     
-    consumer_key = models.CharField(max_length=64)
-    consumer_secret = models.CharField(max_length=64)
-    access_token_key = models.CharField(max_length=64)
-    access_token_secret = models.CharField(max_length=64)
+    consumer_key = models.CharField(max_length=64,null=True)
+    consumer_secret = models.CharField(max_length=64,null=True)
+    access_token_key = models.CharField(max_length=64,null=True)
+    access_token_secret = models.CharField(max_length=64,null=True)
 
     reset_time = models.DateTimeField(null=True)
     remaining_hist = models.IntegerField(null=True)
@@ -51,14 +51,14 @@ class User(models.Model):
     pmk_id =  models.AutoField(primary_key=True)
 
     id = models.BigIntegerField(null=True)
-    name = models.CharField(max_length=200)
-    screen_name = models.CharField(max_length=200)
-    lang = models.CharField(max_length=200)
-    description = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, null=True)
+    screen_name = models.CharField(max_length=200, null=True)
+    lang = models.CharField(max_length=200, null=True)
+    description = models.CharField(max_length=200, null=True)
     url = models.ForeignKey('URL', related_name="user.url", null=True)
 
-    location = models.CharField(max_length=200)
-    time_zone = models.CharField(max_length=200)
+    location = models.CharField(max_length=200, null=True)
+    time_zone = models.CharField(max_length=200, null=True)
     utc_offset = models.IntegerField(null=True)
 
     protected = models.BooleanField()
@@ -71,12 +71,12 @@ class User(models.Model):
 
     created_at = models.DateTimeField(null=True)
 
-    profile_background_color = models.CharField(max_length=200)
+    profile_background_color = models.CharField(max_length=200, null=True)
     profile_background_tile = models.BooleanField()
     profile_image_url = models.ForeignKey('URL', related_name="user.profile_image_url", null=True)
-    profile_link_color = models.CharField(max_length=200)
-    profile_sidebar_fill_color = models.CharField(max_length=200)
-    profile_text_color = models.CharField(max_length=200)
+    profile_link_color = models.CharField(max_length=200, null=True)
+    profile_sidebar_fill_color = models.CharField(max_length=200, null=True)
+    profile_text_color = models.CharField(max_length=200, null=True)
 
     model_update_date = models.DateTimeField(null=True)
     error_triggered = models.BooleanField()
@@ -112,7 +112,6 @@ class User(models.Model):
         for prop in props_to_check:
             if self.__dict__[prop] != twitter_model.__dict__["_"+prop]:
                 self.__dict__[prop] = twitter_model.__dict__["_"+prop]
-                print prop, self.__dict__[prop]
                 model_changed = True
 
         for prop in date_to_check:
@@ -124,8 +123,16 @@ class User(models.Model):
 
         if model_changed:
             self.model_update_date = datetime.now()
-            print "SAVED!"
+            print "User SAVED!", self
             self.save()
+
+    def get_latest_status(self):
+
+        latest_status = None
+        statuses = Status.objects.filter(user=self).order_by("-created_at")
+        for latest_status in statuses: break
+        return latest_status
+        
 
 class Status(models.Model):
 
@@ -143,8 +150,8 @@ class Status(models.Model):
     favorited = models.BooleanField()
     retweet_count = models.IntegerField(null=True)
     retweeted = models.BooleanField()
-    source = models.CharField(max_length=200)
-    text = models.CharField(max_length=200)
+    source = models.CharField(max_length=200, null=True)
+    text = models.CharField(max_length=200, null=True)
     truncated = models.BooleanField()
 
     model_update_date = models.DateTimeField(null=True)
@@ -170,7 +177,6 @@ class Status(models.Model):
         for prop in props_to_check:
             if self.__dict__[prop] != twitter_model.__dict__["_"+prop]:
                 self.__dict__[prop] = twitter_model.__dict__["_"+prop]
-                print prop
                 model_changed = True
 
         for prop in date_to_check:
@@ -182,7 +188,7 @@ class Status(models.Model):
 
         if model_changed:
             self.model_update_date = datetime.now()
-            print "SAVED!_status"
+            print "Status SAVED!", self
             self.save()
     
 class URL(models.Model):
@@ -193,8 +199,8 @@ class URL(models.Model):
     def __unicode__(self):
         return self.original_url
 
-    original_url = models.CharField(max_length=400)
-    unshorten_url = models.CharField(max_length=400)
+    original_url = models.CharField(max_length=400,null=True)
+    unshorten_url = models.CharField(max_length=400,null=True)
         
 
 
