@@ -30,7 +30,7 @@ class Harvester(models.Model):
 
     is_active = models.BooleanField()
 
-    users_to_harvest = models.ManyToManyField('User', related_name='users_to_harvest', through='Harvester_User')
+    users_to_harvest = models.ManyToManyField('User', related_name='users_to_harvest')#, through='Harvester_User')
 
 class Harvester_User(models.Model):
 
@@ -50,9 +50,9 @@ class User(models.Model):
 
     pmk_id =  models.AutoField(primary_key=True)
 
-    id = models.BigIntegerField(null=True)
-    name = models.CharField(max_length=200, null=True)
-    screen_name = models.CharField(max_length=200, null=True)
+    id = models.BigIntegerField(null=True, unique=True)
+    name = models.CharField(max_length=200, null=True, help_text="LeNom:")
+    screen_name = models.CharField(max_length=200, unique=True, null=True)
     lang = models.CharField(max_length=200, null=True)
     description = models.CharField(max_length=200, null=True)
     url = models.ForeignKey('URL', related_name="user.url", null=True)

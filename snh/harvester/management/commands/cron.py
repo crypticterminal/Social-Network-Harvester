@@ -47,8 +47,10 @@ class Command(BaseCommand):
                 except twitter.TwitterError, t:
                     user.error_triggered = True
                     user.save()
-                    print "ERROR: the user %s was reject due to error. Please remove the error flag to retry" % user
-
+                    print "ERROR: the user %s was reject due to error. Please remove the error_triggered flag to retry" % user
+            else:
+                print "ERROR: the user %s was reject due to error. Please remove the error_triggered flag to retry" % user
+ 
             for tw_status in latest_statuses:
                 user.update_from_twitter(tw_status.user)
                 status = self.get_status(tw_status, user)      

@@ -19,9 +19,14 @@ class HarvesterAdmin(admin.ModelAdmin):
 
     inlines = [HarvesterInline]
 
+class UserAdmin(admin.ModelAdmin):
+    fields = [
+                'screen_name', 
+                'error_triggered', 
+            ]
+
 admin.site.register(Harvester, HarvesterAdmin)
-admin.site.register(User)
-admin.site.register(Status)
+admin.site.register(User, UserAdmin)
 
 
 

@@ -1,0 +1,79 @@
+<html>
+<head>
+<title></title>
+<style type="text/css">
+tr:hover {
+background-color: #818a8e;
+cursor:pointer;
+}
+tr {
+background-color: #e8efff;
+}
+tr.head {
+background-color: #818a8e;
+}
+</style>
+</head>
+<body>
+<h3>Détails de {{ user.name }} </h3>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+    <thead>
+    <tr class="head">
+    <th>Name</th>
+    <th>Screen Name</th>
+    <th>Description</th>
+    <th>Followers count</th>
+    <th>Friends count</th>
+    <th>Statuses count</th>
+    <th>Listed count</th>
+    <th>URL</th>
+    <th>Location</th>
+    <th>Time zone</th>
+    <th>UTC offset</th>
+    <th>Protected</th>
+    <th>Language</th>
+    </tr>
+    </thead>
+
+    <tr onclick="document.location.href='/harvester/{{ user.id }}/'">
+    <td>{{ user.name }}</td>
+    <td>{{ user.screen_name }}</td>
+    <td width="100">{{ user.description }}</td>
+    <td>{{ user.followers_count }}</td>
+    <td>{{ user.friends_count }}</td>
+    <td>{{ user.statuses_count }}</td>
+    <td>{{ user.listed_count }}</td>
+    <td>{{ user.url }}</td>
+    <td>{{ user.location }}</td>
+    <td>{{ user.time_zone }}</td>
+    <td>{{ user.utc_offset }}</td>
+    <td>{{ user.protected }}</td>
+    <td>{{ user.lang }}</td>
+    </tr>
+
+</table>
+<h3>Status</h3>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+    <thead>
+    <tr class="head">
+    <th>Created at</th>
+    <th>text</th>
+    <th>Retweet count</th>
+    <th>Retweeted</th>
+    <th>source</th>
+    <th>truncated</th>
+    </tr>
+    </thead>
+{% for status in statuses %}
+    <tr >
+    <td>{{ status.created_at }}</td>
+    <td >{{ status.text }}</td>
+    <td>{{ status.retweet_count }}</td>
+    <td>{{ status.retweeted }}</td>
+    <td>{{ status.source }}</td>
+    <td>{{ status.truncated }}</td>
+    </tr>
+{% endfor %}
+</table>
+
+</body>

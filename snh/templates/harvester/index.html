@@ -1,0 +1,45 @@
+<html>
+<head>
+<title></title>
+<style type="text/css">
+tr:hover {
+background-color: #818a8e;
+cursor:pointer;
+}
+tr {
+background-color: #e8efff;
+}
+tr.head {
+background-color: #818a8e;
+}
+</style>
+</head>
+<body>
+
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+    <thead>
+    <tr class="head">
+    <th>Name</th>
+    <th>Screen Name</th>
+    <th>Description</th>
+    <th>Followers count</th>
+    <th>Friends count</th>
+    <th>Statuses count</th>
+    <th>Listed count</th>
+    </tr>
+    </thead>
+
+{% for user in user_list %}
+    <tr onclick="document.location.href='/harvester/{{ user.id }}/'">
+    <td>{{ user.name }}</td>
+    <td>{{ user.screen_name }}</td>
+    <td width="100">{{ user.description }}</td>
+    <td>{{ user.followers_count }}</td>
+    <td>{{ user.friends_count }}</td>
+    <td>{{ user.statuses_count }}</td>
+    <td>{{ user.listed_count }}</td>
+    </tr>
+{% endfor %}
+</table>
+
+</body>
