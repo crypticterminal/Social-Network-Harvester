@@ -8,5 +8,5 @@ def index(request):
 
 def detail(request, user_id):
     user = get_object_or_404(User, id=user_id)
-    statuses = get_list_or_404(Status, user=user)
+    statuses = get_list_or_404(Status.objects.order_by('-created_at'), user=user)
     return render_to_response('harvester/detail.html', {'user': user, 'statuses':statuses})
