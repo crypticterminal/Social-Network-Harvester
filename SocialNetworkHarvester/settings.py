@@ -23,9 +23,54 @@ DATABASES = {
     }
 }
 
-FACEBOOK_APPLICATION_ID = ''
-FACEBOOK_APPLICATION_SECRET_KEY = ''
-FACEBOOK_APPLICATION_NAMESPACE = ''
+FACEBOOK_APPLICATION_ID = 'xxx'
+FACEBOOK_APPLICATION_SECRET_KEY = 'xxx'
+FACEBOOK_APPLICATION_NAMESPACE = 'archivistique'
+FACEBOOK_APPLICATION_INITIAL_PERMISSIONS = [
+                                            'user_about_me','friends_about_me',
+                                            'user_activities','friends_activities',
+                                            'user_birthday','friends_birthday',
+                                            'user_checkins','friends_checkins',
+                                            'user_education_history','friends_education_history',
+                                            'user_events','friends_events',
+                                            'user_groups','friends_groups',
+                                            'user_hometown','friends_hometown',
+                                            'user_interests','friends_interests',
+                                            'user_likes','friends_likes',
+                                            'user_location','friends_location',
+                                            'user_notes','friends_notes',
+                                            'user_photo_video_tags','friends_photo_video_tags',
+                                            'user_photos','friends_photos',
+                                            'user_questions','friends_questions',
+                                            'user_relationships','friends_relationships',
+                                            'user_relationship_details','friends_relationship_details',
+                                            'user_religion_politics','friends_religion_politics',
+                                            'user_status','friends_status',
+                                            'user_videos','friends_videos',
+                                            'user_website','friends_website',
+                                            'user_work_history','friends_work_history',
+                                            'email',
+                                            'read_friendlists',
+                                            'read_insights',
+                                            'read_mailbox',
+                                            'read_requests',
+                                            'read_stream',
+                                            'xmpp_login',
+                                            'ads_management',
+                                            'create_event',
+                                            'manage_friendlists',
+                                            'manage_notifications',
+                                            'offline_access',
+                                            'user_online_presence',
+                                            'friends_online_presence',
+                                            'publish_checkins',
+                                            'publish_stream',
+                                            'rsvp_event',
+                                            'publish_actions',
+                                            ]
+
+
+
 
 #FACEBOOK_APPLICATION_INITIAL_PERMISSIONS = ['read_stream', 'publish_stream','friends_online_presence','friends_status','read_friendlists']
 
