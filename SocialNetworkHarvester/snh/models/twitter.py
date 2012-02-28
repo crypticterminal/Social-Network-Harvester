@@ -6,7 +6,7 @@ import time
 
 from snh.models.common import *
 
-class Twitter(models.Model):
+class TwitterHarvester(models.Model):
 
     class Meta:
         app_label = "snh"
@@ -32,15 +32,7 @@ class Twitter(models.Model):
 
     is_active = models.BooleanField()
 
-    fbusers_to_harvest = models.ManyToManyField('TWUser', related_name='twusers_to_harvest')
-
-#class Twitter_User(models.Model):
-#
-#    class Meta:
-#        app_label = "snh"
-#
-#    snh = models.ForeignKey('Twitter')
-#    user = models.ForeignKey('TWUser')    
+    twusers_to_harvest = models.ManyToManyField('TWUser', related_name='twusers_to_harvest')
 
 class TWUser(models.Model):
 

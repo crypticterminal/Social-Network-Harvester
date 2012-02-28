@@ -6,7 +6,7 @@ import time
 
 from snh.models.common import *
 
-class Facebook(models.Model):
+class FacebookHarvester(models.Model):
 
     class Meta:
         app_label = "snh"
@@ -36,6 +36,8 @@ class FBUser(models.Model):
 
     oid = models.CharField(max_length=200, null=True)
     name = models.CharField(max_length=200, null=True)
+    #petite entorse. username n'existe pas pour les fanpages. dans ce cas name==username
+    username = models.CharField(max_length=200, null=True)
     websited = models.ForeignKey('URL', related_name="fbuser.website", null=True)
     link = models.ForeignKey('URL', related_name="fbuser.link", null=True)
 
@@ -56,7 +58,6 @@ class FBUserDesc(models.Model):
     gender = models.CharField(max_length=200, null=True)
     locale = models.CharField(max_length=200, null=True)
     #languages = {"id":id, "name":name}
-    username = models.CharField(max_length=200, null=True)
     third_party_id = models.CharField(max_length=200, null=True)
     #installed = {"type":user, "id":id, "installed":true|None}
     #timezone = number
