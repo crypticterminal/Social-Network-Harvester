@@ -14,6 +14,8 @@ class FacebookHarvester(models.Model):
     def __unicode__(self):
         return self.name
 
+    pmk_id =  models.AutoField(primary_key=True)
+
     name = models.CharField(max_length=200, null=True)
 
     user = models.ForeignKey('FBUser', null=True)
@@ -33,6 +35,8 @@ class FBUser(models.Model):
 
     def __unicode__(self):
         return self.username
+   
+    pmk_id =  models.AutoField(primary_key=True)
 
     oid = models.CharField(max_length=200, null=True)
     name = models.CharField(max_length=200, null=True)
@@ -52,6 +56,8 @@ class FBUserDesc(models.Model):
 
     def __unicode__(self):
         return self.username
+
+    pmk_id =  models.AutoField(primary_key=True)
 
     first_name = models.CharField(max_length=200, null=True)
     last_name = models.CharField(max_length=200, null=True)
@@ -89,6 +95,8 @@ class FBPageDesc(models.Model):
     def __unicode__(self):
         return self.username
 
+    pmk_id =  models.AutoField(primary_key=True)
+
     #oid = models.CharField(max_length=200, null=True)
     #name = models.CharField(max_length=200, null=True)
     #link = models.ForeignKey('URL', related_name="fbpage.link", null=True)
@@ -109,6 +117,8 @@ class FBPost(models.Model):
 
     def __unicode__(self):
         return self.text
+
+    pmk_id =  models.AutoField(primary_key=True)
 
     user = models.ForeignKey('FBUser')
 
@@ -148,6 +158,8 @@ class FBComment(models.Model):
 
     def __unicode__(self):
         return self.text
+
+    pmk_id =  models.AutoField(primary_key=True)
 
     oid = models.CharField(max_length=200, null=True)
     user = models.ForeignKey('FBUser')

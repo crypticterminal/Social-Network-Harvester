@@ -1,0 +1,144 @@
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	
+		<style type="text/css" title="currentStyle">
+			@import "/static/demo_page.css"; 
+            @import "/static/header.ccss";
+			@import "/static/demo_table.css";
+
+#user th{
+	background-color: #DDFF75;
+
+}
+
+#user tr{
+	background-color: #ECFFB3;
+}
+
+#example tbody tr.even:hover, #example tbody tr.even td.highlighted {
+	background-color: #ECFFB3;
+}
+
+#example tbody tr.odd:hover, #example tbody tr.odd td.highlighted {
+	background-color: #E6FF99;
+}
+
+#example tr.even:hover{
+cursor:pointer;
+}
+
+#example tr.odd:hover{
+cursor:pointer;
+}
+
+#example tr.even:hover {
+	background-color: #ECFFB3;
+}
+
+#example tr.even:hover td.sorting_1 {
+	background-color: #DDFF75;
+}
+
+#example tr.even:hover td.sorting_2 {
+	background-color: #E7FF9E;
+}
+
+#example tr.even:hover td.sorting_3 {
+	background-color: #E2FF89;
+}
+
+#example tr.odd:hover {
+	background-color: #E6FF99;
+}
+
+#example tr.odd:hover td.sorting_1 {
+	background-color: #D6FF5C;
+}
+
+#example tr.odd:hover td.sorting_2 {
+	background-color: #E0FF84;
+}
+
+#example tr.odd:hover td.sorting_3 {
+	background-color: #DBFF70;
+}  
+		</style>
+		<script type="text/javascript" language="javascript" src="/static/jquery.js"></script>
+		<script type="text/javascript" language="javascript" src="/static/jquery.dataTables.js"></script>
+		<script type="text/javascript" charset="utf-8">
+			$(document).ready(function() {
+				$('#example').dataTable({
+                                            "iDisplayLength": 100,
+                                        });
+			} );
+		</script>
+	</head>
+<body>
+<h3>Détails de {{ user.name }} </h3>
+<table id="user" width="100%" border="0" cellspacing="2" cellpadding="0">
+    <thead>
+    <tr class="head">
+    <th>Name</th>
+    <th>Screen Name</th>
+    <th>Description</th>
+    <th>Followers count</th>
+    <th>Friends count</th>
+    <th>Statuses count</th>
+    <th>Listed count</th>
+    <th>URL</th>
+    <th>Location</th>
+    <th>Time zone</th>
+    <th>UTC offset</th>
+    <th>Protected</th>
+    <th>Language</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>{{ user.name }}</td>
+    <td>{{ user.screen_name }}</td>
+    <td>{{ user.description }}</td>
+    <td>{{ user.followers_count }}</td>
+    <td>{{ user.friends_count }}</td>
+    <td>{{ user.statuses_count }}</td>
+    <td>{{ user.listed_count }}</td>
+    <td>{{ user.url }}</td>
+    <td>{{ user.location }}</td>
+    <td>{{ user.time_zone }}</td>
+    <td>{{ user.utc_offset }}</td>
+    <td>{{ user.protected }}</td>
+    <td>{{ user.lang }}</td>
+    </tr>
+    </tbody>
+
+
+</table>
+<h3>Status</h3>
+<table id="example" width="100%" border="0" cellspacing="2" cellpadding="0">
+    <thead>
+    <tr class="head">
+    <th>Created at</th>
+    <th>text</th>
+    <th>Retweet count</th>
+    <th>Retweeted</th>
+    <th>source</th>
+    <th>truncated</th>
+    </tr>
+    </thead>
+    <tbody>
+{% for status in statuses %}
+    <tr class="line" >
+    <td id="date">{{ status.created_at }}</td>
+    <td >{{ status.text }}</td>
+    <td class="center">{{ status.retweet_count }}</td>
+    <td class="center">{{ status.retweeted }}</td>
+    <td>{{ status.source }}</td>
+    <td>{{ status.truncated }}</td>
+    </tr>
+{% endfor %}
+    <tbody>
+
+</table>
+
+</body>

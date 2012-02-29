@@ -7,13 +7,27 @@ from fandjango.decorators import facebook_authorization_required
 from fandjango.models import User as FanUser
 #from django.http import HttpResponse
 
+from snh.models.twitter import *
+
 @login_required(login_url='/login/')
 def index(request):
     return  render_to_response('snh/index.html',{'user_list': ''})
 
+@login_required(login_url='/login/')
+def twitter(request):
+    user_list = TWUser.objects.all()
+    return  render_to_response('snh/twitter.html',{'user_list': user_list})
+
+@login_required(login_url='/login/')
+def twitter_detail(request, user_id):
+    user = get_object_or_404(TWUser, oid=user_id)
+    statuses = TWStatus.objects.filter(user=user).order_by("-created_at")
+    return render_to_response('snh/twitter_detail.html', {'user': user, 'statuses':statuses})
+
 def logout_view(request):
     logout(request)
 
+@login_required(login_url='/login/')
 def reset_fb_token(request):
     user = FanUser.objects.all().delete()
     return  redirect("snh.views.request_fb_token")

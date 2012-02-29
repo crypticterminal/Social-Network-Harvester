@@ -1,4 +1,3 @@
 *.pyc
 generate.py
 *.pkl
-settings.py

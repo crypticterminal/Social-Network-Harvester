@@ -14,6 +14,8 @@ class TwitterHarvester(models.Model):
     def __unicode__(self):
         return self.name
 
+    pmk_id =  models.AutoField(primary_key=True)
+
     name = models.CharField(max_length=200, null=True)
 
     user = models.ForeignKey('TWUser', null=True)
@@ -41,6 +43,8 @@ class TWUser(models.Model):
 
     def __unicode__(self):
         return self.screen_name
+
+    pmk_id =  models.AutoField(primary_key=True)
 
     oid = models.BigIntegerField(null=True, unique=True)
     name = models.CharField(max_length=200, null=True)
@@ -75,35 +79,35 @@ class TWUser(models.Model):
 
     def update_from_twitter(self, twitter_model):
         model_changed = False
-        props_to_check = [
-                            "id",
-                            "name",
-                            "screen_name",
-                            "lang",
-                            "description",
-                            "location",
-                            "time_zone",
-                            "utc_offset",
-                            "protected",
-                            "favourites_count",
-                            "followers_count",
-                            "friends_count",
-                            "statuses_count",
-                            "listed_count",
-                            "profile_background_color",
-                            "profile_background_tile",
-                            "profile_link_color",
-                            "profile_sidebar_fill_color",
-                            "profile_text_color",
-                            ]
+        props_to_check = {
+                            "oid":"id",
+                            "name":"name",
+                            "screen_name":"screen_name",
+                            "lang":"lang",
+                            "description":"description",
+                            "location":"location",
+                            "time_zone":"time_zone",
+                            "utc_offset":"utc_offset",
+                            "protected":"protected",
+                            "favourites_count":"favourites_count",
+                            "followers_count":"followers_count",
+                            "friends_count":"friends_count",
+                            "statuses_count":"statuses_count",
+                            "listed_count":"listed_count",
+                            "profile_background_color":"profile_background_color",
+                            "profile_background_tile":"profile_background_tile",
+                            "profile_link_color":"profile_link_color",
+                            "profile_sidebar_fill_color":"profile_sidebar_fill_color",
+                            "profile_text_color":"profile_text_color",
+                            }
 
         date_to_check = ["created_at"]
         #TODO implement FK CHECK!!
         fk_to_check = ["url", "profile_image_url"]
 
         for prop in props_to_check:
-            if self.__dict__[prop] != twitter_model.__dict__["_"+prop]:
-                self.__dict__[prop] = twitter_model.__dict__["_"+prop]
+            if self.__dict__[prop] != twitter_model.__dict__["_"+props_to_check[prop]]:
+                self.__dict__[prop] = twitter_model.__dict__["_"+props_to_check[prop]]
                 model_changed = True
 
         for prop in date_to_check:
@@ -115,13 +119,13 @@ class TWUser(models.Model):
 
         if model_changed:
             self.model_update_date = datetime.now()
-            print "User SAVED!", self
+            #print "User SAVED!", self
             self.save()
 
     def get_latest_status(self):
 
         latest_status = None
-        statuses = Status.objects.filter(user=self).order_by("-created_at")
+        statuses = TWStatus.objects.filter(user=self).order_by("-created_at")
         for latest_status in statuses: break
         return latest_status
         
@@ -133,6 +137,8 @@ class TWStatus(models.Model):
 
     def __unicode__(self):
         return self.text
+
+    pmk_id =  models.AutoField(primary_key=True)
 
     user = models.ForeignKey('TWUser')
 
@@ -151,23 +157,23 @@ class TWStatus(models.Model):
 
     def update_from_twitter(self, twitter_model, user):
         model_changed = False
-        props_to_check = [
-                            "id",
-                            "favorited",
-                            "retweet_count",
-                            "retweeted",
-                            "source",
-                            "text",
-                            "truncated",
-                            ]
+        props_to_check = {
+                            "oid":"id",
+                            "favorited":"favorited",
+                            "retweet_count":"retweet_count",
+                            "retweeted":"retweeted",
+                            "source":"source",
+                            "text":"text",
+                            "truncated":"truncated",
+                            }
 
         date_to_check = ["created_at"]
 
         self.user = user        
 
         for prop in props_to_check:
-            if self.__dict__[prop] != twitter_model.__dict__["_"+prop]:
-                self.__dict__[prop] = twitter_model.__dict__["_"+prop]
+            if self.__dict__[prop] != twitter_model.__dict__["_"+props_to_check[prop]]:
+                self.__dict__[prop] = twitter_model.__dict__["_"+props_to_check[prop]]
                 model_changed = True
 
         for prop in date_to_check:
@@ -179,7 +185,7 @@ class TWStatus(models.Model):
 
         if model_changed:
             self.model_update_date = datetime.now()
-            print "Status SAVED!", self
+            #print "Status SAVED!", self
             self.save()
 
 
