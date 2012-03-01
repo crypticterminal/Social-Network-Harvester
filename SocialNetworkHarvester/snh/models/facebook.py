@@ -48,6 +48,8 @@ class FBUser(models.Model):
     user_desc = models.ForeignKey('FBUserDesc', related_name="fbuser.user_desc", null=True)
     page_desc = models.ForeignKey('FBPageDesc', related_name="fbuser.page_desc", null=True)
 
+    error_triggered = models.BooleanField()
+
 
 class FBUserDesc(models.Model):
 

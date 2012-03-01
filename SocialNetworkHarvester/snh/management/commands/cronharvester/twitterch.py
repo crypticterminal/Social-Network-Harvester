@@ -1,11 +1,11 @@
 # coding=UTF-8
 
 import twitter
+import time
 
 from django.core.exceptions import ObjectDoesNotExist
 
 from snh.models.twitter import *
-from snh.models import twitterfactory as tf
 
 def run_twitter_harvester():
     harvester_list = TwitterHarvester.objects.all()
@@ -25,13 +25,16 @@ def run_harvester(harvester):
         latest_statuses = []
 
         if not user.error_triggered:
-            try:
-                latest_status = user.get_latest_status()
-                latest_status_id = 1 if latest_status is None else latest_status.oid
-                latest_statuses = []
-                page = 1
+            latest_status = user.get_latest_status()
+            latest_status_id = 1 if latest_status is None else latest_status.oid
+            latest_statuses = []
+            page = 1
+            retry = 0
+            retry_delay = 30
 
-                while True:
+            while True:
+                try:
+                    print page
                     latest_statuses_page = client.GetUserTimeline(
                                                                 screen_name=user.screen_name, 
                                                                 since_id=latest_status_id, 
@@ -41,16 +44,27 @@ def run_harvester(harvester):
                                                                 page=page
                                                             )
                     page = page + 1
+                    retry = 0
                     if latest_statuses_page:
                         latest_statuses += latest_statuses_page
                     else:
                         break
 
-            except twitter.TwitterError, t:
-                user.error_triggered = True
-                user.save()
-                print "ERROR: the user %s was reject due to error. Please remove the error_triggered flag to retry." % user
-                print "ERROR:", t
+                except twitter.TwitterError, t:
+                    if str(t) == "Not found":
+                        user.error_triggered = True
+                        user.save()
+                        print "ERROR: the user %s was reject due to error. Please remove the error_triggered flag to retry." % user
+                        break
+                    elif str(t) == "Capacity Error":
+                        retry += 1
+                        wait_delay = retry*retry_delay
+                        wait_delay = 120 if wait_delay > 120 else wait_delay
+                        print "Waiting. Retry:",retry,"delay:",wait_delay
+                        time.sleep(wait_delay)
+                        
+                    print "ERROR:%s:" % str(t)
+
         else:
             print "ERROR: the user %s was reject due to error. Please remove the error_triggered flag to retry" % user
 
@@ -66,7 +80,10 @@ def get_status(tw_status,user):
         status = TWStatus.objects.get(oid__exact=tw_status.id)
     except ObjectDoesNotExist:
         status = TWStatus()
-        status.update_from_twitter(tw_status,user)
+        try:
+            status.update_from_twitter(tw_status,user)
+        except:
+            print "ERROR: a problem with the status. cannot be saved!!! user:%s, status id %d" %(user.screen_name, status.oid)
         #print "new", status
     return status
 
