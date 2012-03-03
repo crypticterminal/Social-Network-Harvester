@@ -12,6 +12,16 @@ class URL(models.Model):
     def __unicode__(self):
         return self.original_url
 
-    original_url = models.CharField(max_length=400,null=True)
-    unshorten_url = models.CharField(max_length=400,null=True)
-        
+    original_url = models.TextField(null=True)
+    unshorten_url = models.TextField(null=True)
+    last_snapshot_time = models.DateTimeField(null=True)
+
+class Image(models.Model):
+
+    class Meta:
+        app_label = "snh"
+
+    def __unicode__(self):
+        return self.name
+
+    name = models.TextField(null=True)

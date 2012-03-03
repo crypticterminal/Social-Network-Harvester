@@ -15,17 +15,8 @@ class FacebookHarvester(models.Model):
         return self.name
 
     pmk_id =  models.AutoField(primary_key=True)
-
-    name = models.CharField(max_length=200, null=True)
-
-    user = models.ForeignKey('FBUser', null=True)
-    
-    access_token = models.CharField(max_length=200, null=True)
-    app_id = models.CharField(max_length=200, null=True)
-    app_secret = models.CharField(max_length=200, null=True)
-
+    name = models.CharField(max_length=255, null=True)
     is_active = models.BooleanField()
-
     fbusers_to_harvest = models.ManyToManyField('FBUser', related_name='fbusers_to_harvest')
 
 class FBUser(models.Model):
@@ -38,10 +29,10 @@ class FBUser(models.Model):
    
     pmk_id =  models.AutoField(primary_key=True)
 
-    oid = models.CharField(max_length=200, null=True)
-    name = models.CharField(max_length=200, null=True)
+    fid = models.CharField(max_length=255, null=True)
+    name = models.CharField(max_length=255, null=True)
     #petite entorse. username n'existe pas pour les fanpages. dans ce cas name==username
-    username = models.CharField(max_length=200, null=True)
+    username = models.CharField(max_length=255, null=True)
     websited = models.ForeignKey('URL', related_name="fbuser.website", null=True)
     link = models.ForeignKey('URL', related_name="fbuser.link", null=True)
 
@@ -61,29 +52,29 @@ class FBUserDesc(models.Model):
 
     pmk_id =  models.AutoField(primary_key=True)
 
-    first_name = models.CharField(max_length=200, null=True)
-    last_name = models.CharField(max_length=200, null=True)
-    gender = models.CharField(max_length=200, null=True)
-    locale = models.CharField(max_length=200, null=True)
+    first_name = models.CharField(max_length=255, null=True)
+    last_name = models.CharField(max_length=255, null=True)
+    gender = models.CharField(max_length=255, null=True)
+    locale = models.CharField(max_length=255, null=True)
     #languages = {"id":id, "name":name}
-    third_party_id = models.CharField(max_length=200, null=True)
+    third_party_id = models.CharField(max_length=255, null=True)
     #installed = {"type":user, "id":id, "installed":true|None}
     #timezone = number
     updated_time = models.DateTimeField(null=True)
     verified = models.BooleanField()
-    bio = models.CharField(max_length=1024, null=True)
+    bio = models.TextField(null=True)
     birthday = models.DateTimeField(null=True)
     #education = array of objects containing year and type fields, and school object (name, id, type, and optional year, degree, concentration array, classes array, and with array )
-    email = models.CharField(max_length=200, null=True)
-    hometown = models.CharField(max_length=200, null=True)
+    email = models.CharField(max_length=255, null=True)
+    hometown = models.CharField(max_length=255, null=True)
     #interested_in = array containing strings
     #location = object containing name and id
-    political = models.CharField(max_length=200, null=True)
+    political = models.TextField(null=True)
     #favorite_athletes = array of objects containing id and name fields
     #favorite_tames = array of objects containing id and name fields
-    quotes = models.CharField(max_length=200, null=True)
-    relationship_status = models.CharField(max_length=200, null=True)
-    religion = models.CharField(max_length=200, null=True)
+    quotes = models.TextField(max_length=255, null=True)
+    relationship_status = models.TextField(null=True)
+    religion = models.TextField(null=True)
     #significant_other = object containing name and id
     #video_upload_limits = object containing length and size of video
 
@@ -99,15 +90,15 @@ class FBPageDesc(models.Model):
 
     pmk_id =  models.AutoField(primary_key=True)
 
-    #oid = models.CharField(max_length=200, null=True)
-    #name = models.CharField(max_length=200, null=True)
+    #fid = models.CharField(max_length=255, null=True)
+    #name = models.CharField(max_length=255, null=True)
     #link = models.ForeignKey('URL', related_name="fbpage.link", null=True)
     #website = models.ForeignKey('URL', related_name="fbpage.website", null=True)
 
-    category = models.CharField(max_length=200, null=True)
+    category = models.TextField(null=True)
     likes = models.IntegerField(null=True)
     #location = dictionnary
-    phone = models.CharField(max_length=200, null=True)
+    phone = models.CharField(max_length=255, null=True)
     checkins = models.IntegerField(null=True)
     picture = models.ForeignKey('URL', related_name="fbpagedesc.picture", null=True)
     talking_about_count = models.IntegerField(null=True)
@@ -118,40 +109,95 @@ class FBPost(models.Model):
         app_label = "snh"
 
     def __unicode__(self):
-        return self.text
+        return self.ftype
 
     pmk_id =  models.AutoField(primary_key=True)
-
     user = models.ForeignKey('FBUser')
 
-    oid = models.CharField(max_length=200, null=True)
-    user = models.ForeignKey('FBUser')
-    #to = Contains in data an array of objects, each with the name and Facebook id of the user
-    to = models.ManyToManyField('FBUser', related_name='fbpost.to')
-    message = models.CharField(max_length=4*1024, null=True)
-    #message_tags = object containing fields whose names are the indexes to where objects are mentioned in the message field; each field in turn is an array containing an object with id, name, offset, and length fields, where length is the length, within the message field, of the object mentioned
+    fid = models.CharField(max_length=255, null=True)
+    ffrom = models.ForeignKey('FBUser', related_name='fbpost.from', null=True)
+    to = models.ManyToManyField('FBUser', related_name='fbpost.to', null=True)
+    message = models.TextField(null=True)
+    message_tags_raw = models.TextField(null=True) #not supported but saved
     picture = models.ForeignKey('URL', related_name="fbpost.picture", null=True)
     link = models.ForeignKey('URL', related_name="fbpost.link", null=True)
-    name = models.CharField(max_length=200, null=True)
-    caption = models.CharField(max_length=200, null=True)
-    description = models.CharField(max_length=200, null=True)
+    name = models.CharField(max_length=255, null=True)
+    caption = models.TextField(null=True)
+    description = models.TextField(null=True)
     source = models.ForeignKey('URL', related_name="fbpost.source", null=True)
-    #properties = array of objects containing the name and text
+    properties_raw = models.TextField(null=True) #not supported but saved
     icon = models.ForeignKey('URL', related_name="fbpost.icon", null=True)
-    #actions = array of objects containing the name and link
-    #privacy = voir doc
-    otype = models.CharField(max_length=200, null=True)
-    #likes = Structure containing a data object and the count of total likes, with data containing an array of objects, each with the name and Facebook id of the user who liked the post
-    likes_from = models.ManyToManyField('FBUser', related_name='fbpost.likes_from')
+    #actions = array of objects containing the name and link #will not be supported
+    privacy_raw = models.TextField(null=True) #not supported but saved
+    ftype = models.CharField(max_length=255, null=True)
+    likes_from = models.ManyToManyField('FBUser', related_name='fbpost.likes_from', null=True)
     likes_count = models.IntegerField(null=True)
-    #place = object containing id and name of Page associated with this location, and a location field containing geographic information such as latitude, longitude, country, and other fields (fields will vary based on geography and availability of information)
-    story =  models.CharField(max_length=200, null=True)
-    #story_tags = object containing fields whose names are the indexes to where objects are mentioned in the message field; each field in turn is an array containing an object with id, name, offset, and length fields, where length is the length, within the message field, of the object mentioned
-    #comments = Structure containing a data object containing an array of objects, each with the id, from, message, and created_time for each comment
+    comments_count = models.IntegerField(null=True)
+    place_raw = models.TextField(null=True) #not supported but saved 
+    story =  models.TextField(null=True)
+    story_tags_raw = models.TextField(null=True) #not supported but saved 
     object_id = models.IntegerField(null=True)
-    #application = object containing the name and id of the application
+    application_raw = models.TextField(null=True) #not supported but saved 
     created_time = models.DateTimeField(null=True)
     updated_time = models.DateTimeField(null=True)
+
+    def update_from_facebook(self, facebook_model, user):
+        model_changed = False
+        props_to_check = {
+                            "fid":"id",
+                            "message":"message",
+                            "message_tags_raw":"message_tags",
+                            "name":"name",
+                            "caption":"caption",
+                            "description":"description",
+                            "properties_raw":"properties",
+                            "privacy_raw":"privacy",
+                            "ftype":"type",
+                            "place_raw":"place",
+                            "story":"story",
+                            "story_tags_raw":"story_tags",
+                            "object_id":"object_id",
+                            "application_raw":"application",
+                            }
+
+        subitem_to_check = {
+                            "likes_count":["likes","count"],
+                            "comments_count":["comments","count"],
+                            }
+
+        date_to_check = ["created_time", "updated_time"]
+
+        self.user = user
+
+        for prop in props_to_check:
+            if props_to_check[prop] in facebook_model and self.__dict__[prop] != facebook_model[props_to_check[prop]]:
+                self.__dict__[prop] = facebook_model[props_to_check[prop]]
+                print "prop changed:", prop
+                model_changed = True
+
+        for prop in subitem_to_check:
+            subprop = subitem_to_check[prop]
+            if subprop[0] in facebook_model and \
+               subprop[1] in facebook_model[subprop[0]] and \
+                self.__dict__[prop] != facebook_model[subprop[0]][subprop[1]]:
+
+                self.__dict__[prop] = facebook_model[subprop[0]][subprop[1]]
+                print "prop changed:", prop
+                model_changed = True
+
+        for prop in date_to_check:
+            ts = time.strftime('%Y-%m-%d %H:%M:%S', time.strptime(facebook_model[prop],'%Y-%m-%dT%H:%M:%S+0000'))
+            #TODO implement cleaner time comparison
+            if str(self.__dict__[prop]) != str(ts):
+                self.__dict__[prop] = ts
+                print "prop changed:", prop
+                model_changed = True
+
+        if model_changed:
+            self.model_update_date = datetime.now()
+            self.save()
+            print "Status SAVED!", self
+
         
 class FBComment(models.Model):
 
@@ -163,14 +209,14 @@ class FBComment(models.Model):
 
     pmk_id =  models.AutoField(primary_key=True)
 
-    oid = models.CharField(max_length=200, null=True)
-    user = models.ForeignKey('FBUser')
-    message = models.CharField(max_length=4*1024, null=True)
+    fid = models.CharField(max_length=255, null=True)
+    ffrom = models.ForeignKey('FBUser')
+    message = models.TextField(null=True)
     created_time = models.DateTimeField(null=True)
     likes = models.IntegerField(null=True)
+    user_likes = models.IntegerField(null=True)
+    ftype = models.CharField(max_length=255, null=True)
     post = models.ForeignKey('FBPost', null=True)
-
-
 
 
 

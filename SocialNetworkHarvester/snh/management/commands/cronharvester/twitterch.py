@@ -26,7 +26,7 @@ def run_harvester(harvester):
 
         if not user.error_triggered:
             latest_status = user.get_latest_status()
-            latest_status_id = 1 if latest_status is None else latest_status.oid
+            latest_status_id = 1 if latest_status is None else latest_status.fid
             latest_statuses = []
             page = 1
             retry = 0
@@ -75,16 +75,18 @@ def run_harvester(harvester):
         print_limit(client)
         print "-----------"
         print ""
+
 def get_status(tw_status,user):
     try:
-        status = TWStatus.objects.get(oid__exact=tw_status.id)
+        status = TWStatus.objects.get(fid__exact=tw_status.id)
     except ObjectDoesNotExist:
         status = TWStatus()
-        try:
-            status.update_from_twitter(tw_status,user)
-        except:
-            print "ERROR: a problem with the status. cannot be saved!!! user:%s, status id %d" %(user.screen_name, status.oid)
-        #print "new", status
+
+    try:
+        status.update_from_twitter(tw_status,user)
+    except:
+        print "ERROR: a problem with the status. cannot be saved!!! user:%s, status id %d" %(user.screen_name, status.fid)
+
     return status
 
 def print_limit(client):

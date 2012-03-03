@@ -16,14 +16,14 @@ class TwitterHarvester(models.Model):
 
     pmk_id =  models.AutoField(primary_key=True)
 
-    name = models.CharField(max_length=200, null=True)
+    name = models.CharField(max_length=255, null=True)
 
     user = models.ForeignKey('TWUser', null=True)
     
-    consumer_key = models.CharField(max_length=64,null=True)
-    consumer_secret = models.CharField(max_length=64,null=True)
-    access_token_key = models.CharField(max_length=64,null=True)
-    access_token_secret = models.CharField(max_length=64,null=True)
+    consumer_key = models.CharField(max_length=255,null=True)
+    consumer_secret = models.CharField(max_length=255,null=True)
+    access_token_key = models.CharField(max_length=255,null=True)
+    access_token_secret = models.CharField(max_length=255,null=True)
 
     reset_time = models.DateTimeField(null=True)
     remaining_hist = models.IntegerField(null=True)
@@ -46,15 +46,15 @@ class TWUser(models.Model):
 
     pmk_id =  models.AutoField(primary_key=True)
 
-    oid = models.BigIntegerField(null=True, unique=True)
-    name = models.CharField(max_length=200, null=True)
-    screen_name = models.CharField(max_length=200, unique=True, null=True)
-    lang = models.CharField(max_length=200, null=True)
-    description = models.CharField(max_length=200, null=True)
+    fid = models.BigIntegerField(null=True, unique=True)
+    name = models.CharField(max_length=255, null=True)
+    screen_name = models.CharField(max_length=255, unique=True, null=True)
+    lang = models.CharField(max_length=255, null=True)
+    description = models.TextField(null=True)
     url = models.ForeignKey('URL', related_name="twuser.url", null=True)
 
-    location = models.CharField(max_length=200, null=True)
-    time_zone = models.CharField(max_length=200, null=True)
+    location = models.TextField(null=True)
+    time_zone = models.TextField(null=True)
     utc_offset = models.IntegerField(null=True)
 
     protected = models.BooleanField()
@@ -67,12 +67,12 @@ class TWUser(models.Model):
 
     created_at = models.DateTimeField(null=True)
 
-    profile_background_color = models.CharField(max_length=200, null=True)
+    profile_background_color = models.CharField(max_length=255, null=True)
     profile_background_tile = models.BooleanField()
     profile_image_url = models.ForeignKey('URL', related_name="twuser.profile_image_url", null=True)
-    profile_link_color = models.CharField(max_length=200, null=True)
-    profile_sidebar_fill_color = models.CharField(max_length=200, null=True)
-    profile_text_color = models.CharField(max_length=200, null=True)
+    profile_link_color = models.CharField(max_length=255, null=True)
+    profile_sidebar_fill_color = models.CharField(max_length=255, null=True)
+    profile_text_color = models.CharField(max_length=255, null=True)
 
     model_update_date = models.DateTimeField(null=True)
     error_triggered = models.BooleanField()
@@ -80,7 +80,7 @@ class TWUser(models.Model):
     def update_from_twitter(self, twitter_model):
         model_changed = False
         props_to_check = {
-                            "oid":"id",
+                            "fid":"id",
                             "name":"name",
                             "screen_name":"screen_name",
                             "lang":"lang",
@@ -142,13 +142,13 @@ class TWStatus(models.Model):
 
     user = models.ForeignKey('TWUser')
 
-    oid = models.BigIntegerField(null=True)
+    fid = models.BigIntegerField(null=True)
     created_at = models.DateTimeField(null=True)
     favorited = models.BooleanField()
     retweet_count = models.IntegerField(null=True)
     retweeted = models.BooleanField()
-    source = models.CharField(max_length=200, null=True)
-    text = models.CharField(max_length=200, null=True)
+    source = models.TextField(null=True)
+    text = models.TextField(null=True)
     truncated = models.BooleanField()
 
     model_update_date = models.DateTimeField(null=True)
@@ -158,7 +158,7 @@ class TWStatus(models.Model):
     def update_from_twitter(self, twitter_model, user):
         model_changed = False
         props_to_check = {
-                            "oid":"id",
+                            "fid":"id",
                             "favorited":"favorited",
                             "retweet_count":"retweet_count",
                             "retweeted":"retweeted",
@@ -169,7 +169,7 @@ class TWStatus(models.Model):
 
         date_to_check = ["created_at"]
 
-        self.user = user        
+        self.user = user
 
         for prop in props_to_check:
             if self.__dict__[prop] != twitter_model.__dict__["_"+props_to_check[prop]]:
