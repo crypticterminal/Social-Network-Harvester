@@ -12,4 +12,7 @@ urlpatterns = patterns('snh.views',
     (r'^twitter_detail/(?P<user_id>\d+)/$', 'twitter_detail'),
     (r'^twitter$', 'twitter'),
 
+    (r'^facebook_detail/(?P<user_id>\d+)/$', 'facebook_detail'),
+    (r'^facebook$', 'facebook'),
+
 )

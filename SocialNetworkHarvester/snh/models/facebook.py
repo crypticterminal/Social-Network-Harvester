@@ -33,7 +33,7 @@ class FBUser(models.Model):
     name = models.CharField(max_length=255, null=True)
     #petite entorse. username n'existe pas pour les fanpages. dans ce cas name==username
     username = models.CharField(max_length=255, null=True)
-    websited = models.ForeignKey('URL', related_name="fbuser.website", null=True)
+    website = models.ForeignKey('URL', related_name="fbuser.website", null=True)
     link = models.ForeignKey('URL', related_name="fbuser.link", null=True)
 
     user_desc = models.ForeignKey('FBUserDesc', related_name="fbuser.user_desc", null=True)
@@ -41,6 +41,24 @@ class FBUser(models.Model):
 
     error_triggered = models.BooleanField()
 
+    def update_from_facebook(self,fb_user):
+        model_changed = False
+        props_to_check = {
+                            "fid":"id",
+                            "name":"name",
+                            "username":"username",
+                            }
+
+        for prop in props_to_check:
+            if props_to_check[prop] in fb_user and self.__dict__[prop] != fb_user[props_to_check[prop]]:
+                self.__dict__[prop] = fb_user[props_to_check[prop]]
+                print "prop changed:", prop
+                model_changed = True
+
+        if model_changed:
+            self.model_update_date = datetime.now()
+            self.save()
+            print "User SAVED!", self
 
 class FBUserDesc(models.Model):
 
@@ -172,7 +190,7 @@ class FBPost(models.Model):
         for prop in props_to_check:
             if props_to_check[prop] in facebook_model and self.__dict__[prop] != facebook_model[props_to_check[prop]]:
                 self.__dict__[prop] = facebook_model[props_to_check[prop]]
-                print "prop changed:", prop
+                #print "prop changed:", prop
                 model_changed = True
 
         for prop in subitem_to_check:
@@ -182,7 +200,7 @@ class FBPost(models.Model):
                 self.__dict__[prop] != facebook_model[subprop[0]][subprop[1]]:
 
                 self.__dict__[prop] = facebook_model[subprop[0]][subprop[1]]
-                print "prop changed:", prop
+                #print "prop changed:", prop
                 model_changed = True
 
         for prop in date_to_check:
@@ -190,13 +208,13 @@ class FBPost(models.Model):
             #TODO implement cleaner time comparison
             if str(self.__dict__[prop]) != str(ts):
                 self.__dict__[prop] = ts
-                print "prop changed:", prop
+                #print "prop changed:", prop
                 model_changed = True
 
         if model_changed:
             self.model_update_date = datetime.now()
             self.save()
-            print "Status SAVED!", self
+            #print "Status SAVED!", self
 
         
 class FBComment(models.Model):

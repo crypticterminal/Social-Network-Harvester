@@ -7,6 +7,15 @@
             @import "/static/header.ccss";
 			@import "/static/demo_table.css";
 
+#user th{
+	background-color: #DDFF75;
+
+}
+
+#user tr{
+	background-color: #ECFFB3;
+}
+
 #example tbody tr.even:hover, #example tbody tr.even td.highlighted {
 	background-color: #ECFFB3;
 }
@@ -59,40 +68,55 @@ cursor:pointer;
 		<script type="text/javascript" language="javascript" src="/static/jquery.dataTables.js"></script>
 		<script type="text/javascript" charset="utf-8">
 			$(document).ready(function() {
-				$('#example').dataTable({"iDisplayLength": 100});
+				$('#example').dataTable({
+                                            "iDisplayLength": 100,
+                                        });
 			} );
 		</script>
 	</head>
 <body>
-
-<table cellpadding="0" cellspacing="0" border="0" class="display" id="example" width="100%">
+<h3>Détails de {{ user.name }} </h3>
+<table id="user" width="100%" border="0" cellspacing="2" cellpadding="0">
     <thead>
-    <tr>
-        <th>Name</th>
-        <th>Screen Name</th>
-        <th>Description</th>
-        <th>Followers count</th>
-        <th>Friends count</th>
-        <th>Statuses count</th>
-        <th>Listed count</th>
+    <tr class="head">
+    <th>fid</th>
+    <th>name</th>
+    <th>username</th>
     </tr>
     </thead>
     <tbody>
-{% for user in user_list %}
-    <tr class="line" onclick="document.location.href='/twitter_detail/{{ user.fid }}/'">
-        <td>{{ user.name }}</td>
-        <td>{{ user.screen_name }}</td>
-        <td>{{ user.description }}</td>
-        <td class="center">{{ user.followers_count }}</td>
-        <td class="center">{{ user.friends_count }}</td>
-        <td class="center">{{ user.statuses_count }}</td>
-        <td class="center">{{ user.listed_count }}</td>
+    <tr>
+    <td>{{ user.fid }}</td>
+    <td>{{ user.name }}</td>
+    <td>{{ user.username }}</td>
     </tr>
-{% endfor %}
     </tbody>
 
+
 </table>
-	
+<h3>Post</h3>
+<table id="example" width="100%" border="0" cellspacing="2" cellpadding="0">
+    <thead>
+    <tr class="head">
+    <th>Created time</th>
+    <th>type</th>
+    <th>story/message</th>
+    <th>Comments count</th>
+    <th>Likes count</th>
+    </tr>
+    </thead>
+    <tbody>
+{% for post in posts %}
+    <tr class="line" >
+    <td id="date">{{ post.created_time }}</td>
+    <td >{{ post.ftype }}</td>
+    <td >{{ post.story|default_if_none:"" }}{{ post.message|default_if_none:"" }} </td>
+    <td>{{ post.comments_count|default_if_none:"0" }}</td>
+    <td>{{ post.likes_count|default_if_none:"0" }}</td>
+    </tr>
+{% endfor %}
+    <tbody>
+
+</table>
 
 </body>
-</html>

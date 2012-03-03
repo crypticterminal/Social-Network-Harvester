@@ -14,7 +14,6 @@ def run_facebook_harvester():
         if harvester.is_active:
             run_harvester(harvester)
 
-
 def run_harvester(harvester):
     fanuser = FanUser.objects.all()[0]
     userlist = harvester.fbusers_to_harvest.all()
@@ -24,6 +23,7 @@ def run_harvester(harvester):
 
         if not user.error_triggered:
             url = "%s/feed" % user.username
+            update_user = None
             latest_posts = []
             page = 0
             retry = 0
@@ -33,6 +33,9 @@ def run_harvester(harvester):
             while True:
                 try:
                     print user.username, page
+                    if not update_user:
+                        update_user = fanuser.graph.get(user.username)
+                        user.update_from_facebook(update_user)
                     latest_posts_page = fanuser.graph.get(url,until=until, limit=limit)
                     until,limit = get_paging(latest_posts_page)
                     page = page + 1
