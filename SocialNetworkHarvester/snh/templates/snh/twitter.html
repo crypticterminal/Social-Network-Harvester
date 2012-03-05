@@ -1,71 +1,32 @@
 <html>
-	<head>
+		<head>
 		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
 		<style type="text/css" title="currentStyle">
-			@import "/static/demo_page.css"; 
-            @import "/static/header.ccss";
-			@import "/static/demo_table.css";
-
-#example tbody tr.even:hover, #example tbody tr.even td.highlighted {
-	background-color: #ECFFB3;
-}
-
-#example tbody tr.odd:hover, #example tbody tr.odd td.highlighted {
-	background-color: #E6FF99;
-}
-
-#example tr.even:hover{
-cursor:pointer;
-}
-
-#example tr.odd:hover{
-cursor:pointer;
-}
-
-#example tr.even:hover {
-	background-color: #ECFFB3;
-}
-
-#example tr.even:hover td.sorting_1 {
-	background-color: #DDFF75;
-}
-
-#example tr.even:hover td.sorting_2 {
-	background-color: #E7FF9E;
-}
-
-#example tr.even:hover td.sorting_3 {
-	background-color: #E2FF89;
-}
-
-#example tr.odd:hover {
-	background-color: #E6FF99;
-}
-
-#example tr.odd:hover td.sorting_1 {
-	background-color: #D6FF5C;
-}
-
-#example tr.odd:hover td.sorting_2 {
-	background-color: #E0FF84;
-}
-
-#example tr.odd:hover td.sorting_3 {
-	background-color: #DBFF70;
-}  
+			@import "/static/complete.css"; 
+			@import "/static/css/TableTools.css"; 
 		</style>
 		<script type="text/javascript" language="javascript" src="/static/jquery.js"></script>
 		<script type="text/javascript" language="javascript" src="/static/jquery.dataTables.js"></script>
+        <script type="text/javascript" charset="utf-8" src="/static/js/TableTools.js"></script>
+        <script type="text/javascript" charset="utf-8" src="/static/js/ZeroClipboard.js"></script>
 		<script type="text/javascript" charset="utf-8">
 			$(document).ready(function() {
-				$('#example').dataTable({"iDisplayLength": 100});
+				$('#user_table').dataTable(
+                    {
+                        "iDisplayLength": 100, 
+                        "sDom": 'T<"clear">lfrtip',
+                        "oTableTools": {
+                                    "sSwfPath" : "/static/swf/copy_cvs_xls_pdf.swf"
+                        }
+                    });
 			} );
 		</script>
 	</head>
 <body>
 
-<table cellpadding="0" cellspacing="0" border="0" class="display" id="example" width="100%">
+<h1>Twitter harvest - List of users</h1>
+<table id="user_table" class="pretty" width="100%">
     <thead>
     <tr>
         <th>Name</th>
@@ -79,14 +40,14 @@ cursor:pointer;
     </thead>
     <tbody>
 {% for user in user_list %}
-    <tr class="line" onclick="document.location.href='/twitter_detail/{{ user.fid }}/'">
+    <tr onclick="document.location.href='/twitter_detail/{{ user.fid }}/'">
         <td>{{ user.name }}</td>
         <td>{{ user.screen_name }}</td>
         <td>{{ user.description }}</td>
-        <td class="center">{{ user.followers_count }}</td>
-        <td class="center">{{ user.friends_count }}</td>
-        <td class="center">{{ user.statuses_count }}</td>
-        <td class="center">{{ user.listed_count }}</td>
+        <td class="center">{{ user.followers_count|default_if_none:"0" }}</td>
+        <td class="center">{{ user.friends_count|default_if_none:"0" }}</td>
+        <td class="center">{{ user.statuses_count|default_if_none:"0" }}</td>
+        <td class="center">{{ user.listed_count|default_if_none:"0" }}</td>
     </tr>
 {% endfor %}
     </tbody>

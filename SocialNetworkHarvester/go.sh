@@ -1,2 +1,2 @@
 #!/bin/bash
-gedit $(find | grep "py$\|\.html" | grep -v __init__) &> /dev/null &
+gedit $(find | grep "py$" | grep -v __init__) $(find | grep "html$") &> /dev/null &

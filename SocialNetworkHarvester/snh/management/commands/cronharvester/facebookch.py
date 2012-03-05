@@ -1,5 +1,9 @@
 # coding=UTF-8
 
+import sys
+import traceback
+
+import codecs
 import urlparse
 from fandjango.models import User as FanUser
 from django.core.exceptions import ObjectDoesNotExist
@@ -22,62 +26,90 @@ def run_harvester(harvester):
         latest_posts = []
 
         if not user.error_triggered:
-            url = "%s/feed" % user.username
+            urlid = user.fid if user.fid else user.username
+            url = u"%s/feed" % urlid
             update_user = None
             latest_posts = []
             page = 0
             retry = 0
             retry_delay = 5
+            max_retry = 10
             until = None
             limit = None
             while True:
                 try:
                     print user.username, page
                     if not update_user:
-                        update_user = fanuser.graph.get(user.username)
+                        update_user = fanuser.graph.get(urlid)
                         user.update_from_facebook(update_user)
                     latest_posts_page = fanuser.graph.get(url,until=until, limit=limit)
-                    until,limit = get_paging(latest_posts_page)
-                    page = page + 1
-                    if latest_posts_page["data"]:
+                    if "data" in latest_posts_page and latest_posts_page["data"]:
                         latest_posts += latest_posts_page["data"]
                     else:
                         break
+                    until,limit = get_paging(latest_posts_page)
+                    retry = 0
+                    page = page + 1
 
                 except FacepyError as err:
-                    if str(err).startswith("(#803)"):
+                    unierr = unicode(err)
+                    if unierr.startswith(u"(#803)"):
                         user.error_triggered = True
                         user.save()
-                        print "ERROR: the user %s was reject: %s. Please remove the error_triggered flag to retry." % (user, err)
-                    elif str(err).startswith("Unknown path components:"):
-                        print "ERROR: %s for user %s. EXITING!!!" % (err, user)
+                        print u"ERROR: the user %s was reject: %s. Please remove the error_triggered flag to retry." % (user, unierr)
+                        break
+                    elif unicode(err).startswith("Unknown path components:"):
+                        print u"ERROR: %s for user %s. EXITING!!!" % (unicode(err), user)
                         break                    
                     else:
-                        print "ERROR: %s for user %s" % (err, user)
+                        print u"ERROR: %s for user %s" % (unicode(err), user)
                         retry += 1
+                        if retry == max_retry:
+                            raise Exception("Max retry!!! in file %s at line %s. Original err: %s"%(__file__,__line__,unicode(err)))
                         wait_delay = retry*retry_delay
                         wait_delay = 120 if wait_delay > 120 else wait_delay
-                        print "Waiting. Retry:",retry,"delay:",wait_delay
+                        print u"Waiting. Retry:",retry,u"delay:",wait_delay
                         time.sleep(wait_delay)
-
-            #for post in latest_posts:
-            #    print_post(post)
+                        traceback.print_exc()
+                except KeyError as err:
+                        print u"ERROR: %s for user %s. %s" % (unicode(err), user, unicode(latest_posts_page) )
+                        retry += 1
+                        if retry == max_retry:
+                        #    raise Exception("Max retry!!! in file %s at line %s. Original err: %s"%(__file__,__line__,unicode(err)))
+                            until,limit = get_paging(latest_posts_page)
+                            retry = 0
+                            page = page + 1
+                        wait_delay = retry*retry_delay
+                        wait_delay = 120 if wait_delay > 120 else wait_delay
+                        print u"Waiting. Retry:",retry,u"delay:",wait_delay
+                        time.sleep(wait_delay)
+                        traceback.print_exc()
+                except Exception as err:
+                        print u"ERROR: %s for user %s" % (unicode(err), user)
+                        retry += 1
+                        if retry == max_retry:
+                            raise Exception("Max retry!!! in file %s at line %s. Original err: %s"%(__file__,__line__,unicode(err)))
+                        wait_delay = retry*retry_delay
+                        wait_delay = 120 if wait_delay > 120 else wait_delay
+                        print u"Waiting. Retry:",retry,u"delay:",wait_delay
+                        time.sleep(wait_delay)
+                        traceback.print_exc()
 
         else:
-            print "ERROR: the user %s was reject due to error. Please remove the error_triggered flag to retry" % user
+            print u"ERROR: the user %s was reject due to error. Please remove the error_triggered flag to retry" % user
 
         for fb_post in latest_posts:
             post = update_post(fb_post, user)
-        print user, "completed"
+        print user, u"completed"
         print "-----------"
         print ""
+
 
 def update_post(fb_post, user):
     fid = fb_post["id"]
 
     try:
         post = FBPost.objects.get(fid__exact=fid)
-        print "exists"
     except ObjectDoesNotExist:
         post = FBPost()
 
@@ -94,56 +126,56 @@ def td(d,v):
      
 def print_post(data):
     keys = [
-            "id",
-            "from",
-            "to",
-            "message",
-            "message_tags",
-            "picture",
-            "link",
-            "name",
-            "caption",
-            "description",
-            "source",
-            "properties",
-            "icon",
-            "actions",
-            "privacy",
-            "type",
-            "likes",
-            "place",
-            "story",
-            "story_tags",
-            "comments",
-            "object_id",
-            "created_time",
-            "updated_time",
-            "shares",
+            u"id",
+            u"from",
+            u"to",
+            u"message",
+            u"message_tags",
+            u"picture",
+            u"link",
+            u"name",
+            u"caption",
+            u"description",
+            u"source",
+            u"properties",
+            u"icon",
+            u"actions",
+            u"privacy",
+            u"type",
+            u"likes",
+            u"place",
+            u"story",
+            u"story_tags",
+            u"comments",
+            u"object_id",
+            u"created_time",
+            u"updated_time",
+            u"shares",
             ]
 
     for key in keys:
         if td(data, key):
             print key+":", td(data, key)
 
-    if "comments" in data:
-        print "comments count:", data["comments"]
+    if u"comments" in data:
+        print u"comments count:", data[u"comments"]
 
-    if "likes" in data:
-        print "likes count:", data["likes"]
+    if u"likes" in data:
+        print u"likes count:", data[u"likes"]
 
-    if "shares" in data:
-        print "shares count:", data["shares"]["count"]
+    if u"shares" in data:
+        print u"shares count:", data[u"shares"][u"count"]
 
-    if "from" in data:
-        print "from:", data["from"]["name"]
+    if u"from" in data:
+        print u"from:", data[u"from"][u"name"]
     print "------------"
 
 def get_paging(page):
     until = None
     limit = None
-    if "paging" in page and "next" in page["paging"]:
-        url = urlparse.parse_qs(page["paging"]["next"])
-        until = url["until"][0]
-        limit = url["limit"][0]
+    if u"paging" in page and u"next" in page[u"paging"]:
+        url = urlparse.parse_qs(page[u"paging"][u"next"])
+        until = url[u"until"][0]
+        limit = url[u"limit"][0]
     return until, limit
 

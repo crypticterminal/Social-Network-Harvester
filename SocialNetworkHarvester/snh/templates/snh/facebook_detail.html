@@ -3,117 +3,177 @@
 		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	
 		<style type="text/css" title="currentStyle">
-			@import "/static/demo_page.css"; 
-            @import "/static/header.ccss";
-			@import "/static/demo_table.css";
-
-#user th{
-	background-color: #DDFF75;
-
-}
-
-#user tr{
-	background-color: #ECFFB3;
-}
-
-#example tbody tr.even:hover, #example tbody tr.even td.highlighted {
-	background-color: #ECFFB3;
-}
-
-#example tbody tr.odd:hover, #example tbody tr.odd td.highlighted {
-	background-color: #E6FF99;
-}
-
-#example tr.even:hover{
-cursor:pointer;
-}
-
-#example tr.odd:hover{
-cursor:pointer;
-}
-
-#example tr.even:hover {
-	background-color: #ECFFB3;
-}
-
-#example tr.even:hover td.sorting_1 {
-	background-color: #DDFF75;
-}
-
-#example tr.even:hover td.sorting_2 {
-	background-color: #E7FF9E;
-}
-
-#example tr.even:hover td.sorting_3 {
-	background-color: #E2FF89;
-}
-
-#example tr.odd:hover {
-	background-color: #E6FF99;
-}
-
-#example tr.odd:hover td.sorting_1 {
-	background-color: #D6FF5C;
-}
-
-#example tr.odd:hover td.sorting_2 {
-	background-color: #E0FF84;
-}
-
-#example tr.odd:hover td.sorting_3 {
-	background-color: #DBFF70;
-}  
+			@import "/static/complete.css"; 
+			@import "/static/css/TableTools.css"; 
 		</style>
 		<script type="text/javascript" language="javascript" src="/static/jquery.js"></script>
 		<script type="text/javascript" language="javascript" src="/static/jquery.dataTables.js"></script>
+        <script type="text/javascript" charset="utf-8" src="/static/js/TableTools.js"></script>
+        <script type="text/javascript" charset="utf-8" src="/static/js/ZeroClipboard.js"></script>
 		<script type="text/javascript" charset="utf-8">
-			$(document).ready(function() {
-				$('#example').dataTable({
+			$(document).ready(
+                function() {
+				            $('#user_table').dataTable({
                                             "iDisplayLength": 100,
                                         });
-			} );
+				            $('#post_table').dataTable({
+                                            "iDisplayLength": 100,
+                                            "sDom": 'T<"clear">lfrtip',
+                                            "oTableTools": {
+                                                        "sSwfPath" : "/static/swf/copy_cvs_xls_pdf.swf"
+                                            }
+                                        });
+			                } 
+            );
 		</script>
 	</head>
 <body>
-<h3>Détails de {{ user.name }} </h3>
-<table id="user" width="100%" border="0" cellspacing="2" cellpadding="0">
+<h1>Facebook: {{ user.name }} </h1>
+<table id="user_table" class="pretty" width="100%">
     <thead>
-    <tr class="head">
-    <th>fid</th>
-    <th>name</th>
-    <th>username</th>
+    <tr>
+        <th>ID</th>
+        <th>name</th>
+        <th>username</th>
+        <!--<th>website</th>
+        <th>link</th>
+        <th>first_name</th>
+        <th>last_name</th>
+        <th>gender</th>
+        <th>locale</th>
+        <th>languages</th>
+        <th>third_party_id</th>
+        <th>installed</th>
+        <th>timezone</th>
+        <th>updated_time</th>
+        <th>verified</th>-->
+        <th>bio</th>
+        <!--<th>birthday</th>
+        <th>education</th>
+        <th>email</th>
+        <th>hometown</th>
+        <th>interested_in</th>
+        <th>location</th>
+        <th>political</th>
+        <th>favorites_atheletes</th>
+        <th>favorites_teams</th>
+        <th>quotes</th>
+        <th>relationship_status</th>
+        <th>religion</th>
+        <th>significant_other</th>
+        <th>video_upload_limits</th>
+        <th>work</th>-->
+        <th>category</th>
+        <th>likes</th>
+        <th>about</th>
+        <th>phone</th>
+        <th>checkins</th>
+        <th>picture</th>
+        <th>talking_about_count</th>
+        <th>error_triggered</th>
     </tr>
     </thead>
     <tbody>
     <tr>
-    <td>{{ user.fid }}</td>
-    <td>{{ user.name }}</td>
-    <td>{{ user.username }}</td>
+        <td>{{ user.fid|default_if_none:"0" }}</td>
+        <td>{{ user.name|default_if_none:"" }}</td>
+        <td>{{ user.username|default_if_none:"" }}</td>
+        <!--<td>{{ user.website }}</td>
+        <td>{{ user.link }}</td>
+        <td>{{ user.first_name }}</td>
+        <td>{{ user.last_name }}</td>
+        <td>{{ user.gender }}</td>
+        <td>{{ user.locale }}</td>
+        <td>{{ user.languages_raw }}</td>
+        <td>{{ user.third_party_id }}</td>
+        <td>{{ user.intalled_raw }}</td>
+        <td>{{ user.timezone_raw }}</td>
+        <td>{{ user.updated_time }}</td>
+        <td>{{ user.verified }}</td>-->
+        <td>{{ user.bio|default_if_none:""}}</td>
+        <!--<td>{{ user.birthday }}</td>
+        <td>{{ user.education_raw }}</td>
+        <td>{{ user.email }}</td>
+        <td>{{ user.hometown }}</td>
+        <td>{{ user.interested_in }}</td>
+        <td>{{ user.location_raw }}</td>
+        <td>{{ user.political }}</td>
+        <td>{{ user.favorite_atheletes_raw }}</td>
+        <td>{{ user.favorite_teams_raw }}</td>
+        <td>{{ user.quotes }}</td>
+        <td>{{ user.relationship }}</td>
+        <td>{{ user.religion }}</td>
+        <td>{{ user.significant_other_raw }}</td>
+        <td>{{ user.video_upload_limits_raw }}</td>
+        <td>{{ user.work_raw }}</td>-->
+        <td>{{ user.category|default_if_none:"" }}</td>
+        <td>{{ user.likes|default_if_none:"0" }}</td>
+        <td>{{ user.about|default_if_none:"" }}</td>
+        <td>{{ user.phone|default_if_none:"" }}</td>
+        <td>{{ user.checkins|default_if_none:"0" }}</td>
+        <td>{{ user.picture|default_if_none:"" }}</td>
+        <td>{{ user.talking_about_count|default_if_none:"0" }}</td>
+        <td>{{ user.error_triggered }}</td>
     </tr>
     </tbody>
-
-
 </table>
-<h3>Post</h3>
-<table id="example" width="100%" border="0" cellspacing="2" cellpadding="0">
+
+<h1>Facebook wall for: {{ user.name }} </h1>
+<table id="post_table" class="pretty" width="100%">
     <thead>
-    <tr class="head">
-    <th>Created time</th>
-    <th>type</th>
-    <th>story/message</th>
-    <th>Comments count</th>
-    <th>Likes count</th>
-    </tr>
+        <tr>
+            <th>Created time</th>
+            <th>from</th>
+            <!--<th>to</th>-->
+            <th>story/message</th>
+            <th>story_tags/message_tags</th>
+            <!--<th>picture</th>
+            <th>link</th>-->
+            <th>name</th>
+            <th>caption</th>
+            <th>description</th>
+            <!--<th>source</th>
+            <th>properties</th>
+            <th>icon</th>
+            <th>privacy</th>-->
+            <th>type</th>
+            <!--<th>likes_from</th>-->
+            <th>likes_count</th>
+            <th>comments_count</th>
+            <!--<th>place</th>
+            <th>object_id</th>
+            <th>application</th>-->
+            <th>created_time</th>
+            <th>updated_time</th>
+        </tr>
     </thead>
     <tbody>
 {% for post in posts %}
-    <tr class="line" >
-    <td id="date">{{ post.created_time }}</td>
-    <td >{{ post.ftype }}</td>
-    <td >{{ post.story|default_if_none:"" }}{{ post.message|default_if_none:"" }} </td>
-    <td>{{ post.comments_count|default_if_none:"0" }}</td>
-    <td>{{ post.likes_count|default_if_none:"0" }}</td>
-    </tr>
+        <tr>
+            <td>{{ post.created_time.ctime }}</td>
+            <td>{{ post.ffrom|default_if_none:"" }}</td>
+            <!--<td>{{ post.to }} </td>-->
+            <td>{{ post.story|default_if_none:"" }}{{ post.message|default_if_none:"" }} </td>
+            <td>{{ post.story_tags|default_if_none:"" }}{{ post.message_tags|default_if_none:"" }} </td>
+            <!--<td>{{ post.picture }}</td>
+            <td>{{ post.link }}</td>-->
+            <td>{{ post.name|default_if_none:"" }}</td>
+            <td>{{ post.caption|default_if_none:"" }}</td>
+            <td>{{ post.description|default_if_none:"" }}</td>
+            <!--<td>{{ post.source }}</td>
+            <td>{{ post.properties_raw }}</td>
+            <td>{{ post.icon }}</td>
+            <td>{{ post.privacy_raw }}</td>-->
+            <td>{{ post.ftype|default_if_none:"" }}</td>
+            <!--<td>{{ post.likes_from }}</td>-->
+            <td>{{ post.likes_count|default_if_none:"0" }}</td>
+            <td>{{ post.comments_count|default_if_none:"0" }}</td>
+            <!--<td>{{ post.place_raw }}</td>
+            <td>{{ post.object_id }}</td>
+            <td>{{ post.application_raw }}</td>-->
+            <td>{{ post.created_time }}</td>
+            <td>{{ post.updated_time }}</td>
+        </tr>
 {% endfor %}
     <tbody>
 

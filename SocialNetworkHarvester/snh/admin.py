@@ -1,3 +1,5 @@
+# coding=UTF-8
+
 from django.contrib import admin
 
 from snh.models.twitter import TwitterHarvester
@@ -13,20 +15,20 @@ class TwitterHarvesterInline(admin.StackedInline):
 
 class TwitterHarvesterAdmin(admin.ModelAdmin):
     fields = [
-                'name', 
-                'is_active', 
-                'consumer_key',
-                'consumer_secret',
-                'access_token_key',
-                'access_token_secret',
+                u'name', 
+                u'is_active', 
+                u'consumer_key',
+                u'consumer_secret',
+                u'access_token_key',
+                u'access_token_secret',
             ]
 
     inlines = [TwitterHarvesterInline]
 
 class TWUserAdmin(admin.ModelAdmin):
     fields = [
-                'screen_name', 
-                'error_triggered', 
+                u'screen_name', 
+                u'error_triggered', 
             ]
 
 admin.site.register(TwitterHarvester, TwitterHarvesterAdmin)
@@ -38,16 +40,16 @@ class FacebookHarvesterInline(admin.StackedInline):
 
 class FacebookHarvesterAdmin(admin.ModelAdmin):
     fields = [
-                'name', 
-                'is_active', 
+                u'name', 
+                u'is_active', 
             ]
 
     inlines = [FacebookHarvesterInline]
 
 class FBUserAdmin(admin.ModelAdmin):
     fields = [
-                'username', 
-#                'error_triggered', 
+                u'username', 
+                u'error_triggered', 
             ]
 
 admin.site.register(FacebookHarvester, FacebookHarvesterAdmin)

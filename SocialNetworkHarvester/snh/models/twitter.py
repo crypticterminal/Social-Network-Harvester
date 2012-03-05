@@ -80,25 +80,25 @@ class TWUser(models.Model):
     def update_from_twitter(self, twitter_model):
         model_changed = False
         props_to_check = {
-                            "fid":"id",
-                            "name":"name",
-                            "screen_name":"screen_name",
-                            "lang":"lang",
-                            "description":"description",
-                            "location":"location",
-                            "time_zone":"time_zone",
-                            "utc_offset":"utc_offset",
-                            "protected":"protected",
-                            "favourites_count":"favourites_count",
-                            "followers_count":"followers_count",
-                            "friends_count":"friends_count",
-                            "statuses_count":"statuses_count",
-                            "listed_count":"listed_count",
-                            "profile_background_color":"profile_background_color",
-                            "profile_background_tile":"profile_background_tile",
-                            "profile_link_color":"profile_link_color",
-                            "profile_sidebar_fill_color":"profile_sidebar_fill_color",
-                            "profile_text_color":"profile_text_color",
+                            u"fid":u"id",
+                            u"name":u"name",
+                            u"screen_name":u"screen_name",
+                            u"lang":u"lang",
+                            u"description":u"description",
+                            u"location":u"location",
+                            u"time_zone":u"time_zone",
+                            u"utc_offset":u"utc_offset",
+                            u"protected":u"protected",
+                            u"favourites_count":u"favourites_count",
+                            u"followers_count":u"followers_count",
+                            u"friends_count":u"friends_count",
+                            u"statuses_count":u"statuses_count",
+                            u"listed_count":u"listed_count",
+                            u"profile_background_color":u"profile_background_color",
+                            u"profile_background_tile":u"profile_background_tile",
+                            u"profile_link_color":u"profile_link_color",
+                            u"profile_sidebar_fill_color":u"profile_sidebar_fill_color",
+                            u"profile_text_color":u"profile_text_color",
                             }
 
         date_to_check = ["created_at"]
@@ -158,13 +158,13 @@ class TWStatus(models.Model):
     def update_from_twitter(self, twitter_model, user):
         model_changed = False
         props_to_check = {
-                            "fid":"id",
-                            "favorited":"favorited",
-                            "retweet_count":"retweet_count",
-                            "retweeted":"retweeted",
-                            "source":"source",
-                            "text":"text",
-                            "truncated":"truncated",
+                            u"fid":u"id",
+                            u"favorited":u"favorited",
+                            u"retweet_count":u"retweet_count",
+                            u"retweeted":u"retweeted",
+                            u"source":u"source",
+                            u"text":u"text",
+                            u"truncated":u"truncated",
                             }
 
         date_to_check = ["created_at"]
