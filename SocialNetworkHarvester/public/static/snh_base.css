@@ -1,0 +1,41 @@
+/*
+ * Table styles
+ */
+table.snh_head {
+	width: 100%;
+    height: 40px;
+    padding: 1px;
+	clear: both;
+}
+
+table.snh_head td,
+table.snh_head th {
+	padding: 1px;
+	border: 1px solid #fff;
+}
+
+/* Body cells */
+table.snh_head tbody td.snh_title {
+	background: #d5eaf0;
+	text-align: left;
+	font-weight: bold;
+}
+	
+table.snh_head tbody td {
+	text-align: right;
+	background: #d5eaf0;
+}
+
+table.snh_head tbody td {
+	text-align: center;
+	background: #d5eaf0;
+}
+		
+table.snh_head tbody tr td { 
+	background: #bcd9e1;
+}
+
+table.snh_head tbody td.link:hover{ 
+	background: #E6FF99;
+    cursor: pointer;
+}

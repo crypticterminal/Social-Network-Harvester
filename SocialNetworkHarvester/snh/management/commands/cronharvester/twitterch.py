@@ -43,7 +43,8 @@ def run_harvester(harvester):
             max_retry = 5
             retry_delay = 5
 
-            while True:
+            while rate["remaining_hits"] != 0:
+                rate = client.GetRateLimitStatus()
                 try:
                     print page,  client.GetRateLimitStatus()["remaining_hits"]
                     latest_statuses_page = client.GetUserTimeline(
@@ -70,7 +71,7 @@ def run_harvester(harvester):
                     #elif unicode(t) == u"Capacity Error":
                     retry += 1
                     if retry == max_retry:
-                        raise Exception("Max retry!!! in file %s at line %s. Original err: %s"%(__file__,__line__,unicode(err)))
+                        raise Exception("Max retry!!! in file %s at line %s. Original err: %s"%("","",unicode(err)))
                     wait_delay = retry*retry_delay
                     wait_delay = 120 if wait_delay > 120 else wait_delay
                     print u"Waiting. Retry:",retry,u"delay:",wait_delay
@@ -81,7 +82,7 @@ def run_harvester(harvester):
                     print u"ERROR: %s for user %s" % (unicode(err), user)
                     retry += 1
                     if retry == max_retry:
-                        raise Exception("Max retry!!! in file %s at line %s. Original err: %s"%(__file__,__line__,unicode(err)))
+                        raise Exception("Max retry!!! in file %s at line %s. Original err: %s"%("","",unicode(err)))
                     wait_delay = retry*retry_delay
                     wait_delay = 120 if wait_delay > 120 else wait_delay
                     print u"Waiting. Retry:",retry,u"delay:",wait_delay

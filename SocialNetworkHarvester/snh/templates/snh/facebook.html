@@ -1,29 +1,19 @@
-<html>
-	<head>
-		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-	
-		<style type="text/css" title="currentStyle">
-			@import "/static/complete.css"; 
-			@import "/static/css/TableTools.css"; 
-		</style>
-		<script type="text/javascript" language="javascript" src="/static/jquery.js"></script>
-		<script type="text/javascript" language="javascript" src="/static/jquery.dataTables.js"></script>
-        <script type="text/javascript" charset="utf-8" src="/static/js/TableTools.js"></script>
-        <script type="text/javascript" charset="utf-8" src="/static/js/ZeroClipboard.js"></script>
-		<script type="text/javascript" charset="utf-8">
-			$(document).ready(function() {
-				$('#user_table').dataTable(
-                    {
-                        "iDisplayLength": 100,
-                        "sDom": 'T<"clear">lfrtip',
-                        "oTableTools": {
-                                    "sSwfPath" : "/static/swf/copy_cvs_xls_pdf.swf"
-                        }
-                    });
-			} );
-		</script>
-	</head>
-<body>
+{% extends "snh/snh_base.html" %}
+{% block scripts %}
+<script type="text/javascript" charset="utf-8">
+	$(document).ready(function() {
+		$('#user_table').dataTable(
+            {
+                "iDisplayLength": 100, 
+                "sDom": 'T<"clear">lfrtip',
+                "oTableTools": {
+                            "sSwfPath" : "/static/swf/copy_cvs_xls_pdf.swf"
+                }
+            });
+	} );
+</script>
+{% endblock %}
+{% block content %}
 <h1>Facebook harvest - List of users</h1>
 <table class="pretty" id="user_table" width="100%">
     <thead>
@@ -114,8 +104,5 @@
     </tr>
 {% endfor %}
     </tbody>
-
 </table>
-
-</body>
-</html>
+{% endblock %}

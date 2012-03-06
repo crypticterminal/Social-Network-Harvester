@@ -1,0 +1,38 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html lang="en">
+<head>
+    <title>{% block title %}{% endblock %}</title>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+
+	<style type="text/css" title="currentStyle">
+		@import "/static/complete.css"; 
+		@import "/static/snh_base.css"; 
+		@import "/static/css/TableTools.css"; 
+	</style>
+	<script type="text/javascript" language="javascript" src="/static/jquery.js"></script>
+	<script type="text/javascript" language="javascript" src="/static/jquery.dataTables.js"></script>
+    <script type="text/javascript" charset="utf-8" src="/static/js/TableTools.js"></script>
+    <script type="text/javascript" charset="utf-8" src="/static/js/ZeroClipboard.js"></script>
+    {% block scripts %}{% endblock %}
+</head>
+<body>
+
+    <table class="snh_head">
+        <tbody>
+        <tr>
+            <td class="snh_title">Social Network Harvester</td>
+            <td class="link" onclick="document.location.href='/'">Home</td>
+            <td class="link" onclick="document.location.href='/twitter'">Twitter</td>
+            <td class="link" onclick="document.location.href='/facebook'">Facebook</td>
+            <td class="link" onclick="document.location.href='/logout'">Logout</td>
+        </tr>
+        </tbody>
+    </table>
+
+    {% block content %}{% endblock %}
+    {% block footer %}
+    <hr>
+    <p>Social Network Harverster v 0.1</p>
+    {% endblock %}
+</body>
+</html>
