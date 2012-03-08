@@ -3,38 +3,75 @@
 from django.db import models
 from datetime import datetime
 import time
+import twitter
 
 from snh.models.common import *
 
-class TwitterHarvester(models.Model):
+class TwitterHarvester(AbstractHaverster):
 
-    class Meta:
-        app_label = "snh"
+    client = None
 
-    def __unicode__(self):
-        return self.name
-
-    pmk_id =  models.AutoField(primary_key=True)
-
-    name = models.CharField(max_length=255, null=True)
-
-    user = models.ForeignKey('TWUser', null=True)
-    
     consumer_key = models.CharField(max_length=255,null=True)
     consumer_secret = models.CharField(max_length=255,null=True)
     access_token_key = models.CharField(max_length=255,null=True)
     access_token_secret = models.CharField(max_length=255,null=True)
 
+    remaining_hits = models.IntegerField(null=True)
+    reset_time_in_seconds = models.DateTimeField(null=True)
+    hourly_limit = models.IntegerField(null=True)
     reset_time = models.DateTimeField(null=True)
-    remaining_hist = models.IntegerField(null=True)
-    allowed_hit_by_hour = models.IntegerField(null=True)
-    next_allowed_harvest_seconds = models.DateTimeField(null=True)
-
-    rate_limit_reached = models.BooleanField()
-
-    is_active = models.BooleanField()
 
     twusers_to_harvest = models.ManyToManyField('TWUser', related_name='twusers_to_harvest')
+
+    last_havested_user = models.ForeignKey('TWUser', null=True)
+    current_harvested_user = models.ForeignKey('TWUser', null=True)
+
+    def gie(self, d, k):
+        if k in d return d[k] else return None 
+
+    def get_client(self):
+        if not self.client:
+            self.client = twitter.Api(consumer_key=self.consumer_key,
+                                        consumer_secret=self.consumer_secret,
+                                        access_token_key=self.access_token_key,
+                                        access_token_secret=self.access_token_secret,
+                                     )
+        if not self.client:
+        f    raise Exception("Cannot initialize the twitter client :(")
+        return self.client
+
+    def update_client_stats(self):
+        c = self.get_client()
+        rate = c.GetRateLimitStatus()
+        self.remaining_hits = gie(rate, "remaining_hits")
+        self.reset_time_in_seconds =gie(rate, "reset_time_in_seconds")
+        self.hourly_limit = gie(rate, "hourly_limit")
+        self.reset_time = gie(rate, "reset_time")
+        self.save()
+
+    def ending_current_harvest(self):
+        super(TwitterHarvester, self).ending_current_harvest()
+        self.save()
+
+    def api_call(self, method, params):
+        super(TwitterHarvester, self).api_call(method, params)
+        c = self.get_client()   
+        metp = getattr(c, method)
+        metp(*params)
+
+    def get_last_harvested_user(self, params):
+        return self.last_havested_user
+    
+    def get_current_harvested_user(self, params):
+        return self.current_harvested_user
+
+    def get_next_user_to_harvest(self):
+        if self.current_harvested_user:
+            self.last_havested_user = self.current_harvested_user
+
+        self.update_client_stats()
+        self.save()
+        
 
 class TWUser(models.Model):
 
