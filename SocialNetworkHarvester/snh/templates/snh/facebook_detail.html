@@ -8,6 +8,7 @@
                                 });
 		            $('#post_table').dataTable({
                                     "iDisplayLength": 100,
+                                    "sPaginationType": "full_numbers",
                                     "sDom": 'T<"clear">lfrtip',
                                     "oTableTools": {
                                                 "sSwfPath" : "/static/swf/copy_cvs_xls_pdf.swf"
@@ -19,7 +20,7 @@
 {% endblock %}
 
 {% block content %}
-<h1>Facebook: {{ user.name }} </h1>
+<h1>Facebook: {{ fbuser.name }} </h1>
 <table id="user_table" class="pretty" width="100%">
     <thead>
     <tr>
@@ -66,9 +67,9 @@
     </thead>
     <tbody>
     <tr>
-        <td>{{ user.fid|default_if_none:"0" }}</td>
-        <td>{{ user.name|default_if_none:"" }}</td>
-        <td>{{ user.username|default_if_none:"" }}</td>
+        <td>{{ fbuser.fid|default_if_none:"0" }}</td>
+        <td>{{ fbuser.name|default_if_none:"" }}</td>
+        <td>{{ fbuser.username|default_if_none:"" }}</td>
         <!--<td>{{ user.website }}</td>
         <td>{{ user.link }}</td>
         <td>{{ user.first_name }}</td>
@@ -81,7 +82,7 @@
         <td>{{ user.timezone_raw }}</td>
         <td>{{ user.updated_time }}</td>
         <td>{{ user.verified }}</td>-->
-        <td>{{ user.bio|default_if_none:""}}</td>
+        <td>{{ fbuser.bio|default_if_none:""}}</td>
         <!--<td>{{ user.birthday }}</td>
         <td>{{ user.education_raw }}</td>
         <td>{{ user.email }}</td>
@@ -97,19 +98,19 @@
         <td>{{ user.significant_other_raw }}</td>
         <td>{{ user.video_upload_limits_raw }}</td>
         <td>{{ user.work_raw }}</td>-->
-        <td>{{ user.category|default_if_none:"" }}</td>
-        <td>{{ user.likes|default_if_none:"0" }}</td>
-        <td>{{ user.about|default_if_none:"" }}</td>
-        <td>{{ user.phone|default_if_none:"" }}</td>
-        <td>{{ user.checkins|default_if_none:"0" }}</td>
-        <td>{{ user.picture|default_if_none:"" }}</td>
-        <td>{{ user.talking_about_count|default_if_none:"0" }}</td>
-        <td>{{ user.error_triggered }}</td>
+        <td>{{ fbuser.category|default_if_none:"" }}</td>
+        <td>{{ fbuser.likes|default_if_none:"0" }}</td>
+        <td>{{ fbuser.about|default_if_none:"" }}</td>
+        <td>{{ fbuser.phone|default_if_none:"" }}</td>
+        <td>{{ fbuser.checkins|default_if_none:"0" }}</td>
+        <td>{{ fbuser.picture|default_if_none:"" }}</td>
+        <td>{{ fbuser.talking_about_count|default_if_none:"0" }}</td>
+        <td>{{ fbuser.error_triggered }}</td>
     </tr>
     </tbody>
 </table>
 
-<h1>Facebook wall for: {{ user.name }} </h1>
+<h1>Facebook wall for: {{ fbuser.name }} </h1>
 <table id="post_table" class="pretty" width="100%">
     <thead>
         <tr>

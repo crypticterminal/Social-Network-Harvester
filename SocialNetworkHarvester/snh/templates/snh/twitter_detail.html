@@ -8,7 +8,8 @@
                                 });
 		            $('#post_table').dataTable({
                                     "iDisplayLength": 100,
-                                    "sDom": 'T<"clear">lfrtip',
+                                    "sPaginationType": "full_numbers",
+                                    "sDom": '<"tools"T><"top">p<"clear">lfrtip',
                                     "oTableTools": {
                                                 "sSwfPath" : "/static/swf/copy_cvs_xls_pdf.swf"
                                     }
@@ -19,7 +20,8 @@
 {% endblock %}
 
 {% block content %}
-<h1>Twitter: {{ user.name }} </h1>
+<h1>Twitter: {{ twuser.name }} </h1>
+
 <table id="user_table" class="pretty" width="100%">
     <thead>
     <tr class="head">
@@ -40,25 +42,25 @@
     </thead>
     <tbody>
     <tr>
-    <td>{{ user.name }}</td>
-    <td>{{ user.screen_name }}</td>
-    <td>{{ user.description }}</td>
-    <td>{{ user.followers_count }}</td>
-    <td>{{ user.friends_count }}</td>
-    <td>{{ user.statuses_count }}</td>
-    <td>{{ user.listed_count }}</td>
-    <td>{{ user.url }}</td>
-    <td>{{ user.location }}</td>
-    <td>{{ user.time_zone }}</td>
-    <td>{{ user.utc_offset }}</td>
-    <td>{{ user.protected }}</td>
-    <td>{{ user.lang }}</td>
+    <td>{{ twuser.name }}</td>
+    <td>{{ twuser.screen_name }}</td>
+    <td>{{ twuser.description }}</td>
+    <td>{{ twuser.followers_count }}</td>
+    <td>{{ twuser.friends_count }}</td>
+    <td>{{ twuser.statuses_count }}</td>
+    <td>{{ twuser.listed_count }}</td>
+    <td>{{ twuser.url }}</td>
+    <td>{{ twuser.location }}</td>
+    <td>{{ twuser.time_zone }}</td>
+    <td>{{ twuser.utc_offset }}</td>
+    <td>{{ twuser.protected }}</td>
+    <td>{{ twuser.lang }}</td>
     </tr>
     </tbody>
 
 
 </table>
-<h1>Twitter statuses for: {{ user.name }} </h1>
+<h1>Twitter statuses for: {{ twuser.name }} </h1>
 <h1>Total: {{ len }} </h1>
 <table id="post_table" class="pretty" width="100%" border="0" cellspacing="2" cellpadding="0">
     <thead>

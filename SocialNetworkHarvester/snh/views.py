@@ -16,13 +16,13 @@ def index(request):
 @login_required(login_url='/login/')
 def twitter(request):
     user_list = TWUser.objects.all()
-    return  render_to_response(u'snh/twitter.html',{u'user_list': user_list})
+    return  render_to_response(u'snh/twitter.html',{u'user_list': user_list,u'twitter':True})
 
 @login_required(login_url=u'/login/')
 def twitter_detail(request, user_id):
     user = get_object_or_404(TWUser, fid=user_id)
     statuses = TWStatus.objects.filter(user=user).order_by(u"-created_at")
-    return render_to_response(u'snh/twitter_detail.html', {u'user': user, u'statuses':statuses, u'len':len(statuses)})
+    return render_to_response(u'snh/twitter_detail.html', {u'twuser': user, u'statuses':statuses, u'len':len(statuses),u'twitter':True})
 
 @login_required(login_url=u'/login/')
 def facebook(request):
@@ -33,7 +33,7 @@ def facebook(request):
 def facebook_detail(request, user_id):
     user = get_object_or_404(FBUser, fid=user_id)
     posts = FBPost.objects.filter(user=user).order_by(u"-created_time")
-    return render_to_response(u'snh/facebook_detail.html', {u'user': user, u'posts':posts, u'len':len(posts)})
+    return render_to_response(u'snh/facebook_detail.html', {u'fbuser': user, u'posts':posts, u'len':len(posts)})
 
 def logout_view(request):
     logout(request)

@@ -5,6 +5,7 @@
 		$('#user_table').dataTable(
             {
                 "iDisplayLength": 100, 
+                "sPaginationType": "full_numbers",
                 "sDom": 'T<"clear">lfrtip',
                 "oTableTools": {
                             "sSwfPath" : "/static/swf/copy_cvs_xls_pdf.swf"
@@ -29,15 +30,15 @@
     </tr>
     </thead>
     <tbody>
-{% for user in user_list %}
-    <tr onclick="document.location.href='/twitter_detail/{{ user.fid }}/'">
-        <td>{{ user.name }}</td>
-        <td>{{ user.screen_name }}</td>
-        <td>{{ user.description }}</td>
-        <td class="center">{{ user.followers_count|default_if_none:"0" }}</td>
-        <td class="center">{{ user.friends_count|default_if_none:"0" }}</td>
-        <td class="center">{{ user.statuses_count|default_if_none:"0" }}</td>
-        <td class="center">{{ user.listed_count|default_if_none:"0" }}</td>
+{% for twuser in user_list %}
+    <tr onclick="document.location.href='/twitter_detail/{{ twuser.fid }}/'">
+        <td>{{ twuser.name }}</td>
+        <td>{{ twuser.screen_name }}</td>
+        <td>{{ twuser.description }}</td>
+        <td class="center">{{ twuser.followers_count|default_if_none:"0" }}</td>
+        <td class="center">{{ twuser.friends_count|default_if_none:"0" }}</td>
+        <td class="center">{{ twuser.statuses_count|default_if_none:"0" }}</td>
+        <td class="center">{{ twuser.listed_count|default_if_none:"0" }}</td>
     </tr>
 {% endfor %}
     </tbody>
