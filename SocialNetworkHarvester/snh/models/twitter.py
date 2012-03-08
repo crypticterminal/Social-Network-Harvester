@@ -1,5 +1,5 @@
 # coding=UTF-8
-
+from collections import deque
 from django.db import models
 from datetime import datetime
 import time
@@ -23,11 +23,13 @@ class TwitterHarvester(AbstractHaverster):
 
     twusers_to_harvest = models.ManyToManyField('TWUser', related_name='twusers_to_harvest')
 
-    last_havested_user = models.ForeignKey('TWUser', null=True)
-    current_harvested_user = models.ForeignKey('TWUser', null=True)
+    last_harvested_user = models.ForeignKey('TWUser',  related_name='last_harvested_user', null=True)
+    current_harvested_user = models.ForeignKey('TWUser', related_name='current_harvested_user',  null=True)
+
+    haverst_deque = None
 
     def gie(self, d, k):
-        if k in d return d[k] else return None 
+        return d[k] if k in d else None 
 
     def get_client(self):
         if not self.client:
@@ -37,7 +39,7 @@ class TwitterHarvester(AbstractHaverster):
                                         access_token_secret=self.access_token_secret,
                                      )
         if not self.client:
-        f    raise Exception("Cannot initialize the twitter client :(")
+            raise Exception("Cannot initialize the twitter client :(")
         return self.client
 
     def update_client_stats(self):
@@ -50,8 +52,8 @@ class TwitterHarvester(AbstractHaverster):
         self.save()
 
     def ending_current_harvest(self):
+        #self.update_client_stats()
         super(TwitterHarvester, self).ending_current_harvest()
-        self.save()
 
     def api_call(self, method, params):
         super(TwitterHarvester, self).api_call(method, params)
@@ -59,19 +61,46 @@ class TwitterHarvester(AbstractHaverster):
         metp = getattr(c, method)
         metp(*params)
 
-    def get_last_harvested_user(self, params):
-        return self.last_havested_user
+    def get_last_harvested_user(self):
+        return self.last_harvested_user
     
-    def get_current_harvested_user(self, params):
+    def get_current_harvested_user(self):
         return self.current_harvested_user
 
     def get_next_user_to_harvest(self):
-        if self.current_harvested_user:
-            self.last_havested_user = self.current_harvested_user
 
-        self.update_client_stats()
-        self.save()
-        
+        if self.current_harvested_user:
+            self.last_harvested_user = self.current_harvested_user
+
+        if self.haverst_deque is None:
+            self.build_harvester_sequence()
+
+        try:
+            self.current_harvested_user = self.haverst_deque.pop()
+        except IndexError:
+            self.current_harvested_user = None
+
+        return self.current_harvested_user
+
+        #self.update_client_stats()
+        #self.save()
+
+    def build_harvester_sequence(self):
+        print "DEQUE GENERATION"
+        self.haverst_deque = deque()
+        all_users = self.twusers_to_harvest.all()
+
+        if self.last_harvested_user:
+            count = 0
+            for user in all_users:
+                if user == self.last_harvested_user:
+                    break
+                count = count + 1
+            self.haverst_deque.extend(all_users[count:])
+            self.haverst_deque.extend(all_users[:count])
+        else:
+            self.haverst_deque.extend(all_users)
+            
 
 class TWUser(models.Model):
 

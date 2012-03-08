@@ -3,12 +3,11 @@
 from datetime import datetime
 from django.db import models
 
-
 class AbstractHaverster(models.Model):
 
     class Meta:
         app_label = "snh"
-        asbtract = True
+        abstract = True
 
     def __unicode__(self):
         return u"%s/%s" % (unicode(self.harvester_type),unicode(self.harvester_name))
@@ -47,10 +46,10 @@ class AbstractHaverster(models.Model):
         self.current_harvest_call_count = self.current_harvest_call_count + 1
         self.save()
 
-    def get_last_harvested_user(self, params):
+    def get_last_harvested_user(self):
         raise NotImplementedError( "Should have implemented this" )
 
-    def get_current_harvested_user(self, params):
+    def get_current_harvested_user(self):
         raise NotImplementedError( "Should have implemented this" )
 
     def get_next_user_to_harvest(self):
