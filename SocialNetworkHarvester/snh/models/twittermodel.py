@@ -3,7 +3,7 @@ from collections import deque
 from django.db import models
 from datetime import datetime
 import time
-import twitter
+import twitter as pytw
 
 from snh.models.common import *
 
@@ -33,7 +33,7 @@ class TwitterHarvester(AbstractHaverster):
 
     def get_client(self):
         if not self.client:
-            self.client = twitter.Api(consumer_key=self.consumer_key,
+            self.client = pytw.Api(consumer_key=self.consumer_key,
                                         consumer_secret=self.consumer_secret,
                                         access_token_key=self.access_token_key,
                                         access_token_secret=self.access_token_secret,
@@ -80,13 +80,10 @@ class TwitterHarvester(AbstractHaverster):
         except IndexError:
             self.current_harvested_user = None
 
+        self.update_client_stats()
         return self.current_harvested_user
 
-        #self.update_client_stats()
-        #self.save()
-
     def build_harvester_sequence(self):
-        print "DEQUE GENERATION"
         self.haverst_deque = deque()
         all_users = self.twusers_to_harvest.all()
 

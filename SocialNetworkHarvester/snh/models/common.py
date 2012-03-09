@@ -28,6 +28,11 @@ class AbstractHaverster(models.Model):
 
     current_harvest_start_time = models.DateTimeField(null=True)
 
+    max_retry_on_fail = models.IntegerField(null=True)
+
+    dont_harvest_further_than = models.IntegerField(null=True)
+    full_harvest_on_next_run = models.BooleanField()
+
     def start_new_harvest(self):
         self.current_harvest_start_time = datetime.now()
         self.current_harvest_call_count = 0
@@ -39,7 +44,7 @@ class AbstractHaverster(models.Model):
         self.last_harvest_end_time = datetime.now()
         self.current_harvest_start_time = None
         self.last_harvest_call_count = self.current_harvest_call_count
-        self.last_user_harvest_was_aborted = bool(self.get_last_harvested_user())
+        self.last_user_harvest_was_aborted = bool(self.get_current_harvested_user())
         self.save()
 
     def api_call(self, method, params):

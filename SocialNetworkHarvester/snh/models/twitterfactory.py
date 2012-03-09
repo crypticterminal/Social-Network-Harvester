@@ -2,7 +2,7 @@
 
 from django.db import models
 from django.db.models import Q
-from snh.models.twitter import *
+from snh.models.twittermodel import *
 
 def get_user(screen_name=None, twitter_id=None):
     print "s%s id%s" %(screen_name, twitter_id)

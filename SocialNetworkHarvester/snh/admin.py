@@ -15,12 +15,14 @@ class TwitterHarvesterInline(admin.StackedInline):
 
 class TwitterHarvesterAdmin(admin.ModelAdmin):
     fields = [
-                u'name', 
+                u'harvester_name', 
                 u'is_active', 
                 u'consumer_key',
                 u'consumer_secret',
                 u'access_token_key',
                 u'access_token_secret',
+                u'dont_harvest_further_than',
+                u'full_harvest_on_next_run',
             ]
 
     inlines = [TwitterHarvesterInline]
