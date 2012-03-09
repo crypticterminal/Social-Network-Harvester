@@ -26,7 +26,6 @@ DATABASES = {
 FACEBOOK_APPLICATION_ID = 'xxx'
 FACEBOOK_APPLICATION_SECRET_KEY = 'xxx'
 FACEBOOK_APPLICATION_NAMESPACE = 'xxx'
-
 FACEBOOK_APPLICATION_INITIAL_PERMISSIONS = [
                                             'user_about_me','friends_about_me',
                                             'user_activities','friends_activities',

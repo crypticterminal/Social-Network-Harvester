@@ -39,12 +39,13 @@ class AbstractHaverster(models.Model):
         self.harvest_in_progress = True
         self.save()
 
-    def ending_current_harvest(self):
+    def end_current_harvest(self):
         self.last_harvest_start_time = self.current_harvest_start_time
         self.last_harvest_end_time = datetime.now()
         self.current_harvest_start_time = None
         self.last_harvest_call_count = self.current_harvest_call_count
         self.last_user_harvest_was_aborted = bool(self.get_current_harvested_user())
+        self.harvest_in_progress = False
         self.save()
 
     def api_call(self, method, params):
@@ -63,19 +64,21 @@ class AbstractHaverster(models.Model):
     def get_stats(self):
         return {"abstract":
                     {
-                    "harvester_type":harvester_type,
-                    "harvester_name":harvester_name,
+                    "harvester_type":self.harvester_type,
+                    "harvester_name":self.harvester_name,
 
-                    "last_harvest_call_count":last_harvest_call_count,
-                    "current_harvest_call_count":current_harvest_call_count,
+                    "last_harvest_call_count":self.last_harvest_call_count,
+                    "current_harvest_call_count":self.current_harvest_call_count,
 
-                    "is_active":is_active,
-                    "harvest_in_progress":harvest_in_progress,
+                    "is_active":self.is_active,
+                    "harvest_in_progress":self.harvest_in_progress,
 
-                    "last_harvest_start_time":last_harvest_start_time,
-                    "last_harvest_end_time":last_harvest_end_time,
+                    "last_harvest_start_time":self.last_harvest_start_time,
+                    "last_harvest_end_time":self.last_harvest_end_time,
 
-                    "current_harvest_start_time":current_harvest_start_time,
+                    "last_user_harvest_was_aborted":self.last_user_harvest_was_aborted,
+
+                    "current_harvest_start_time":self.current_harvest_start_time,
                     },
                 "concrete":{},
                 }

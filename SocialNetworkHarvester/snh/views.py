@@ -6,7 +6,7 @@ from django.shortcuts import render_to_response, get_object_or_404, get_list_or_
 from fandjango.decorators import facebook_authorization_required
 from fandjango.models import User as FanUser
 
-from snh.models.twitter import *
+from snh.models.twittermodel import *
 from snh.models.facebook import *
 
 @login_required(login_url=u'/login/')

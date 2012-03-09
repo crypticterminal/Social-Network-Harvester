@@ -2,8 +2,8 @@
 
 from django.contrib import admin
 
-from snh.models.twitter import TwitterHarvester
-from snh.models.twitter import TWUser
+from snh.models.twittermodel import TwitterHarvester
+from snh.models.twittermodel import TWUser
 
 from snh.models.facebook import FacebookHarvester
 from snh.models.facebook import FBUser

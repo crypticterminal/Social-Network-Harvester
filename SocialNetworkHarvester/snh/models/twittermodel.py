@@ -7,6 +7,15 @@ import twitter as pytw
 
 from snh.models.common import *
 
+def gie(d, k):
+    return d[k] if k in d else None 
+
+def t2p(twitter_time):
+    if twitter_time:
+        return time.strftime('%Y-%m-%d %H:%M:%S', time.strptime(twitter_time,'%a %b %d %H:%M:%S +0000 %Y'))
+    else:
+        return None
+
 class TwitterHarvester(AbstractHaverster):
 
     client = None
@@ -17,7 +26,7 @@ class TwitterHarvester(AbstractHaverster):
     access_token_secret = models.CharField(max_length=255,null=True)
 
     remaining_hits = models.IntegerField(null=True)
-    reset_time_in_seconds = models.DateTimeField(null=True)
+    reset_time_in_seconds = models.IntegerField(null=True)
     hourly_limit = models.IntegerField(null=True)
     reset_time = models.DateTimeField(null=True)
 
@@ -28,9 +37,6 @@ class TwitterHarvester(AbstractHaverster):
 
     haverst_deque = None
 
-    def gie(self, d, k):
-        return d[k] if k in d else None 
-
     def get_client(self):
         if not self.client:
             self.client = pytw.Api(consumer_key=self.consumer_key,
@@ -38,28 +44,26 @@ class TwitterHarvester(AbstractHaverster):
                                         access_token_key=self.access_token_key,
                                         access_token_secret=self.access_token_secret,
                                      )
-        if not self.client:
-            raise Exception("Cannot initialize the twitter client :(")
         return self.client
 
     def update_client_stats(self):
         c = self.get_client()
         rate = c.GetRateLimitStatus()
         self.remaining_hits = gie(rate, "remaining_hits")
-        self.reset_time_in_seconds =gie(rate, "reset_time_in_seconds")
+        self.reset_time_in_seconds = gie(rate, "reset_time_in_seconds")
         self.hourly_limit = gie(rate, "hourly_limit")
-        self.reset_time = gie(rate, "reset_time")
+        self.reset_time = t2p(gie(rate, "reset_time"))
         self.save()
 
-    def ending_current_harvest(self):
-        #self.update_client_stats()
-        super(TwitterHarvester, self).ending_current_harvest()
+    def end_current_harvest(self):
+        self.update_client_stats()
+        super(TwitterHarvester, self).end_current_harvest()
 
     def api_call(self, method, params):
         super(TwitterHarvester, self).api_call(method, params)
         c = self.get_client()   
         metp = getattr(c, method)
-        metp(*params)
+        return metp(**params)
 
     def get_last_harvested_user(self):
         return self.last_harvested_user
@@ -98,7 +102,6 @@ class TwitterHarvester(AbstractHaverster):
         else:
             self.haverst_deque.extend(all_users)
             
-
 class TWUser(models.Model):
 
     class Meta:
