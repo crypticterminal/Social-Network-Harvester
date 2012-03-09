@@ -1,9 +1,7 @@
 # coding=UTF-8
 
-import sys
-import os
-import logging
-import traceback
+#import sys
+#import os
 
 from django.core.management.base import BaseCommand, CommandError
 from django.core.exceptions import ObjectDoesNotExist
@@ -11,15 +9,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from snh.management.commands.cronharvester import twitterch
 from snh.management.commands.cronharvester import facebookch
 
-from settings import PROJECT_PATH
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-fh = logging.FileHandler(os.path.join(PROJECT_PATH, "log/twitter.log"), mode="a+")
-fh.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-fh.setFormatter(formatter)
-logger.addHandler(fh)
+import snhlogger
+logger = snhlogger.init_logger(__name__, "twitter.log")
 
 class Command(BaseCommand):
     #args = '<poll_id poll_id ...>'

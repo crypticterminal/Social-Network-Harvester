@@ -12,11 +12,13 @@ class AbstractHaverster(models.Model):
     def __unicode__(self):
         return u"%s/%s" % (unicode(self.harvester_type),unicode(self.harvester_name))
 
+    pmk_id = models.AutoField(primary_key=True)
+
     harvester_type = models.CharField(max_length=255, null=True)
     harvester_name = models.CharField(max_length=255, null=True)
 
-    last_harvest_call_count = models.BigIntegerField(null=True, unique=True)
-    current_harvest_call_count = models.BigIntegerField(null=True, unique=True)
+    #last_harvest_call_count = models.IntegerField(null=True, unique=True)
+    #current_harvest_call_count = models.IntegerField(null=True, unique=True)
 
     is_active = models.BooleanField()
     harvest_in_progress =  models.BooleanField()
@@ -67,8 +69,8 @@ class AbstractHaverster(models.Model):
                     "harvester_type":self.harvester_type,
                     "harvester_name":self.harvester_name,
 
-                    "last_harvest_call_count":self.last_harvest_call_count,
-                    "current_harvest_call_count":self.current_harvest_call_count,
+                    #"last_harvest_call_count":self.last_harvest_call_count,
+                    #"current_harvest_call_count":self.current_harvest_call_count,
 
                     "is_active":self.is_active,
                     "harvest_in_progress":self.harvest_in_progress,

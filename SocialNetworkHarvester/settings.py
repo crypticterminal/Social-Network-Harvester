@@ -1,7 +1,10 @@
 # coding=UTF-8
 # Django settings for SocialNetworkHarvester project.
 import os
+import logging
+
 PROJECT_PATH = os.path.abspath(os.path.split(__file__)[0])
+LOG_LEVEL = logging.DEBUG
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG

@@ -57,6 +57,8 @@ class TwitterHarvester(AbstractHaverster):
 
     def end_current_harvest(self):
         self.update_client_stats()
+        if self.current_harvested_user:
+            self.last_harvested_user = self.current_harvested_user
         super(TwitterHarvester, self).end_current_harvest()
 
     def api_call(self, method, params):
@@ -97,10 +99,24 @@ class TwitterHarvester(AbstractHaverster):
                 if user == self.last_harvested_user:
                     break
                 count = count + 1
-            self.haverst_deque.extend(all_users[count:])
-            self.haverst_deque.extend(all_users[:count])
+            retry_last_on_fail = 1 if self.retry_user_after_abortion and self.last_user_harvest_was_aborted else 0
+            self.haverst_deque.extend(all_users[count+retry_last_on_fail:])
+            self.haverst_deque.extend(all_users[:count+retry_last_on_fail])
         else:
             self.haverst_deque.extend(all_users)
+
+    def get_stats(self):
+        parent_stats = super(TwitterHarvester, self).get_stats()
+        parent_stats["concrete"] = {
+                                    "remaining_hits":self.remaining_hits,
+                                    "reset_time_in_seconds":self.reset_time_in_seconds,
+                                    "hourly_limit":self.hourly_limit,
+                                    "reset_time":self.reset_time,
+                                    "last_harvested_user":unicode(self.last_harvested_user),
+                                    "current_harvested_user":unicode(self.current_harvested_user),
+                                    }
+        return parent_stats
+
             
 class TWUser(models.Model):
 

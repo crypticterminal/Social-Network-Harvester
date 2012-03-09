@@ -1,30 +1,34 @@
 # coding=UTF-8
 
-import sys
-import os
-import logging
+#import sys
+#import os
 
 import twitter
 import time
+import datetime
 
 from django.core.exceptions import ObjectDoesNotExist
 
 from snh.models.twittermodel import *
-from settings import PROJECT_PATH
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-fh = logging.FileHandler(os.path.join(PROJECT_PATH, "log/twitter.log"), mode="a+")
-fh.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-fh.setFormatter(formatter)
-logger.addHandler(fh)
+import snhlogger
+logger = snhlogger.init_logger(__name__, "twitter.log")
 
 def run_twitter_harvester():
     harvester_list = TwitterHarvester.objects.all()
     for harvester in harvester_list:
-        logger.info(u"The harvester %s is %s" % (unicode(harvester), "active" if harvester.is_active else "inactive"))
-        if harvester.is_active:
+        harvester.update_client_stats()
+
+        logger.info(u"The harvester %s is %s" % 
+                                                (unicode(harvester), 
+                                                "active" if harvester.is_active else "inactive"))
+        if harvester.is_active and not harvester.remaining_hits > 0:
+            logger.warning(u"The harvester %s is %s but has exceeded the rate limit. Need to wait? %s" % 
+                                                (unicode(harvester), 
+                                                "active" if harvester.is_active else "inactive", 
+                                                harvester.get_stats()))
+
+        if harvester.is_active and harvester.remaining_hits > 0:
             run_harvester_v2(harvester)
 
 def get_latest_statuses_page(harvester, user, page):
@@ -46,9 +50,43 @@ def sleeper(retry_count):
     wait_delay = 60 if wait_delay > 60 else wait_delay
     time.sleep(wait_delay)
 
+def manage_exception(retry_count, harvester, user, page):
+    msg = u"Exception for the harvester %s for the user %s(%d) at page %d. Retry:%d" % (harvester, unicode(user), user.fid if user.fid else 0, page, retry_count)
+    logger.exception(msg)
+    retry_count += 1
+    return (retry_count, retry_count > harvester.max_retry_on_fail)
+
+def manage_twitter_exception(retry_count, harvester, user, page, tex):
+    retry_count += 1
+    need_a_break = retry_count > harvester.max_retry_on_fail
+
+    if unicode(tex) == u"Not found":
+        user.error_triggered = True
+        user.save()
+        need_a_break = True
+        msg = u"Exception for the harvester %s for the user %s(%d) at page %d. Retry:%d. The user does not exists!" % (harvester, unicode(user), user.fid if user.fid else 0, page, retry_count)
+        logger.exception(msg)
+    elif unicode(tex) == u"Capacity Error":
+        logger.debug(u"%s:%s(%d):%d. Capacity Error. Retrying." % (harvester, unicode(user), user.fid if user.fid else 0, page))
+    elif unicode(tex).startswith(u"Rate limit exceeded"):
+        harvester.update_client_stats()
+        msg = u"Exception for the harvester %s for the user %s(%d) at page %d. Retry:%d." % (harvester, unicode(user), user.fid if user.fid else 0, page, retry_count)
+        logger.exception(msg)
+        raise
+    else:
+        msg = u"Exception for the harvester %s for the user %s(%d) at page %d. Retry:%d." % (harvester, unicode(user), user.fid if user.fid else 0, page, retry_count)
+        logger.exception(msg)
+
+    return (retry_count, retry_count > harvester.max_retry_on_fail)
+
+def get_timedelta(twitter_time):
+    ts = datetime.strptime(twitter_time,'%a %b %d %H:%M:%S +0000 %Y')
+    return (datetime.utcnow() - ts).days
+
+
 def get_latest_statuses(harvester, user):
 
-    page = 0
+    page = 1
     retry = 0
     lsp = []
     latest_statuses = []
@@ -57,20 +95,31 @@ def get_latest_statuses(harvester, user):
         try:
             logger.debug(u"%s:%s(%d):%d" % (harvester, unicode(user), user.fid if user.fid else 0, page))
             lsp = get_latest_statuses_page(harvester, user, page)
+
             if lsp:
+                print user.screen_name, page, lsp[0].created_at, get_timedelta(lsp[0].created_at), lsp[0].text
                 latest_statuses += lsp
             else:
                 break
-            page += 1
+
+            if get_timedelta(lsp[0].created_at) >= harvester.dont_harvest_further_than:
+                break
+
+            page = page + 1
             retry = 0
-        except:
-            msg = u"Exception for the harvester %s for the user %s(%d) at page %d. Retry:%d" % (harvester, unicode(user), user.fid if user.fid else 0, page, retry)
-            logger.exception(msg)
-            retry += 1
-            if retry > harvester.max_retry_on_fail:
+        except twitter.TwitterError, tex:
+            (retry, need_a_break) = manage_twitter_exception(retry, harvester, user, page, tex)
+            if need_a_break:
                 break
             else:
-                sleeper(retry)
+                sleeper(retry)             
+        except:
+            (retry, need_a_break) = manage_exception(retry, harvester, user, page)
+            if need_a_break:
+                break
+            else:
+                sleeper(retry) 
+
     return latest_statuses
 
 def update_user(statuses, user):
@@ -78,9 +127,7 @@ def update_user(statuses, user):
             if statuses:
                 user.update_from_twitter(statuses[0].user)
             else:
-                user.error_triggered = True
-                user.save()
-                raise Exception("Cannot update user without a status!")
+                raise Exception("Cannot update user (%s) without a status!" % unicode(user))
         except:
             msg = u"Cannot update user info for %s:(%d)" % (unicode(user), user.fid if user.fid else 0)
             logger.exception(msg)    
@@ -101,17 +148,22 @@ def run_harvester_v2(harvester):
 
     harvester.start_new_harvest()
     user = harvester.get_next_user_to_harvest()
-    while user:
-        if not user.error_triggered:
-            logger.info(u"Start: %s:%s(%d). Hits to go: %d" % (harvester, unicode(user), user.fid if user.fid else 0, harvester.remaining_hits))
-            ls = get_latest_statuses(harvester, user)
-            update_user(ls, user)
-            update_user_statuses(ls, user)
-        else:
-            logger.info(u"Skipping: %s:%s(%d) because user has triggered the error flag." % (harvester, unicode(user), user.fid if user.fid else 0))
-        user = harvester.get_next_user_to_harvest()
-            
-    harvester.end_current_harvest()
-    logger.info(u"End: %s Stats:%s" % (harvester,unicode(harvester.get_stats())))
+    logger.info(u"START: %s Stats:%s" % (harvester,unicode(harvester.get_stats())))
+    try:
+        while user and harvester.remaining_hits > 0:
+            if not user.error_triggered:
+                logger.info(u"Start: %s:%s(%d). Hits to go: %d" % (harvester, unicode(user), user.fid if user.fid else 0, harvester.remaining_hits))
+                ls = get_latest_statuses(harvester, user)
+                update_user(ls, user)
+                update_user_statuses(ls, user)
+            else:
+                logger.info(u"Skipping: %s:%s(%d) because user has triggered the error flag." % (harvester, unicode(user), user.fid if user.fid else 0))
+            user = harvester.get_next_user_to_harvest()
+    except twitter.TwitterError:
+        harvester.update_client_stats()
+        pass
+    finally:
+        harvester.end_current_harvest()
+        logger.info(u"End: %s Stats:%s" % (harvester,unicode(harvester.get_stats())))
     
 
