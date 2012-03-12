@@ -1,23 +1,86 @@
 # coding=UTF-8
-
+from collections import deque
 from django.db import models
 from datetime import datetime
 import time
+from fandjango.models import User as FanUser
 
 from snh.models.common import *
 
-class FacebookHarvester(models.Model):
+class FacebookHarvester(AbstractHaverster):
 
     class Meta:
         app_label = "snh"
 
-    def __unicode__(self):
-        return self.name
+    client = None
 
-    pmk_id =  models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255, null=True)
-    is_active = models.BooleanField()
     fbusers_to_harvest = models.ManyToManyField('FBUser', related_name='fbusers_to_harvest')
+
+    last_harvested_user = models.ForeignKey('FBUser',  related_name='last_harvested_user', null=True)
+    current_harvested_user = models.ForeignKey('FBUser', related_name='current_harvested_user',  null=True)
+
+    haverst_deque = None
+
+    def get_client(self):
+        if not self.client:
+            self.client = FanUser.objects.all()[0].graph
+        return self.client
+
+    def end_current_harvest(self):
+        if self.current_harvested_user:
+            self.last_harvested_user = self.current_harvested_user
+        super(FacebookHarvester, self).end_current_harvest()
+
+    def api_call(self, method, params):
+        super(FacebookHarvester, self).api_call(method, params)
+        c = self.get_client()   
+        metp = getattr(c, method)
+        return metp(**params)
+
+    def get_last_harvested_user(self):
+        return self.last_harvested_user
+    
+    def get_current_harvested_user(self):
+        return self.current_harvested_user
+
+    def get_next_user_to_harvest(self):
+
+        if self.current_harvested_user:
+            self.last_harvested_user = self.current_harvested_user
+
+        if self.haverst_deque is None:
+            self.build_harvester_sequence()
+
+        try:
+            self.current_harvested_user = self.haverst_deque.pop()
+        except IndexError:
+            self.current_harvested_user = None
+
+        return self.current_harvested_user
+
+    def build_harvester_sequence(self):
+        self.haverst_deque = deque()
+        all_users = self.fbusers_to_harvest.all()
+
+        if self.last_harvested_user:
+            count = 0
+            for user in all_users:
+                if user == self.last_harvested_user:
+                    break
+                count = count + 1
+            retry_last_on_fail = 1 if self.retry_user_after_abortion and self.last_user_harvest_was_aborted else 0
+            self.haverst_deque.extend(all_users[count+retry_last_on_fail:])
+            self.haverst_deque.extend(all_users[:count+retry_last_on_fail])
+        else:
+            self.haverst_deque.extend(all_users)
+
+    def get_stats(self):
+        parent_stats = super(FacebookHarvester, self).get_stats()
+        parent_stats["concrete"] = {
+                                    "last_harvested_user":unicode(self.last_harvested_user),
+                                    "current_harvested_user":unicode(self.current_harvested_user),
+                                    }
+        return parent_stats
 
 class FBUser(models.Model):
 
@@ -71,6 +134,7 @@ class FBUser(models.Model):
     talking_about_count = models.IntegerField(null=True)
 
     error_triggered = models.BooleanField()
+    error_on_update = models.BooleanField()
 
     def update_from_facebook(self, fb_user):
         model_changed = False
@@ -123,13 +187,9 @@ class FBUser(models.Model):
 
         for prop in date_to_check:
             if date_to_check[prop] in fb_user and self.__dict__[prop] != fb_user[date_to_check[prop]]:
-                #TODO error in translation. Always triggers a value changed...
-                ts = time.strftime('%Y-%m-%d', time.strptime(fb_user[prop],'%m/%d/%Y'))
-                #TODO implement cleaner time comparison
-                if str(self.__dict__[prop]) != str(ts):
-                    old_val = self.__dict__[prop]
-                    self.__dict__[prop] = ts
-                    print "prop changed. %s was %s is %s" % (prop, old_val, self.__dict__[prop])
+                date_val = datetime.strptime(fb_user[prop],'%m/%d/%Y')
+                if self.__dict__[prop] != date_val:
+                    self.__dict__[prop] = date_val
                     model_changed = True
 
         if self.fid == self.username and self.name:
@@ -138,9 +198,9 @@ class FBUser(models.Model):
 
 
         if model_changed:
-            self.model_update_date = datetime.now()
+            self.model_update_date = datetime.utcnow()
+            self.error_on_update = False
             self.save()
-            print u"User SAVED!", self
 
         return model_changed
 
@@ -181,6 +241,7 @@ class FBPost(models.Model):
     application_raw = models.TextField(null=True) #not supported but saved 
     created_time = models.DateTimeField(null=True)
     updated_time = models.DateTimeField(null=True)
+    error_on_update = models.BooleanField()
 
     def update_from_facebook(self, facebook_model, user):
         model_changed = False
@@ -213,32 +274,28 @@ class FBPost(models.Model):
         for prop in props_to_check:
             if props_to_check[prop] in facebook_model and self.__dict__[prop] != facebook_model[props_to_check[prop]]:
                 self.__dict__[prop] = facebook_model[props_to_check[prop]]
-                #print "prop changed:", prop
                 model_changed = True
 
         for prop in subitem_to_check:
             subprop = subitem_to_check[prop]
             if subprop[0] in facebook_model and \
-               subprop[1] in facebook_model[subprop[0]] and \
-                self.__dict__[prop] != facebook_model[subprop[0]][subprop[1]]:
-
+                    subprop[1] in facebook_model[subprop[0]] and \
+                    self.__dict__[prop] != facebook_model[subprop[0]][subprop[1]]:
                 self.__dict__[prop] = facebook_model[subprop[0]][subprop[1]]
-                #print "prop changed:", prop
                 model_changed = True
 
         for prop in date_to_check:
-            ts = time.strftime('%Y-%m-%d %H:%M:%S', time.strptime(facebook_model[prop],'%Y-%m-%dT%H:%M:%S+0000'))
-            #TODO implement cleaner time comparison
-            if str(self.__dict__[prop]) != str(ts):
-                self.__dict__[prop] = ts
-                #print "prop changed:", prop
+            fb_val = facebook_model[prop]
+            date_val = datetime.strptime(fb_val,'%Y-%m-%dT%H:%M:%S+0000')
+            if self.__dict__[prop] != date_val:
+                self.__dict__[prop] = date_val
                 model_changed = True
 
         if model_changed:
-            self.model_update_date = datetime.now()
+            self.model_update_date = datetime.utcnow()
+            self.error_on_update = False
             self.save()
-            #print "Status SAVED!", self
-
+   
         return model_changed
         
 class FBComment(models.Model):
@@ -260,8 +317,7 @@ class FBComment(models.Model):
     ftype = models.CharField(max_length=255, null=True)
     post = models.ForeignKey('FBPost', null=True)
 
-
-
+    error_on_update = models.BooleanField()
 
 
 

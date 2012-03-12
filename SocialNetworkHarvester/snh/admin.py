@@ -42,7 +42,7 @@ class FacebookHarvesterInline(admin.StackedInline):
 
 class FacebookHarvesterAdmin(admin.ModelAdmin):
     fields = [
-                u'name', 
+                u'harvester_name', 
                 u'is_active', 
             ]
 

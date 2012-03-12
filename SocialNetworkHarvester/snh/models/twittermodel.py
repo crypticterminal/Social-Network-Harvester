@@ -158,6 +158,7 @@ class TWUser(models.Model):
 
     model_update_date = models.DateTimeField(null=True)
     error_triggered = models.BooleanField()
+    error_on_update = models.BooleanField()
 
     def update_from_twitter(self, twitter_model):
         model_changed = False
@@ -188,30 +189,30 @@ class TWUser(models.Model):
         fk_to_check = ["url", "profile_image_url"]
 
         for prop in props_to_check:
-            if self.__dict__[prop] != twitter_model.__dict__["_"+props_to_check[prop]]:
-                self.__dict__[prop] = twitter_model.__dict__["_"+props_to_check[prop]]
+            tw_val = twitter_model.__dict__["_"+props_to_check[prop]]
+            if self.__dict__[prop] != tw_val:
+                self.__dict__[prop] = tw_val
                 model_changed = True
 
         for prop in date_to_check:
-            ts = time.strftime('%Y-%m-%d %H:%M:%S', time.strptime(twitter_model.__dict__["_"+prop],'%a %b %d %H:%M:%S +0000 %Y'))
-            #TODO implement cleaner time comparison
-            if str(self.__dict__[prop]) != str(ts):
-                self.__dict__[prop] = ts
+            tw_val = twitter_model.__dict__["_"+prop]
+            date_val = datetime.strptime(tw_val,'%a %b %d %H:%M:%S +0000 %Y')
+            if self.__dict__[prop] != date_val:
+                self.__dict__[prop] = date_val
                 model_changed = True
 
         if model_changed:
-            self.model_update_date = datetime.now()
-            #print "User SAVED!", self
+            self.model_update_date = datetime.utcnow()
+            self.error_on_update = False
             self.save()
 
     def get_latest_status(self):
 
         latest_status = None
-        statuses = TWStatus.objects.filter(user=self).order_by("-created_at")
+        statuses = TWStatus.objects.filter(user=self).order_by("created_at")
         for latest_status in statuses: break
         return latest_status
         
-
 class TWStatus(models.Model):
 
     class Meta:
@@ -234,6 +235,7 @@ class TWStatus(models.Model):
     truncated = models.BooleanField()
 
     model_update_date = models.DateTimeField(null=True)
+    error_on_update = models.BooleanField()
 
     #TODO HASHTAG
 
@@ -254,20 +256,21 @@ class TWStatus(models.Model):
         self.user = user
 
         for prop in props_to_check:
-            if self.__dict__[prop] != twitter_model.__dict__["_"+props_to_check[prop]]:
-                self.__dict__[prop] = twitter_model.__dict__["_"+props_to_check[prop]]
+            tw_prop_val = twitter_model.__dict__["_"+props_to_check[prop]]
+            if self.__dict__[prop] != tw_prop_val:
+                self.__dict__[prop] = tw_prop_val
                 model_changed = True
 
         for prop in date_to_check:
-            ts = time.strftime('%Y-%m-%d %H:%M:%S', time.strptime(twitter_model.__dict__["_"+prop],'%a %b %d %H:%M:%S +0000 %Y'))
-            #TODO implement cleaner time comparison
-            if str(self.__dict__[prop]) != str(ts):
-                self.__dict__[prop] = ts
+            tw_prop_val = twitter_model.__dict__["_"+prop]
+            date_val = datetime.strptime(tw_prop_val,'%a %b %d %H:%M:%S +0000 %Y')
+            if self.__dict__[prop] != date_val:
+                self.__dict__[prop] = date_val
                 model_changed = True
 
         if model_changed:
-            self.model_update_date = datetime.now()
-            #print "Status SAVED!", self
+            self.model_update_date = datetime.utcnow()
+            self.error_on_update = False
             self.save()
 
 

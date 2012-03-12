@@ -4,7 +4,7 @@ from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render_to_response, get_object_or_404, get_list_or_404, redirect
 from fandjango.decorators import facebook_authorization_required
-from fandjango.models import User as FanUser
+#from fandjango.models import User as FanUser
 
 from snh.models.twittermodel import *
 from snh.models.facebook import *

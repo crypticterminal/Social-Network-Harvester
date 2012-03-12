@@ -1,22 +1,120 @@
 # coding=UTF-8
 
 import sys
-import traceback
+import time
 
-import codecs
-import urlparse
-from fandjango.models import User as FanUser
 from django.core.exceptions import ObjectDoesNotExist
-import facepy
 from facepy.exceptions import FacepyError
 
 from snh.models.facebook import *
 
+import snhlogger
+logger = snhlogger.init_logger(__name__, "facebook.log")
+
 def run_facebook_harvester():
     harvester_list = FacebookHarvester.objects.all()
     for harvester in harvester_list:
+        logger.info(u"The harvester %s is %s" % 
+                                                (unicode(harvester), 
+                                                "active" if harvester.is_active else "inactive"))
         if harvester.is_active:
-            run_harvester(harvester)
+            run_harvester_v2(harvester)
+
+def sleeper(retry_count):
+    max_retry = 5
+    retry_delay = 1
+    wait_delay = retry_count*retry_delay
+    wait_delay = 60 if wait_delay > 60 else wait_delay
+    time.sleep(wait_delay)
+
+def manage_exception(retry_count, harvester, user):
+    msg = u"Exception for the harvester %s for the user %s(%d). Retry:%d" % (harvester, unicode(user), user.fid if user.fid else 0, retry_count)
+    logger.exception(msg)
+    retry_count += 1
+    return (retry_count, retry_count > harvester.max_retry_on_fail)
+
+def manage_facebook_exception(retry_count, harvester, user, fex):
+    retry_count += 1
+    need_a_break = retry_count > harvester.max_retry_on_fail
+
+    if unicode(fex).startswith(u"(#803)"):
+        user.error_triggered = True
+        user.save()
+        msg = u"Exception for the harvester %s for the user %s(%d). Retry:%d. The user does not exists!" % (harvester, unicode(user), user.fid if user.fid else 0, retry_count)
+        logger.exception(msg)
+        need_a_break = True
+    elif unicode(fex).startswith("Unknown path components:"):
+        msg = u"Exception for the harvester %s for the user %s(%d). Retry:%d. The user does not exists!" % (harvester, unicode(user), user.fid if user.fid else 0, retry_count)
+        logger.exception(msg)
+        need_a_break = True                    
+    else:
+        msg = u"Exception for the harvester %s for the user %s(%d). Retry:%d. The user does not exists!" % (harvester, unicode(user), user.fid if user.fid else 0, retry_count)
+        logger.exception(msg)
+
+    return (retry_count, retry_count > harvester.max_retry_on_fail)
+
+def get_latest_statuses(harvester, user):
+
+    page = 1
+    retry = 0
+    lsp = []
+    latest_statuses = []
+
+    urlid = user.fid if user.fid else user.username
+    url = u"%s/feed" % urlid
+    until = None
+    limit = None
+
+    try:
+        lsp_iter = harvester.api_call("get",{"path":url,"page":True,"until":until,"limit":limit})
+        for lsp_block in lsp_iter:
+            logger.debug(u"%s:%s(%d):%d" % (harvester, unicode(user), user.fid if user.fid else 0, page))
+            for lsp in lsp_block["data"]: 
+                latest_statuses += lsp
+            page += 1
+
+    except FacepyError, fex:
+        (retry, need_a_break) = manage_facebook_exception(retry, harvester, user, fex)
+        #if need_a_break:
+        #    break
+        #else:
+        #    sleeper(retry)             
+    except:
+        (retry, need_a_break) = manage_exception(retry, harvester, user)
+        #if need_a_break:
+        #    break
+        #else:
+        #    sleeper(retry) 
+
+    return latest_statuses
+
+def run_harvester_v2(harvester):
+    harvester.start_new_harvest()
+    user = harvester.get_next_user_to_harvest()
+    #logger.info(u"START: %s Stats:%s" % (harvester, harvester.get_stats())   )
+    try:
+        while user:
+            if not user.error_triggered:
+                logger.info(u"Start: %s:%s(%d)." % (harvester, unicode(user), user.fid if user.fid else 0))
+                ls = get_latest_statuses(harvester, user)
+                print ls
+                #update_user(ls, user)
+                #update_user_statuses(ls, user)
+            else:
+                logger.info(u"Skipping: %s:%s(%d) because user has triggered the error flag." % (harvester, unicode(user), user.fid if user.fid else 0))
+            user = harvester.get_next_user_to_harvest()
+    except:
+        logger.exception(u"EXCEPTION: %s" % harvester)
+    finally:
+        harvester.end_current_harvest()
+        logger.info(u"End: %s Stats:%s" % (harvester,unicode(harvester.get_stats())))
+
+
+
+
+
+
+
 
 def run_harvester(harvester):
     fanuser = FanUser.objects.all()[0]
@@ -123,6 +221,12 @@ def td(d,v):
         return d[v]
     else:
         return None
+
+def get_msg(data):
+
+    if td(data, u"message"):
+        return  td(data,  u"message")
+    return None
      
 def print_post(data):
     keys = [

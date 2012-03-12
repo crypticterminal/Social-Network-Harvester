@@ -7,7 +7,6 @@ from django.core.management.base import BaseCommand, CommandError
 from django.core.exceptions import ObjectDoesNotExist
 
 from snh.management.commands.cronharvester import twitterch
-from snh.management.commands.cronharvester import facebookch
 
 import snhlogger
 logger = snhlogger.init_logger(__name__, "twitter.log")

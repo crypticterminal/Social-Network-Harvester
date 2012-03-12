@@ -1,8 +1,5 @@
 # coding=UTF-8
 
-#import sys
-#import os
-
 import twitter
 import time
 import datetime
@@ -97,12 +94,19 @@ def get_latest_statuses(harvester, user):
             lsp = get_latest_statuses_page(harvester, user, page)
 
             if lsp:
-                print user.screen_name, page, lsp[0].created_at, get_timedelta(lsp[0].created_at), lsp[0].text
                 latest_statuses += lsp
             else:
                 break
 
             if get_timedelta(lsp[0].created_at) >= harvester.dont_harvest_further_than:
+                logger.debug(u"%s:%s(%d). max date reached. Now:%s, Status.created_at:%s, Delta:%s" % 
+                                                                (harvester, 
+                                                                unicode(user), 
+                                                                user.fid if user.fid else 0, 
+                                                                datetime.utcnow(), 
+                                                                datetime.strptime(lsp[0].created_at,'%a %b %d %H:%M:%S +0000 %Y'), 
+                                                                get_timedelta(lsp[0].created_at)
+                                                                ))
                 break
 
             page = page + 1
