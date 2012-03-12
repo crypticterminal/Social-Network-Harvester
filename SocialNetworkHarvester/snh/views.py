@@ -7,7 +7,7 @@ from fandjango.decorators import facebook_authorization_required
 from fandjango.models import User as FanUser
 
 from snh.models.twittermodel import *
-from snh.models.facebook import *
+from snh.models.facebookmodel import *
 
 @login_required(login_url=u'/login/')
 def index(request):

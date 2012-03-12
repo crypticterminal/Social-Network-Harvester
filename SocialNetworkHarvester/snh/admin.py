@@ -5,8 +5,8 @@ from django.contrib import admin
 from snh.models.twittermodel import TwitterHarvester
 from snh.models.twittermodel import TWUser
 
-from snh.models.facebook import FacebookHarvester
-from snh.models.facebook import FBUser
+from snh.models.facebookmodel import FacebookHarvester
+from snh.models.facebookmodel import FBUser
 
 
 class TwitterHarvesterInline(admin.StackedInline):

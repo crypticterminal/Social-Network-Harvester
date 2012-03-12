@@ -6,7 +6,7 @@ import time
 from django.core.exceptions import ObjectDoesNotExist
 from facepy.exceptions import FacepyError
 from fandjango.models import User as FanUser
-from snh.models.facebook import *
+from snh.models.facebookmodel import *
 
 import snhlogger
 logger = snhlogger.init_logger(__name__, "facebook.log")
