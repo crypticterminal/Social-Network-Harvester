@@ -4,14 +4,25 @@ from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render_to_response, get_object_or_404, get_list_or_404, redirect
 from fandjango.decorators import facebook_authorization_required
-#from fandjango.models import User as FanUser
+from fandjango.models import User as FanUser
 
 from snh.models.twittermodel import *
 from snh.models.facebook import *
 
 @login_required(login_url=u'/login/')
 def index(request):
-    return  render_to_response(u'snh/index.html',{u'user_list': ''})
+
+    twitter_harvesters = TwitterHarvester.objects.all()
+    tw_stats = []
+    for th in twitter_harvesters:
+        tw_stats += th.get_stats()["abstract"]
+
+    facebook_harvesters = FacebookHarvester.objects.all()
+    fb_stats = []
+    for fb in facebook_harvesters:
+        fb_stats += fb.get_stats()
+
+    return  render_to_response(u'snh/index.html',{u'tw_stats':tw_stats,'fb_stats':fb_stats})
 
 @login_required(login_url='/login/')
 def twitter(request):
@@ -46,17 +57,17 @@ def reset_fb_token(request):
 @login_required(login_url=u'/login/')
 @facebook_authorization_required
 def request_fb_token(request):
-    fanu = get_list_or_404(u"FanUser")
+    fanu = FanUser.objects.all()[0]
     userfb = None
     if fanu:
-        userfb = fanu[0].user.graph.get(u"me")
+        userfb = fanu.graph.get(u"me")
     return  render_to_response(u'snh/test_token.html',{u'user': userfb})
 
 @login_required(login_url=u'/login/')
 def test_fb_token(request):
-    fanu = get_list_or_404(u"FanUser")
+    fanu = FanUser.objects.all()[0]
     userfb = None
     if fanu:
-        userfb = fanu[0].user.graph.get(u"me")
+        userfb = fanu.graph.get(u"me")
     return  render_to_response(u'snh/test_token.html',{u'user': userfb})
 

@@ -3,16 +3,13 @@
 <script type="text/javascript" charset="utf-8">
 	$(document).ready(
         function() {
-		            $('#user_table').dataTable({
-                                    "iDisplayLength": 100,
-                                });
-		            $('#post_table').dataTable({
+		            var oTable = $('#post_table').dataTable({
                                     "iDisplayLength": 100,
                                     "sPaginationType": "full_numbers",
                                     "sDom": 'T<"clear">lfrtip',
                                     "oTableTools": {
                                                 "sSwfPath" : "/static/swf/copy_cvs_xls_pdf.swf"
-                                    }
+                                    },
                                 });
 	                } 
     );
@@ -21,40 +18,13 @@
 
 {% block content %}
 <h1>Facebook: {{ fbuser.name }} </h1>
-<table id="user_table" class="pretty" width="100%">
+<table id="user_table" class="pretty">
     <thead>
     <tr>
         <th>ID</th>
         <th>name</th>
         <th>username</th>
-        <!--<th>website</th>
-        <th>link</th>
-        <th>first_name</th>
-        <th>last_name</th>
-        <th>gender</th>
-        <th>locale</th>
-        <th>languages</th>
-        <th>third_party_id</th>
-        <th>installed</th>
-        <th>timezone</th>
-        <th>updated_time</th>
-        <th>verified</th>-->
         <th>bio</th>
-        <!--<th>birthday</th>
-        <th>education</th>
-        <th>email</th>
-        <th>hometown</th>
-        <th>interested_in</th>
-        <th>location</th>
-        <th>political</th>
-        <th>favorites_atheletes</th>
-        <th>favorites_teams</th>
-        <th>quotes</th>
-        <th>relationship_status</th>
-        <th>religion</th>
-        <th>significant_other</th>
-        <th>video_upload_limits</th>
-        <th>work</th>-->
         <th>category</th>
         <th>likes</th>
         <th>about</th>
@@ -70,34 +40,7 @@
         <td>{{ fbuser.fid|default_if_none:"0" }}</td>
         <td>{{ fbuser.name|default_if_none:"" }}</td>
         <td>{{ fbuser.username|default_if_none:"" }}</td>
-        <!--<td>{{ user.website }}</td>
-        <td>{{ user.link }}</td>
-        <td>{{ user.first_name }}</td>
-        <td>{{ user.last_name }}</td>
-        <td>{{ user.gender }}</td>
-        <td>{{ user.locale }}</td>
-        <td>{{ user.languages_raw }}</td>
-        <td>{{ user.third_party_id }}</td>
-        <td>{{ user.intalled_raw }}</td>
-        <td>{{ user.timezone_raw }}</td>
-        <td>{{ user.updated_time }}</td>
-        <td>{{ user.verified }}</td>-->
         <td>{{ fbuser.bio|default_if_none:""}}</td>
-        <!--<td>{{ user.birthday }}</td>
-        <td>{{ user.education_raw }}</td>
-        <td>{{ user.email }}</td>
-        <td>{{ user.hometown }}</td>
-        <td>{{ user.interested_in }}</td>
-        <td>{{ user.location_raw }}</td>
-        <td>{{ user.political }}</td>
-        <td>{{ user.favorite_atheletes_raw }}</td>
-        <td>{{ user.favorite_teams_raw }}</td>
-        <td>{{ user.quotes }}</td>
-        <td>{{ user.relationship }}</td>
-        <td>{{ user.religion }}</td>
-        <td>{{ user.significant_other_raw }}</td>
-        <td>{{ user.video_upload_limits_raw }}</td>
-        <td>{{ user.work_raw }}</td>-->
         <td>{{ fbuser.category|default_if_none:"" }}</td>
         <td>{{ fbuser.likes|default_if_none:"0" }}</td>
         <td>{{ fbuser.about|default_if_none:"" }}</td>
@@ -111,62 +54,42 @@
 </table>
 
 <h1>Facebook wall for: {{ fbuser.name }} </h1>
-<table id="post_table" class="pretty" width="100%">
+<table id="post_table" class="pretty">
     <thead>
         <tr>
             <th>Created time</th>
             <th>from</th>
-            <!--<th>to</th>-->
-            <th>story/message</th>
-            <th>story_tags/message_tags</th>
-            <!--<th>picture</th>-->
+            <th>story / message</th>
+            <th>story_tags / message_tags</th>
             <th>link</th>
             <th>name</th>
             <th>caption</th>
             <th>description</th>
-            <!--<th>source</th>
-            <th>properties</th>
-            <th>icon</th>
-            <th>privacy</th>-->
             <th>type</th>
-            <!--<th>likes_from</th>-->
             <th>likes_count</th>
             <th>comments_count</th>
-            <!--<th>place</th>
-            <th>object_id</th>
-            <th>application</th>-->
             <th>created_time</th>
             <th>updated_time</th>
         </tr>
     </thead>
     <tbody>
-{% for post in posts %}
+        {% for post in posts %}
         <tr>
             <td>{{ post.created_time.ctime }}</td>
             <td>{{ post.ffrom|default_if_none:"" }}</td>
-            <!--<td>{{ post.to }} </td>-->
             <td>{{ post.story|default_if_none:""|urlize }}{{ post.message|default_if_none:""|urlize }} </td>
             <td>{{ post.story_tags|default_if_none:"" }}{{ post.message_tags|default_if_none:"" }} </td>
-            <!--<td>{{ post.picture }}</td>-->
             <td>{{ post.link|urlize }}</td>
             <td>{{ post.name|default_if_none:""|urlize }}</td>
             <td>{{ post.caption|default_if_none:""|urlize }}</td>
             <td>{{ post.description|default_if_none:""|urlize }}</td>
-            <!--<td>{{ post.source }}</td>
-            <td>{{ post.properties_raw }}</td>
-            <td>{{ post.icon }}</td>
-            <td>{{ post.privacy_raw }}</td>-->
             <td>{{ post.ftype|default_if_none:"" }}</td>
-            <!--<td>{{ post.likes_from }}</td>-->
             <td>{{ post.likes_count|default_if_none:"0" }}</td>
             <td>{{ post.comments_count|default_if_none:"0" }}</td>
-            <!--<td>{{ post.place_raw }}</td>
-            <td>{{ post.object_id }}</td>
-            <td>{{ post.application_raw }}</td>-->
             <td>{{ post.created_time.ctime }}</td>
             <td>{{ post.updated_time.ctime }}</td>
         </tr>
-{% endfor %}
+        {% endfor %}
     <tbody>
 </table>
 {% endblock %}

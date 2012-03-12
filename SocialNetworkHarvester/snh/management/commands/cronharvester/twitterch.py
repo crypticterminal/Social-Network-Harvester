@@ -142,7 +142,8 @@ def update_user_statuses(statuses, user):
                 try:
                     tw_status = TWStatus.objects.get(fid__exact=status.id)
                 except ObjectDoesNotExist:
-                    tw_status = TWStatus()
+                    tw_status = TWStatus(user=user)
+                    tw_status.save()
                 tw_status.update_from_twitter(status,user)
             except:
                 msg = u"Cannot update status %s for %s:(%d)" % (unicode(status), unicode(user), user.fid if user.fid else 0)

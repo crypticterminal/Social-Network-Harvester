@@ -185,20 +185,41 @@ class TWUser(models.Model):
                             }
 
         date_to_check = ["created_at"]
-        #TODO implement FK CHECK!!
-        fk_to_check = ["url", "profile_image_url"]
 
         for prop in props_to_check:
-            tw_val = twitter_model.__dict__["_"+props_to_check[prop]]
-            if self.__dict__[prop] != tw_val:
-                self.__dict__[prop] = tw_val
-                model_changed = True
+            prop_name = "_"+props_to_check[prop]
+            if prop_name in twitter_model.__dict__:
+                tw_val = twitter_model.__dict__[prop_name]
+                if self.__dict__[prop] != tw_val:
+                    self.__dict__[prop] = tw_val
+                    model_changed = True
 
         for prop in date_to_check:
-            tw_val = twitter_model.__dict__["_"+prop]
-            date_val = datetime.strptime(tw_val,'%a %b %d %H:%M:%S +0000 %Y')
-            if self.__dict__[prop] != date_val:
-                self.__dict__[prop] = date_val
+            prop_name = "_"+prop
+            if prop_name in twitter_model.__dict__:
+                tw_prop_val = twitter_model.__dict__[prop_name]
+                date_val = datetime.strptime(tw_prop_val,'%a %b %d %H:%M:%S +0000 %Y')
+                if self.__dict__[prop] != date_val:
+                    self.__dict__[prop] = date_val
+                    model_changed = True
+
+
+        if "_url" in twitter_model.__dict__:
+            tw_prop_val = twitter_model.__dict__["_url"]
+            if self.url is None or self.url.original_url != tw_prop_val:
+                tw_url = URL()
+                tw_url.original_url = tw_prop_val
+                tw_url.save()
+                self.url = tw_url
+                model_changed = True
+
+        if "_profile_image_url" in twitter_model.__dict__:
+            tw_prop_val = twitter_model.__dict__["_profile_image_url"]
+            if self.profile_image_url is None or self.profile_image_url.original_url != tw_prop_val:
+                tw_url = URL()
+                tw_url.original_url = tw_prop_val
+                tw_url.save()
+                self.profile_image_url = tw_url
                 model_changed = True
 
         if model_changed:
@@ -234,10 +255,13 @@ class TWStatus(models.Model):
     text = models.TextField(null=True)
     truncated = models.BooleanField()
 
+    text_urls = models.ManyToManyField('URL', related_name='twstatus_text_urls')
+    hash_tags = models.ManyToManyField('Tag', related_name='twstatus_tag')
+    user_mentions = models.ManyToManyField('TWUser', related_name='twstatus_user_mention')
+
     model_update_date = models.DateTimeField(null=True)
     error_on_update = models.BooleanField()
 
-    #TODO HASHTAG
 
     def update_from_twitter(self, twitter_model, user):
         model_changed = False
@@ -256,17 +280,81 @@ class TWStatus(models.Model):
         self.user = user
 
         for prop in props_to_check:
-            tw_prop_val = twitter_model.__dict__["_"+props_to_check[prop]]
-            if self.__dict__[prop] != tw_prop_val:
-                self.__dict__[prop] = tw_prop_val
-                model_changed = True
+            prop_name = "_"+props_to_check[prop]
+            if prop_name in twitter_model.__dict__:
+                tw_prop_val = twitter_model.__dict__[prop_name]
+                if self.__dict__[prop] != tw_prop_val:
+                    self.__dict__[prop] = tw_prop_val
+                    model_changed = True
 
         for prop in date_to_check:
-            tw_prop_val = twitter_model.__dict__["_"+prop]
-            date_val = datetime.strptime(tw_prop_val,'%a %b %d %H:%M:%S +0000 %Y')
-            if self.__dict__[prop] != date_val:
-                self.__dict__[prop] = date_val
-                model_changed = True
+            prop_name = "_"+prop
+            if prop_name in twitter_model.__dict__:
+                tw_prop_val = twitter_model.__dict__[prop_name]
+                date_val = datetime.strptime(tw_prop_val,'%a %b %d %H:%M:%S +0000 %Y')
+                if self.__dict__[prop] != date_val:
+                    self.__dict__[prop] = date_val
+                    model_changed = True
+
+        if "hashtags" in twitter_model.__dict__:
+            tw_prop_val = twitter_model.__dict__["hashtags"]
+            for twtag in tw_prop_val:
+                tag = None
+                try:
+                    tag = Tag.objects.filter(text=twtag.text)[0]
+                except:
+                    pass
+
+                if tag is None:
+                    tag = Tag(text=twtag.text)
+                    tag.save()
+                    self.hash_tags.add(tag)
+                    model_changed = True
+                else:
+                    
+                    if tag not in self.hash_tags.all():
+                        self.hash_tags.add(tag)
+                        model_changed = True
+
+        if "urls" in twitter_model.__dict__:
+            tw_prop_val = twitter_model.__dict__["urls"]
+            for twurl in tw_prop_val:
+                url = None
+                try:
+                    url = URL.objects.filter(original_url=twurl.url)[0]
+                except:
+                    pass
+
+                if url is None:
+                    url = URL(original_url=twurl.url)
+                    url.save()
+                    self.text_urls.add(url)
+                    model_changed = True
+                else:
+                    
+                    if url not in self.text_urls.all():
+                        self.text_urls.add(url)
+                        model_changed = True                        
+
+        if "user_mentions" in twitter_model.__dict__:
+            tw_prop_val = twitter_model.__dict__["user_mentions"]
+            for tw_mention in tw_prop_val:
+                user = None
+                try:
+                    user = TWUser.objects.filter(screen_name=tw_mention.screen_name)[0]
+                except:
+                    pass
+
+                if user is None:
+                    user = TWUser(screen_name=tw_mention.screen_name)
+                    user.save()
+                    self.user_mentions.add(user)
+                    model_changed = True
+                else:
+                    
+                    if user not in self.user_mentions.all():
+                        self.user_mentions.add(user)
+                        model_changed = True    
 
         if model_changed:
             self.model_update_date = datetime.utcnow()

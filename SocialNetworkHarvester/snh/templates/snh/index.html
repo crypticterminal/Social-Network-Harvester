@@ -1,1 +1,41 @@
 {% extends "snh/snh_base.html" %}
+{% block content %}
+
+<h1>Harvesters stats</h1>
+
+<table width="100%">
+    <thead>
+        <th>Twitter</th>
+        <th>Facebook</th>
+        <th>Youtube</th>
+        <th>Dailymotion</th>
+    </thead>
+    <tbody>
+        <td>
+            <table width="100%">
+                <tbody>
+                    {% for twharvester in tw_stats %}
+                    <tr>
+                        <td>Name</td>
+                        <td>{{ twharvester }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </td>
+
+    </tbody>
+</table>
+                    <tr>
+                        <td></td>
+                        <td>{{ twharvester.harvester_type }}</td>
+                        <td>{{ twharvester.is_active }}</td>
+                        <td>{{ twharvester.harvest_in_progress }}</td>
+                        <td>{{ twharvester.last_harvest_start_time }}</td>
+                        <td>{{ twharvester.last_harvest_end_time }}</td>
+                        <td>{{ twharvester.current_harvest_start_time }}</td>
+                        <td>{{ twharvester.last_user_was_aborted }}</td>
+                    </tr>
+
+
+{% endblock %}

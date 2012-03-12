@@ -86,9 +86,21 @@ class URL(models.Model):
     def __unicode__(self):
         return self.original_url
 
+    pmk_id =  models.AutoField(primary_key=True)
     original_url = models.TextField(null=True)
     unshorten_url = models.TextField(null=True)
     last_snapshot_time = models.DateTimeField(null=True)
+
+class Tag(models.Model):
+
+    class Meta:
+        app_label = "snh"
+
+    def __unicode__(self):
+        return self.text
+
+    pmk_id =  models.AutoField(primary_key=True)
+    text = models.TextField(null=True)
 
 class Image(models.Model):
 
@@ -98,4 +110,5 @@ class Image(models.Model):
     def __unicode__(self):
         return self.name
 
+    pmk_id =  models.AutoField(primary_key=True)
     name = models.TextField(null=True)
