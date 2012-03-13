@@ -88,7 +88,7 @@ def get_latest_statuses(harvester, user):
                 for lsp in lsp_block["data"]: 
                     latest_statuses.append(lsp)
                     last_status = lsp
-                    logger.debug(u"%s:%s(%s):%d" % (harvester, unicode(user), user.fid if user.fid else "0", lsp["id"]))
+                    logger.debug(u"%s:%s(%s):%s" % (harvester, unicode(user), user.fid if user.fid else "0", lsp["id"]))
                     if get_timedelta(last_status["created_time"]) >= harvester.dont_harvest_further_than:
                         break
 
