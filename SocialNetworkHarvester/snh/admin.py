@@ -22,6 +22,7 @@ class TwitterHarvesterAdmin(admin.ModelAdmin):
                 u'access_token_key',
                 u'access_token_secret',
                 u'dont_harvest_further_than',
+                u'max_retry_on_fail',
                 #u'full_harvest_on_next_run',
             ]
 
@@ -45,6 +46,7 @@ class FacebookHarvesterAdmin(admin.ModelAdmin):
                 u'harvester_name', 
                 u'is_active',
                 u'dont_harvest_further_than',
+                u'max_retry_on_fail',
                 #u'full_harvest_on_next_run',
             ]
 

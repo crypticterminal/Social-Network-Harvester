@@ -67,13 +67,15 @@ def get_latest_statuses(harvester, user):
     url = u"%s/feed" % urlid
     until = None
     limit = 6000
+    all_status_count = 0
     while True:
         try:
             lsp_iter = harvester.api_call("get",{"path":url,"page":True,"until":until,"limit":limit})
             page = 1
             for lsp_block in lsp_iter:
                 too_old = False
-                logger.debug(u"%s:%s(%s):%d" % (harvester, unicode(user), user.fid if user.fid else "0", page))
+                all_status_count += len(lsp_block["data"])
+                logger.debug(u"%s:%s(%s):%d.%d;%d" % (harvester, unicode(user), user.fid if user.fid else "0", page, len(lsp_block["data"]),all_status_count))
                 last_status = None
                 
                 for lsp in lsp_block["data"]: 
@@ -128,7 +130,7 @@ def get_user(harvester, user):
 
     return fbuser
 
-def get_comments(harvester, status, user):
+def get_comments(harvester, status, user, count, total): '221985374523581' 
     page = 1
     retry = 0
     lc = []
@@ -141,11 +143,11 @@ def get_comments(harvester, status, user):
         try:
             lc_iter = harvester.api_call("get",{"path":url,"page":True,"until":until,"limit":limit})
             for lc_block in lc_iter:
-                logger.debug(u"%s-%s:%s(%s):%d" % (harvester, unicode(user), unicode(status), status.fid if status.fid else "0", page))
+                logger.debug(u"%s-%s:%s:%d/%d:%d" % (harvester, unicode(user), status.fid if status.fid else "0",count, total, page))
                 subpage = 0
 
                 for lc in lc_block["data"]:
-                    logger.debug(u"%s-%s:%s(%s):%d.%d" % (harvester, unicode(user), unicode(status), status.fid if status.fid else "0", page, subpage))
+                    logger.debug(u"%s-%s:%s:%d/%d:%d.%d" % (harvester, unicode(user), status.fid if status.fid else "0", count, total, page, subpage))
                     latest_comments.append(lc)
                     subpage += 1
                 page += 1
@@ -165,10 +167,10 @@ def get_comments(harvester, status, user):
 
     return latest_comments
 
-def update_comment(harvester, status, user):
+def update_comment(harvester, status, user, count, total):
     
-    comments = get_comments(harvester, status, user)
-
+    comments = get_comments(harvester, status, user, count, total)
+    logger.debug(u"%s-%s:%s %d/%d.Adding (%d) comments to db." % (harvester, unicode(user), status.fid if status.fid else "0", count, total, len(comments)))
     for comment in comments:
         try:
             try:
@@ -176,13 +178,16 @@ def update_comment(harvester, status, user):
             except ObjectDoesNotExist:
                 fb_comment = FBComment()
             fb_comment.update_from_facebook(comment,status)
+            msg = u"%s-%s:%s %d/%d.Cannot update comment %s for %s:(%s)" % (harvester, unicode(user), status.fid if status.fid else "0", count, total, unicode(status), unicode(fb_comment), fb_comment.fid if fb_comment.fid else "0")
                 
         except:
-            msg = u"Cannot update comment %s for %s:(%s)" % (unicode(status), unicode(fb_comment), fb_comment.fid if fb_comment.fid else "0")
+            msg = u"%s-%s:%s %d/%d.Cannot update comment %s for %s:(%s)" % (harvester, unicode(user), status.fid if status.fid else "0", count, total, unicode(status), unicode(fb_comment), fb_comment.fid if fb_comment.fid else "0")
             logger.exception(msg) 
 
 
 def update_user_statuses(harvester, statuses, user):
+        status_count = 1
+        total_status = len(statuses)
         for status in statuses:
             try:
                 try:
@@ -193,11 +198,12 @@ def update_user_statuses(harvester, statuses, user):
 
                 fb_status.update_from_facebook(status,user)
                 if fb_status.comments_count > 0:
-                    update_comment(harvester, fb_status, user)
+                    update_comment(harvester, fb_status, user, status_count, total_status)
                     
             except:
                 msg = u"Cannot update status %s for %s:(%s)" % (unicode(status), unicode(user), user.fid if user.fid else "0")
                 logger.exception(msg) 
+            status_count += 1
 
 def run_harvester_v2(harvester):
     harvester.start_new_harvest()
@@ -209,9 +215,20 @@ def run_harvester_v2(harvester):
                 logger.info(u"Start: %s:%s(%s)." % (harvester, unicode(user), user.fid if user.fid else "0"))
 
                 fbuser = get_user(harvester, user)
-                user.update_from_facebook(fbuser)
                 ls = get_latest_statuses(harvester, user)
-                update_user_statuses(harvester, ls, user)
+                retry = 0
+                while True:
+                    try:
+                        user.update_from_facebook(fbuser)
+                        update_user_statuses(harvester, ls, user)
+                        break
+                    except:
+                        (retry, need_a_break) = manage_exception(retry, harvester, user)
+                        if need_a_break:
+                            break
+                        else:
+                            sleeper(retry)   
+
             else:
                 logger.info(u"Skipping: %s:%s(%s) because user has triggered the error flag." % (harvester, unicode(user), user.fid if user.fid else "0"))
             user = harvester.get_next_user_to_harvest()

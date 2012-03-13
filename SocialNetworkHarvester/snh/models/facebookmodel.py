@@ -6,6 +6,9 @@ import time
 from django.db import models
 from snh.models.common import *
 
+import snhlogger
+logger = snhlogger.init_logger(__name__, "facebook.log")
+
 class FacebookHarvester(AbstractHaverster):
 
     class Meta:
@@ -161,6 +164,7 @@ class FBUser(models.Model):
     def update_from_facebook(self, fb_user):
         model_changed = False
         props_to_check = {
+                            u"fid":u"id",
                             u"name":u"name",
                             u"username":u"username",
                             u"first_name":u"first_name",
@@ -199,10 +203,6 @@ class FBUser(models.Model):
         #date_to_check = {"birthday":"birthday"}
         date_to_check = {}
 
-        if  self.fid is None and "id" in fb_user:
-            self.fid =  fb_user["id"]
-            model_changed = True
-
         for prop in props_to_check:
             if props_to_check[prop] in fb_user and unicode(self.__dict__[prop]) != unicode(fb_user[props_to_check[prop]]):
                 self.__dict__[prop] = fb_user[props_to_check[prop]]
@@ -215,10 +215,6 @@ class FBUser(models.Model):
                 if self.__dict__[prop] != date_val:
                     self.__dict__[prop] = date_val
                     model_changed = True
-
-        if self.fid == self.username and self.name:
-            self.username = self.name
-            model_changed = True
 
         (changed, self_prop) = self.update_url_fk(self.website, "website", fb_user)
         if changed:
@@ -325,6 +321,7 @@ class FBPost(models.Model):
     def update_from_facebook(self, facebook_model, user):
         model_changed = False
         props_to_check = {
+                            u"fid":u"id",
                             u"message":u"message",
                             u"message_tags_raw":u"message_tags",
                             u"name":u"name",
@@ -348,10 +345,6 @@ class FBPost(models.Model):
         date_to_check = [u"created_time", u"updated_time"]
 
         self.user = user
-
-        if  self.fid is None and "id" in facebook_model:
-            self.fid =  facebook_model["id"]
-            model_changed = True
 
         for prop in props_to_check:
             if props_to_check[prop] in facebook_model and self.__dict__[prop] != facebook_model[props_to_check[prop]]:
@@ -422,9 +415,10 @@ class FBPost(models.Model):
         if model_changed:
             self.model_update_date = datetime.utcnow()
             self.error_on_update = False
+            #logger.debug(u"FBPost exist and changed! %s" % (self.fid))
             self.save()
         else:
-            print "exists:", self
+            logger.debug(u">>>>>>>>>>>>>>>>>>>FBPost exist and unchanged! %s" % (self.fid))
    
         return model_changed
         
@@ -473,6 +467,7 @@ class FBComment(models.Model):
     def update_from_facebook(self, facebook_model, status):
         model_changed = False
         props_to_check = {
+                            u"fid":u"id",
                             u"message":u"message",
                             u"likes":u"likes",
                             u"user_likes":u"user_likes",
@@ -507,9 +502,10 @@ class FBComment(models.Model):
         if model_changed:
             self.model_update_date = datetime.utcnow()
             self.error_on_update = False
+            #logger.debug(u"FBComment exist and changed! %s" % (self.fid))
             self.save()
         else:
-            print "exists:", self
+            logger.debug(u">>>>>>>>>>>>>>>>>>FBComment exist and unchanged! %s" % (self.fid))
             
    
         return model_changed
