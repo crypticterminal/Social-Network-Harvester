@@ -2,6 +2,7 @@
 
 import sys
 import time
+import urlparse
 
 from django.core.exceptions import ObjectDoesNotExist
 from facepy.exceptions import FacepyError
@@ -28,27 +29,39 @@ def sleeper(retry_count):
     wait_delay = 60 if wait_delay > 60 else wait_delay
     time.sleep(wait_delay)
 
-def manage_exception(retry_count, harvester, user):
-    msg = u"Exception for the harvester %s for the user %s(%s). Retry:%d" % (harvester, unicode(user), user.fid if user.fid else "0", retry_count)
+def manage_exception(retry_count, harvester, related_object):
+    msg = u"Exception for the harvester %s for the object %s(%s). Retry:%d" % (harvester, 
+                                                                                unicode(related_object), 
+                                                                                related_object.fid if related_object.fid else "0", 
+                                                                                retry_count)
     logger.exception(msg)
     retry_count += 1
     return (retry_count, retry_count > harvester.max_retry_on_fail)
 
-def manage_facebook_exception(retry_count, harvester, user, fex):
+def manage_facebook_exception(retry_count, harvester, related_object, fex):
     retry_count += 1
 
     if unicode(fex).startswith(u"(#803)"):
         user.error_triggered = True
         user.save()
-        msg = u"Exception for the harvester %s for the user %s(%s). Retry:%d. The user does not exists!" % (harvester, unicode(user), user.fid if user.fid else "0", retry_count)
+        msg = u"Exception for the harvester %s for the object %s(%s). Retry:%d. The user does not exists!" % (harvester, 
+                                                                                                                unicode(related_object), 
+                                                                                                                related_object.fid if related_object.fid else "0", 
+                                                                                                                retry_count)
         logger.exception(msg)
         need_a_break = True
     elif unicode(fex).startswith("Unknown path components:"):
-        msg = u"Exception for the harvester %s for the user %s(%s). Retry:%d. The user does not exists!" % (harvester, unicode(user), user.fid if user.fid else "0", retry_count)
+        msg = u"Exception for the harvester %s for the object %s(%s). Retry:%d. The user does not exists!" % (harvester, 
+                                                                                                                unicode(related_object), 
+                                                                                                                related_object.fid if related_object.fid else "0",
+                                                                                                                retry_count)
         logger.exception(msg)
         need_a_break = True                    
     else:
-        msg = u"Exception for the harvester %s for the user %s(%s). Retry:%d. The user does not exists!" % (harvester, unicode(user), user.fid if user.fid else "0", retry_count)
+        msg = u"Exception for the harvester %s for the object %s(%s). Retry:%d. The user does not exists!" % (harvester, 
+                                                                                                                unicode(related_object), 
+                                                                                                                related_object.fid if related_object.fid else "0", 
+                                                                                                                retry_count)
         logger.exception(msg)
 
     return (retry_count, retry_count > harvester.max_retry_on_fail)
@@ -57,122 +70,110 @@ def get_timedelta(fb_time):
     ts = date_val = datetime.strptime(fb_time,'%Y-%m-%dT%H:%M:%S+0000')
     return (datetime.utcnow() - ts).days
 
-def get_latest_statuses(harvester, user):
 
-    retry = 0
-    lsp = []
-    latest_statuses = []
-
-    urlid = user.fid if user.fid else user.username
-    url = u"%s/feed" % urlid
+def get_status_paging(page):
     until = None
+    new_page = False
+    if u"paging" in page and u"next" in page[u"paging"]:
+        url = urlparse.parse_qs(page[u"paging"][u"next"])
+        until = url[u"until"][0]
+        limit = url[u"limit"][0]
+        new_page = True
+    return ["until",until], new_page
+
+def get_comment_paging(page):
+    __after_id = None
+    new_page = False
+    if u"paging" in page and u"next" in page[u"paging"]:
+        url = urlparse.parse_qs(page[u"paging"][u"next"])
+        __after_id = url[u"__after_id"][0]
+        new_page = True
+    return ["__after_id",__after_id], new_page
+
+def get_facebook_list(harvester, url, related_object, page_func):
+    complete_list = []
+    page = 0
+    retry = 0
+    until = ["until",None]
     limit = 6000
-    all_status_count = 0
     while True:
         try:
-            lsp_iter = harvester.api_call("get",{"path":url,"page":True,"until":until,"limit":limit})
-            page = 1
-            for lsp_block in lsp_iter:
-                too_old = False
-                
-                block_len = 0
-                if "data" in lsp_block:
-                    block_len = len(lsp_block["data"])
-                    all_status_count += block_len
-                else:
-                    logger.debug(u"%s:%s(%s):%d ERROR. No Block! %s" % (harvester, unicode(user), user.fid if user.fid else "0", page, lsp_block))
-                
-                logger.debug(u"%s:%s(%s):%d.%d;%d" % (harvester, unicode(user), user.fid if user.fid else "0", page, block_len,all_status_count))
-                last_status = None
-                
-                for lsp in lsp_block["data"]: 
-                    latest_statuses.append(lsp)
-                    last_status = lsp
-                    logger.debug(u"%s:%s(%s):%s" % (harvester, unicode(user), user.fid if user.fid else "0", lsp["id"]))
-                    if get_timedelta(last_status["created_time"]) >= harvester.dont_harvest_further_than:
-                        break
+            logger.debug(u"%s %s page:%d retry:%d" % (harvester, related_object, page, retry))
+            latest_page = harvester.api_call("get",{"path":url,until[0]:until[1],"limit":limit})
 
-                if not last_status:
-                    logger.debug(u"%s:%s(%s):%d.No more status?" % (harvester, unicode(user), user.fid if user.fid else "0", page))
-                    break
-                elif get_timedelta(last_status["created_time"]) >= harvester.dont_harvest_further_than:
-                    logger.debug(u"%s:%s(%s). max date reached. Now:%s, Status.created_at:%s, Delta:%s" % 
-                                                                    (harvester, 
-                                                                    unicode(user), 
-                                                                    user.fid if user.fid else 0, 
-                                                                    datetime.utcnow(), 
-                                                                    datetime.strptime(last_status["created_time"],'%Y-%m-%dT%H:%M:%S+0000'),
-                                                                    get_timedelta(last_status["created_time"]),
-                                                                    ))
-                    break
+            if "data" in latest_page and latest_page["data"]:
+                logger.debug(u"%s %s page:%d retry:%d adding: %d objects" % (harvester, 
+                                                                                        related_object, 
+                                                                                        page, 
+                                                                                        retry, 
+                                                                                        len(latest_page["data"])))
+                complete_list += latest_page["data"]
+            else:
+                logger.debug(u"%s %s page:%d retry:%d No more data? %s" % (harvester, 
+                                                                                    related_object, 
+                                                                                    page, 
+                                                                                    retry, 
+                                                                                    ""))
+                break
 
-                page += 1
-                logger.debug(u"%s:%s(%s): Will fetch page %d" % (harvester, unicode(user), user.fid if user.fid else "0", page))
-            break
+            until, new_page = page_func(latest_page)
+            if not new_page:
+                logger.debug(u"%s %s page:%d retry:%d No new page? %s" % (harvester, 
+                                                                                    related_object, 
+                                                                                    page, 
+                                                                                    retry, 
+                                                                                    ""))
+                break
+
+            retry = 0
+            page += 1
+
         except FacepyError, fex:
-            (retry, need_a_break) = manage_facebook_exception(retry, harvester, user, fex)
+            (retry, need_a_break) = manage_facebook_exception(retry, harvester, related_object, fex)
             if need_a_break:
+                logger.debug(u"%s %s page:%d retry:%d FacepyError:breaking, too many retry!" % (harvester, 
+                                                                                                            related_object, 
+                                                                                                            page, 
+                                                                                                            retry, 
+                                                                                                ))
                 break
             else:
                 sleeper(retry)   
         except:
-            (retry, need_a_break) = manage_exception(retry, harvester, user)
+            (retry, need_a_break) = manage_exception(retry, harvester, related_object)
             if need_a_break:
+                logger.debug("u%s %s page:%d retry:%d Error:breaking, too many retry!" % (harvester, 
+                                                                                                    related_object, 
+                                                                                                    page, 
+                                                                                                    retry, 
+                                                                                            ))
                 break
             else:
-                sleeper(retry)   
+                sleeper(retry)
+    return complete_list
+
+def get_latest_statuses(harvester, user):
+
+    urlid = user.fid if user.fid else user.username
+    url = u"%s/feed" % urlid
+    logger.debug(u"%s %s %s Will get statuses" % (harvester, user, url))
+    latest_statuses = get_facebook_list(harvester, url, user, get_status_paging)
     return latest_statuses
 
 def get_user(harvester, user):
 
     urlid = user.fid if user.fid else user.username
     url = u"%s" % urlid
-    fbuser = None
-
-    try:
-        fbuser = harvester.api_call("get",{"path":url})
-    except FacepyError, fex:
-        (retry, need_a_break) = manage_facebook_exception(retry, harvester, user, fex)
-    except:
-        (retry, need_a_break) = manage_exception(retry, harvester, user)
-
+    logger.debug(u"%s %s %s Will get user" % (harvester, user, url))
+    fbuser = harvester.api_call("get",{"path":url})
     return fbuser
 
 def get_comments(harvester, status, user, count, total):
-    page = 1
-    retry = 0
-    lc = []
+
     latest_comments = []
-    until = None
-    limit = 6000
-
     url = u"%s/comments" % status.fid
-    while True:
-        try:
-            lc_iter = harvester.api_call("get",{"path":url,"page":True,"until":until,"limit":limit})
-            for lc_block in lc_iter:
-                logger.debug(u"%s-%s:%s:%d/%d:%d" % (harvester, unicode(user), status.fid if status.fid else "0",count, total, page))
-                subpage = 0
-
-                for lc in lc_block["data"]:
-                    logger.debug(u"%s-%s:%s:%d/%d:%d.%d" % (harvester, unicode(user), status.fid if status.fid else "0", count, total, page, subpage))
-                    latest_comments.append(lc)
-                    subpage += 1
-                page += 1
-            break
-        except FacepyError, fex:
-            (retry, need_a_break) = manage_facebook_exception(retry, harvester, status, fex)
-            if need_a_break:
-                break
-            else:
-                sleeper(retry)   
-        except:
-            (retry, need_a_break) = manage_exception(retry, harvester, status)
-            if need_a_break:
-                break
-            else:
-                sleeper(retry)   
-
+    logger.debug(u"%s %s %s Will get comment" % (harvester, user, url))
+    latest_comments = get_facebook_list(harvester, url, status, get_comment_paging)
     return latest_comments
 
 def update_comment(harvester, status, user, count, total):
