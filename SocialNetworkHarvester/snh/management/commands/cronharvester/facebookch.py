@@ -88,6 +88,7 @@ def get_latest_statuses(harvester, user):
                 for lsp in lsp_block["data"]: 
                     latest_statuses.append(lsp)
                     last_status = lsp
+                    logger.debug(u"%s:%s(%s):%d" % (harvester, unicode(user), user.fid if user.fid else "0", lsp["id"]))
                     if get_timedelta(last_status["created_time"]) >= harvester.dont_harvest_further_than:
                         break
 
@@ -184,13 +185,10 @@ def update_comment(harvester, status, user, count, total):
                 fb_comment = FBComment.objects.get(fid__exact=comment["id"])
             except ObjectDoesNotExist:
                 fb_comment = FBComment()
-            fb_comment.update_from_facebook(comment,status)
-            msg = u"%s-%s:%s %d/%d.Cannot update comment %s for %s:(%s)" % (harvester, unicode(user), status.fid if status.fid else "0", count, total, unicode(status), unicode(fb_comment), fb_comment.fid if fb_comment.fid else "0")
-                
+            fb_comment.update_from_facebook(comment,status)                
         except:
             msg = u"%s-%s:%s %d/%d.Cannot update comment %s for %s:(%s)" % (harvester, unicode(user), status.fid if status.fid else "0", count, total, unicode(status), unicode(fb_comment), fb_comment.fid if fb_comment.fid else "0")
             logger.exception(msg) 
-
 
 def update_user_statuses(harvester, statuses, user):
         status_count = 1
