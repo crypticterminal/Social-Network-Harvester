@@ -74,8 +74,15 @@ def get_latest_statuses(harvester, user):
             page = 1
             for lsp_block in lsp_iter:
                 too_old = False
-                all_status_count += len(lsp_block["data"])
-                logger.debug(u"%s:%s(%s):%d.%d;%d" % (harvester, unicode(user), user.fid if user.fid else "0", page, len(lsp_block["data"]),all_status_count))
+                
+                block_len = 0
+                if "data" in lsp_block:
+                    block_len = len(lsp_block["data"])
+                    all_status_count += block_len
+                else:
+                    logger.debug(u"%s:%s(%s):%d ERROR. No Block! %s" % (harvester, unicode(user), user.fid if user.fid else "0", page, lsp_block))
+                
+                logger.debug(u"%s:%s(%s):%d.%d;%d" % (harvester, unicode(user), user.fid if user.fid else "0", page, block_len,all_status_count))
                 last_status = None
                 
                 for lsp in lsp_block["data"]: 
