@@ -76,8 +76,6 @@ def get_latest_statuses(harvester, user):
                 logger.debug(u"%s:%s(%s):%d" % (harvester, unicode(user), user.fid if user.fid else "0", page))
                 last_status = None
                 
-                logger.debug(u"%s:%s(%s):%d:Block len %d.First Delta:%d" % (harvester, unicode(user), user.fid if user.fid else "0", page,len(lsp_block["data"]),get_timedelta(lsp_block["data"][0]["created_time"])))
-
                 for lsp in lsp_block["data"]: 
                     latest_statuses.append(lsp)
                     last_status = lsp
@@ -85,6 +83,7 @@ def get_latest_statuses(harvester, user):
                         break
 
                 if not last_status:
+                    logger.debug(u"%s:%s(%s):%d.No more status?" % (harvester, unicode(user), user.fid if user.fid else "0", page))
                     break
                 elif get_timedelta(last_status["created_time"]) >= harvester.dont_harvest_further_than:
                     logger.debug(u"%s:%s(%s). max date reached. Now:%s, Status.created_at:%s, Delta:%s" % 
