@@ -130,7 +130,7 @@ def get_user(harvester, user):
 
     return fbuser
 
-def get_comments(harvester, status, user, count, total): '221985374523581' 
+def get_comments(harvester, status, user, count, total):
     page = 1
     retry = 0
     lc = []
