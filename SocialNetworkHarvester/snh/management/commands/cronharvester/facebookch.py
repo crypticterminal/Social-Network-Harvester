@@ -165,7 +165,32 @@ def get_user(harvester, user):
     urlid = user.fid if user.fid else user.username
     url = u"%s" % urlid
     logger.debug(u"%s %s %s Will get user" % (harvester, user, url))
-    fbuser = harvester.api_call("get",{"path":url})
+    fbuser = None
+    retry = 0
+
+    while True:
+        try:
+            fbuser = harvester.api_call("get",{"path":url})
+        except FacepyError, fex:
+            (retry, need_a_break) = manage_facebook_exception(retry, harvester, user, fex)
+            if need_a_break:
+                logger.debug(u"%s %s retry:%d FacepyError:breaking, too many retry!" % (harvester, 
+                                                                                                    user, 
+                                                                                                    retry, 
+                                                                                                ))
+                break
+            else:
+                sleeper(retry)   
+        except:
+            (retry, need_a_break) = manage_exception(retry, harvester, related_object)
+            if need_a_break:
+                logger.debug("u%s %s retry:%d Error:breaking, too many retry!" % (harvester, 
+                                                                                            user, 
+                                                                                            retry, 
+                                                                                            ))
+                break
+            else:
+                sleeper(retry)
     return fbuser
 
 def get_comments(harvester, status, user, count, total):
