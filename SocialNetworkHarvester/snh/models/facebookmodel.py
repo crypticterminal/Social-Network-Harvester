@@ -143,7 +143,7 @@ class FBUser(models.Model):
         model_changed = False
         if face_prop in facebook_model:
             prop_val = facebook_model[face_prop]
-            if self.__dict__[self_prop] is None or self.__dict__[self_prop] != prop_val:
+            if self_prop is None or self_prop.original_url != prop_val:
                 url = None
                 try:
                     url = URL.objects.filter(original_url=prop_val)[0]
@@ -154,14 +154,13 @@ class FBUser(models.Model):
                     url = URL(original_url=prop_val)
                     url.save()
 
-                self.__dict__[self_prop] = url
+                self_prop = url
                 model_changed = True
-        return model_changed
+        return model_changed, self_prop
 
     def update_from_facebook(self, fb_user):
         model_changed = False
         props_to_check = {
-                            u"fid":u"id",
                             u"name":u"name",
                             u"username":u"username",
                             u"first_name":u"first_name",
@@ -200,9 +199,12 @@ class FBUser(models.Model):
         #date_to_check = {"birthday":"birthday"}
         date_to_check = {}
 
+        if  self.fid is None and "id" in fb_user:
+            self.fid =  fb_user["id"]
+            model_changed = True
+
         for prop in props_to_check:
             if props_to_check[prop] in fb_user and unicode(self.__dict__[prop]) != unicode(fb_user[props_to_check[prop]]):
-                old_val = self.__dict__[prop]
                 self.__dict__[prop] = fb_user[props_to_check[prop]]
                 #print "prop changed. %s was %s is %s" % (prop, old_val, self.__dict__[prop])
                 model_changed = True
@@ -218,15 +220,20 @@ class FBUser(models.Model):
             self.username = self.name
             model_changed = True
 
-        if self.update_url_fk("website_id", "website", fb_user):
+        (changed, self_prop) = self.update_url_fk(self.website, "website", fb_user)
+        if changed:
+            self.website = self_prop
             model_changed = True
             
-        if self.update_url_fk("link_id", "link", fb_user):
+        (changed, self_prop) = self.update_url_fk(self.link, "link", fb_user)
+        if changed:
+            self.link = self_prop
             model_changed = True
 
-        if self.update_url_fk("picture_id", "picture", fb_user):
+        (changed, self_prop) = self.update_url_fk(self.picture, "picture", fb_user)
+        if changed:
+            self.picture = self_prop
             model_changed = True
-
 
         if model_changed:
             self.model_update_date = datetime.utcnow()
@@ -278,7 +285,7 @@ class FBPost(models.Model):
         model_changed = False
         if face_prop in facebook_model:
             prop_val = facebook_model[face_prop]
-            if self.__dict__[self_prop] is None or self.__dict__[self_prop] != prop_val:
+            if self_prop is None or self_prop.original_url != prop_val:
                 url = None
                 try:
                     url = URL.objects.filter(original_url=prop_val)[0]
@@ -289,35 +296,35 @@ class FBPost(models.Model):
                     url = URL(original_url=prop_val)
                     url.save()
 
-                self.__dict__[self_prop] = url.pmk_id
+                self_prop = url
                 model_changed = True
-        return model_changed
+        return model_changed, self_prop
 
     def update_user_fk(self, self_prop, face_prop, facebook_model):
         model_changed = False
         if face_prop in facebook_model:
             prop_val = facebook_model[face_prop]
-            if self.__dict__[self_prop] is None or self.__dict__[self_prop] != prop_val:
+            if self_prop is None or self_prop.fid != prop_val["id"]:
                 user = None
                 try:
-                    user = FBUser.objects.filter(fid=prop_val)[0]
+                    user = FBUser.objects.filter(fid=prop_val["id"])[0]
                 except:
                     pass
-
                 if user is None:
-                    user = FBUser(fid=prop_val)
+                    user = FBUser(fid=prop_val["id"])
+                    user.update_from_facebook(prop_val)
                     user.save()
 
-                self.__dict__[self_prop] = user.pmk_id
+                self_prop = user
+                #print self_prop, user.name, prop_val
                 model_changed = True
 
-        return model_changed
+        return model_changed, self_prop
 
 
     def update_from_facebook(self, facebook_model, user):
         model_changed = False
         props_to_check = {
-                            u"fid":u"id",
                             u"message":u"message",
                             u"message_tags_raw":u"message_tags",
                             u"name":u"name",
@@ -342,6 +349,10 @@ class FBPost(models.Model):
 
         self.user = user
 
+        if  self.fid is None and "id" in facebook_model:
+            self.fid =  facebook_model["id"]
+            model_changed = True
+
         for prop in props_to_check:
             if props_to_check[prop] in facebook_model and self.__dict__[prop] != facebook_model[props_to_check[prop]]:
                 self.__dict__[prop] = facebook_model[props_to_check[prop]]
@@ -362,19 +373,29 @@ class FBPost(models.Model):
                 self.__dict__[prop] = date_val
                 model_changed = True
 
-        if self.update_url_fk("picture_id", "picture", facebook_model):
+        (changed, self_prop) = self.update_url_fk(self.picture, "picture", facebook_model)
+        if changed:
+            self.picture = self_prop
             model_changed = True
 
-        if self.update_url_fk("link_id", "link", facebook_model):
+        (changed, self_prop) = self.update_url_fk(self.link, "link", facebook_model)
+        if changed:
+            self.link = self_prop
             model_changed = True
 
-        if self.update_url_fk("source_id", "source", facebook_model):
+        (changed, self_prop) = self.update_url_fk(self.source, "source", facebook_model)
+        if changed:
+            self.source = self_prop
             model_changed = True
 
-        if self.update_url_fk("icon_id", "icon", facebook_model):
+        (changed, self_prop) = self.update_url_fk(self.icon, "icon", facebook_model)
+        if changed:
+            self.icon = self_prop
             model_changed = True
 
-        if self.update_user_fk("ffrom_id", "from", facebook_model):
+        (changed, self_prop) = self.update_user_fk(self.ffrom, "from", facebook_model)
+        if changed:
+            self.ffrom = self_prop
             model_changed = True
 
         if "to" in facebook_model:
@@ -402,6 +423,8 @@ class FBPost(models.Model):
             self.model_update_date = datetime.utcnow()
             self.error_on_update = False
             self.save()
+        else:
+            print "exists:", self
    
         return model_changed
         
@@ -411,12 +434,12 @@ class FBComment(models.Model):
         app_label = "snh"
 
     def __unicode__(self):
-        return self.text
+        return self.message
 
     pmk_id =  models.AutoField(primary_key=True)
 
     fid = models.CharField(max_length=255, null=True, unique=True)
-    ffrom = models.ForeignKey('FBUser')
+    ffrom = models.ForeignKey('FBUser', related_name="fbcomment.ffrom", null=True)
     message = models.TextField(null=True)
     created_time = models.DateTimeField(null=True)
     likes = models.IntegerField(null=True)
@@ -431,37 +454,38 @@ class FBComment(models.Model):
         model_changed = False
         if face_prop in facebook_model:
             prop_val = facebook_model[face_prop]
-            if self.__dict__[self_prop] is None or self.__dict__[self_prop] != prop_val:
+            if self_prop is None or self_prop.fid != prop_val["id"]:
                 user = None
                 try:
-                    user = FBUser.objects.filter(fid=prop_val)[0]
+                    user = FBUser.objects.filter(fid=prop_val["id"])[0]
                 except:
                     pass
-
                 if user is None:
-                    user = FBUser(fid=prop_val)
+                    user = FBUser(fid=prop_val["id"])
+                    user.update_from_facebook(prop_val)
                     user.save()
 
-                self.__dict__[self_prop] = user.pmk_id
+                self_prop = user
                 model_changed = True
 
-        return model_changed
+        return model_changed, self_prop
 
     def update_from_facebook(self, facebook_model, status):
         model_changed = False
         props_to_check = {
-                            u"fid":u"id",
                             u"message":u"message",
                             u"likes":u"likes",
                             u"user_likes":u"user_likes",
-                            u"ftype":u"type",
-                            u"ftype":u"type",
                             u"ftype":u"type",
                             }
 
         date_to_check = [u"created_time"]
 
         self.post = status
+
+        if  self.fid is None and "id" in facebook_model:
+            self.fid =  facebook_model["id"]
+            model_changed = True
 
         for prop in props_to_check:
             if props_to_check[prop] in facebook_model and self.__dict__[prop] != facebook_model[props_to_check[prop]]:
@@ -475,13 +499,18 @@ class FBComment(models.Model):
                 self.__dict__[prop] = date_val
                 model_changed = True
 
-        if self.update_user_fk("ffrom_id", "from", facebook_model):
+        (changed, self_prop) = self.update_user_fk(self.ffrom, "from", facebook_model)
+        if changed:
+            self.ffrom = self_prop
             model_changed = True
 
         if model_changed:
             self.model_update_date = datetime.utcnow()
             self.error_on_update = False
             self.save()
+        else:
+            print "exists:", self
+            
    
         return model_changed
 

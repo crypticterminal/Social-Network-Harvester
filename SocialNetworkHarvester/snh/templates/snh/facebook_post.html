@@ -3,7 +3,7 @@
 <script type="text/javascript" charset="utf-8">
 	$(document).ready(
         function() {
-		            $('#post_table').dataTable({
+		            $('#comment_table').dataTable({
                                     "iDisplayLength": 100,
                                     "sPaginationType": "full_numbers",
                                     "sDom": 'pT<"clear">lfrtip',
@@ -59,7 +59,7 @@
     </tbody>
 </table>
 
-<h1>Facebook wall for: {{ fbuser.name }} </h1>
+<h1>Post detail</h1>
 <table id="post_table" class="pretty">
     <thead>
         <tr>
@@ -79,8 +79,7 @@
         </tr>
     </thead>
     <tbody>
-        {% for post in posts %}
-        <tr onclick="document.location.href='/facebook_post/{{ post.fid }}/'">
+        <tr>
             <td>{{ post.created_time.ctime }}</td>
             <td>{{ post.ffrom.name|default_if_none:post.ffrom.username|default_if_none:post.ffrom.fid }}</td>
             <td>{{ post.story|default_if_none:""|urlize }}{{ post.message|default_if_none:""|urlize }} </td>
@@ -95,8 +94,34 @@
             <td>{{ post.created_time.ctime }}</td>
             <td>{{ post.updated_time.ctime }}</td>
         </tr>
+    <tbody>
+</table>
+
+<h1>Comments</h1>
+<table id="comment_table" class="pretty">
+    <thead>
+        <tr>
+            <th>Created time</th>
+            <th>from</th>
+            <th>Message</th>
+            <th>Likes</th>
+            <th>User likes</th>
+            <th>Type</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for comment in comments %}
+        <tr>
+            <td id="date">{{ comment.created_time.ctime }}</td>
+            <td>{{ comment.ffrom.name }}</td>
+            <td>{{ comment.message|urlize }}</td>
+            <td>{{ comment.likes }}</td>
+            <td>{{ comment.user_likes }}</td>
+            <td>{{ comment.ftype }}</td>
+        </tr>
         {% endfor %}
     <tbody>
 </table>
+
 
 {% endblock %}

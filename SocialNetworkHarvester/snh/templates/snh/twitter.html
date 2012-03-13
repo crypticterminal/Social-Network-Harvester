@@ -16,6 +16,12 @@
 {% endblock %}
 
 {% block content %}
+<ul>
+<li><a href="/twitter/0">All users</a></li>
+{% for harv in harvesters %}
+<li><a href="/twitter/{{ harv.pmk_id }}">{{ harv.harvester_name }}</a></li>
+{% endfor %}
+</ul>
 <h1>Twitter harvest - List of users</h1>
 <table id="user_table" class="pretty" width="100%">
     <thead>

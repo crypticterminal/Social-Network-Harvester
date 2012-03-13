@@ -41,7 +41,6 @@ def get_latest_statuses_page(harvester, user, page):
     return latest_statuses_page
 
 def sleeper(retry_count):
-    max_retry = 5
     retry_delay = 1
     wait_delay = retry_count*retry_delay
     wait_delay = 60 if wait_delay > 60 else wait_delay
@@ -55,7 +54,6 @@ def manage_exception(retry_count, harvester, user, page):
 
 def manage_twitter_exception(retry_count, harvester, user, page, tex):
     retry_count += 1
-    need_a_break = retry_count > harvester.max_retry_on_fail
 
     if unicode(tex) == u"Not found":
         user.error_triggered = True
@@ -92,20 +90,20 @@ def get_latest_statuses(harvester, user):
         try:
             logger.debug(u"%s:%s(%d):%d" % (harvester, unicode(user), user.fid if user.fid else 0, page))
             lsp = get_latest_statuses_page(harvester, user, page)
-
+            
             if lsp:
                 latest_statuses += lsp
             else:
                 break
 
-            if get_timedelta(lsp[0].created_at) >= harvester.dont_harvest_further_than:
+            if get_timedelta(lsp[len(lsp)-1].created_at) >= harvester.dont_harvest_further_than:
                 logger.debug(u"%s:%s(%d). max date reached. Now:%s, Status.created_at:%s, Delta:%s" % 
                                                                 (harvester, 
                                                                 unicode(user), 
                                                                 user.fid if user.fid else 0, 
                                                                 datetime.utcnow(), 
-                                                                datetime.strptime(lsp[0].created_at,'%a %b %d %H:%M:%S +0000 %Y'), 
-                                                                get_timedelta(lsp[0].created_at)
+                                                                datetime.strptime(lsp[len(lsp)-1].created_at,'%a %b %d %H:%M:%S +0000 %Y'), 
+                                                                get_timedelta(lsp[len(lsp)-1].created_at)
                                                                 ))
                 break
 

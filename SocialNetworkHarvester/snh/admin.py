@@ -22,7 +22,7 @@ class TwitterHarvesterAdmin(admin.ModelAdmin):
                 u'access_token_key',
                 u'access_token_secret',
                 u'dont_harvest_further_than',
-                u'full_harvest_on_next_run',
+                #u'full_harvest_on_next_run',
             ]
 
     inlines = [TwitterHarvesterInline]
@@ -43,7 +43,9 @@ class FacebookHarvesterInline(admin.StackedInline):
 class FacebookHarvesterAdmin(admin.ModelAdmin):
     fields = [
                 u'harvester_name', 
-                u'is_active', 
+                u'is_active',
+                u'dont_harvest_further_than',
+                #u'full_harvest_on_next_run',
             ]
 
     inlines = [FacebookHarvesterInline]

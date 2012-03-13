@@ -16,6 +16,13 @@
 {% endblock %}
 
 {% block content %}
+
+<ul>
+<li><a href="/facebook/0">All users</a></li>
+{% for harv in harvesters %}
+<li><a href="/facebook/{{ harv.pmk_id }}">{{ harv.harvester_name }}</a></li>
+{% endfor %}
+</ul>
 <h1>Facebook harvest - List of users</h1>
 <table id="user_table" class="pretty" width="100%">
     <thead>
@@ -23,13 +30,11 @@
         <th>ID</th>
         <th>name</th>
         <th>username</th>
-        <th>bio</th>
         <th>category</th>
         <th>likes</th>
         <th>about</th>
         <th>phone</th>
         <th>checkins</th>
-        <th>picture</th>
         <th>talking_about_count</th>
         <th>error_triggered</th>
     </tr>
@@ -40,13 +45,11 @@
         <td>{{ fbuser.fid|default_if_none:"0" }}</td>
         <td>{{ fbuser.name|default_if_none:"" }}</td>
         <td>{{ fbuser.username|default_if_none:"" }}</td>
-        <td>{{ fbuser.bio|default_if_none:""}}</td>
         <td>{{ fbuser.category|default_if_none:"" }}</td>
         <td>{{ fbuser.likes|default_if_none:"0" }}</td>
         <td>{{ fbuser.about|default_if_none:"" }}</td>
         <td>{{ fbuser.phone|default_if_none:"" }}</td>
         <td>{{ fbuser.checkins|default_if_none:"0" }}</td>
-        <td>{{ fbuser.picture|default_if_none:"" }}</td>
         <td>{{ fbuser.talking_about_count|default_if_none:"0" }}</td>
         <td>{{ fbuser.error_triggered }}</td>
     </tr>

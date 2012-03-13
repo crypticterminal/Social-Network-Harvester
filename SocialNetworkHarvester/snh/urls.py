@@ -9,10 +9,12 @@ urlpatterns = patterns('snh.views',
     (r'^request_fb_token$', 'request_fb_token'),
     (r'^test_fb_token$', 'test_fb_token'),
 
+    (r'^twitter_status/(?P<status_id>\d+)/$', 'twitter_status'),
     (r'^twitter_detail/(?P<user_id>\d+)/$', 'twitter_detail'),
-    (r'^twitter$', 'twitter'),
+    (r'^twitter/(?P<harvester_id>\d+)/$', 'twitter'),
 
+    (r'^facebook_post/(?P<post_id>\w+)/$', 'facebook_post'),
     (r'^facebook_detail/(?P<user_id>\d+)/$', 'facebook_detail'),
-    (r'^facebook$', 'facebook'),
+    (r'^facebook/(?P<harvester_id>\d+)/$', 'facebook'),
 
 )

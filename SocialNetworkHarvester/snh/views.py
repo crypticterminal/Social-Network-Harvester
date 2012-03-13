@@ -13,38 +13,64 @@ from snh.models.facebookmodel import *
 def index(request):
 
     twitter_harvesters = TwitterHarvester.objects.all()
-    tw_stats = []
-    for th in twitter_harvesters:
-        tw_stats += th.get_stats()["abstract"]
-
     facebook_harvesters = FacebookHarvester.objects.all()
-    fb_stats = []
-    for fb in facebook_harvesters:
-        fb_stats += fb.get_stats()
 
-    return  render_to_response(u'snh/index.html',{u'tw_stats':tw_stats,'fb_stats':fb_stats})
+    return  render_to_response(u'snh/index.html',{u'twitter_harvesters':twitter_harvesters,'facebook_harvesters':facebook_harvesters})
 
 @login_required(login_url='/login/')
-def twitter(request):
-    user_list = TWUser.objects.all()
-    return  render_to_response(u'snh/twitter.html',{u'user_list': user_list,u'twitter':True})
+def twitter(request, harvester_id):
+    if harvester_id == "0":
+        user_list = TWUser.objects.all()
+    else:
+        harvester = TwitterHarvester.objects.filter(pmk_id__exact=harvester_id)[0]
+        user_list = harvester.twusers_to_harvest.all()
+    all_harvesters =  TwitterHarvester.objects.all()
+    return  render_to_response(u'snh/twitter.html',{u'user_list': user_list,"harvesters":all_harvesters})
 
 @login_required(login_url=u'/login/')
 def twitter_detail(request, user_id):
     user = get_object_or_404(TWUser, fid=user_id)
-    statuses = TWStatus.objects.filter(user=user).order_by(u"-created_at")
-    return render_to_response(u'snh/twitter_detail.html', {u'twuser': user, u'statuses':statuses, u'len':len(statuses),u'twitter':True})
+    statuses = TWStatus.objects.filter(user=user).order_by(u"created_at")
+    return render_to_response(u'snh/twitter_detail.html', {u'twuser': user, u'statuses':statuses, u'len':len(statuses)})
 
 @login_required(login_url=u'/login/')
-def facebook(request):
-    user_list = FBUser.objects.all()
-    return  render_to_response(u'snh/facebook.html',{u'user_list': user_list})
+def twitter_status(request, status_id):
+    status = get_object_or_404(TWStatus, fid=status_id)
+    return render_to_response(u'snh/twitter_status.html', {u'twuser': status.user, 
+                                                            u'status':status, 
+                                                            u'mentions':status.user_mentions.all(),
+                                                            u'urls':status.text_urls.all(),
+                                                            u'tags':status.hash_tags.all(),
+                                                            })
+
+
+
+@login_required(login_url=u'/login/')
+def facebook(request, harvester_id):
+    if harvester_id == "0":
+        user_list = FBUser.objects.all()
+    else:
+        harvester = FacebookHarvester.objects.filter(pmk_id__exact=harvester_id)[0]
+        user_list = harvester.fbusers_to_harvest.all()
+    all_harvesters =  FacebookHarvester.objects.all()
+    return  render_to_response(u'snh/facebook.html',{u'user_list': user_list,"harvesters":all_harvesters})
 
 @login_required(login_url=u'/login/')
 def facebook_detail(request, user_id):
     user = get_object_or_404(FBUser, fid=user_id)
     posts = FBPost.objects.filter(user=user).order_by(u"-created_time")
     return render_to_response(u'snh/facebook_detail.html', {u'fbuser': user, u'posts':posts, u'len':len(posts)})
+
+@login_required(login_url=u'/login/')
+def facebook_post(request, post_id):
+    post = get_object_or_404(FBPost, fid=post_id)
+    comments = FBComment.objects.filter(post=post)
+    return render_to_response(u'snh/facebook_post.html', {u'fbuser': post.user, 
+                                                            u'post':post, 
+                                                            u'comments':comments,
+                                                            })
+
+
 
 def logout_view(request):
     logout(request)

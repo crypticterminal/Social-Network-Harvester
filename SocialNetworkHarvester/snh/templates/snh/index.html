@@ -12,30 +12,88 @@
     </thead>
     <tbody>
         <td>
-            <table width="100%">
+            {% for th in twitter_harvesters %}
+            <table width="100%" class="pretty">
+                <thead>
+                    <th colspan="2">{{ th.harvester_name }}</th>
+                </thead>
                 <tbody>
-                    {% for twharvester in tw_stats %}
                     <tr>
-                        <td>Name</td>
-                        <td>{{ twharvester }}</td>
+                        <td>is_active</td>
+                        <td>{{ th.is_active }}</td>
                     </tr>
-                    {% endfor %}
+                    <tr>
+                        <td>harvest_in_progress</td>
+                        <td>{{ th.harvest_in_progress }}</td>
+                    </tr>
+                    <tr>
+                        <td>last_user_harvest_was_aborted</td>
+                        <td>{{ th.last_user_harvest_was_aborted }}</td>
+                    </tr>
+                    <tr>
+                        <td>retry_user_after_abortion</td>
+                        <td>{{ th.retry_user_after_abortion }}</td>
+                    </tr>
+                    <tr>
+                        <td>last_harvest_start_time</td>
+                        <td>{{ th.last_harvest_start_time }}</td>
+                    </tr>
+                    <tr>
+                        <td>last_harvest_end_time</td>
+                        <td>{{ th.last_harvest_end_time }}</td>
+                    </tr>
+                    <tr>
+                        <td>current_harvest_start_time</td>
+                        <td>{{ th.current_harvest_start_time }}</td>
+                    </tr>
+
                 </tbody>
             </table>
+            {% endfor %}
         </td>
-
-    </tbody>
-</table>
+        <td>
+            {% for th in facebook_harvesters %}
+            <table width="100%" class="pretty">
+                <thead>
+                    <th colspan="2">{{ th.harvester_name }}</th>
+                </thead>
+                <tbody>
                     <tr>
-                        <td></td>
-                        <td>{{ twharvester.harvester_type }}</td>
-                        <td>{{ twharvester.is_active }}</td>
-                        <td>{{ twharvester.harvest_in_progress }}</td>
-                        <td>{{ twharvester.last_harvest_start_time }}</td>
-                        <td>{{ twharvester.last_harvest_end_time }}</td>
-                        <td>{{ twharvester.current_harvest_start_time }}</td>
-                        <td>{{ twharvester.last_user_was_aborted }}</td>
+                        <td>is_active</td>
+                        <td>{{ th.is_active }}</td>
+                    </tr>
+                    <tr>
+                        <td>harvest_in_progress</td>
+                        <td>{{ th.harvest_in_progress }}</td>
+                    </tr>
+                    <tr>
+                        <td>last_user_harvest_was_aborted</td>
+                        <td>{{ th.last_user_harvest_was_aborted }}</td>
+                    </tr>
+                    <tr>
+                        <td>retry_user_after_abortion</td>
+                        <td>{{ th.retry_user_after_abortion }}</td>
+                    </tr>
+                    <tr>
+                        <td>last_harvest_start_time</td>
+                        <td>{{ th.last_harvest_start_time }}</td>
+                    </tr>
+                    <tr>
+                        <td>last_harvest_end_time</td>
+                        <td>{{ th.last_harvest_end_time }}</td>
+                    </tr>
+                    <tr>
+                        <td>current_harvest_start_time</td>
+                        <td>{{ th.current_harvest_start_time }}</td>
                     </tr>
 
+                </tbody>
+            </table>
+            {% endfor %}
+        </td>
+        <td></td>
+        <td></td>
+    </tbody>
+</table>
 
 {% endblock %}
