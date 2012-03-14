@@ -89,7 +89,6 @@ html[xmlns] .dataTables_wrapper {
 table.pretty {
 	width: 100%;
 	clear: both;
-    table-layout:fixed;
     word-wrap:break-word;
 }
 

@@ -58,8 +58,17 @@ def facebook(request, harvester_id):
 @login_required(login_url=u'/login/')
 def facebook_detail(request, user_id):
     user = get_object_or_404(FBUser, fid=user_id)
-    posts = FBPost.objects.filter(user=user).order_by(u"-created_time")
-    return render_to_response(u'snh/facebook_detail.html', {u'fbuser': user, u'posts':posts, u'len':len(posts)})
+    posts = FBPost.objects.filter(user=user).order_by(u"created_time")
+    other_posts = FBPost.objects.filter(ffrom=user).exclude(user=user).order_by(u"created_time")
+    comments = FBComment.objects.filter(ffrom=user)
+    return render_to_response(u'snh/facebook_detail.html', {u'fbuser': user, 
+                                                            u'posts':posts, 
+                                                            u'other_posts':other_posts, 
+                                                            u'comments':comments, 
+                                                            u'len':len(posts),
+                                                            u'len_comments':len(comments),
+                                                            u'len_other_posts':len(other_posts),
+                                                            })
 
 @login_required(login_url=u'/login/')
 def facebook_post(request, post_id):

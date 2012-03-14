@@ -79,9 +79,9 @@
         </tr>
     </thead>
     <tbody>
-        <tr>
+        <tr onclick="document.location.href='/facebook_post/{{ post.fid }}/'">
             <td>{{ post.created_time.ctime }}</td>
-            <td>{{ post.ffrom.name|default_if_none:post.ffrom.username|default_if_none:post.ffrom.fid }}</td>
+            <td><a href="/facebook_detail/{{ post.ffrom.fid }}/">{{ post.ffrom.name|default_if_none:post.ffrom.username }} / ({{ post.ffrom.fid }})</a></td>
             <td>{{ post.story|default_if_none:""|urlize }}{{ post.message|default_if_none:""|urlize }} </td>
             <td>{{ post.story_tags|default_if_none:"" }}{{ post.message_tags|default_if_none:"" }} </td>
             <td>{{ post.link|urlize }}</td>
@@ -113,7 +113,7 @@
         {% for comment in comments %}
         <tr>
             <td id="date">{{ comment.created_time.ctime }}</td>
-            <td>{{ comment.ffrom.name }}</td>
+            <td><a href="/facebook_detail/{{ comment.ffrom.fid }}/">{{ comment.ffrom.name }} / ({{ comment.ffrom.fid }})</a></td>
             <td>{{ comment.message|urlize }}</td>
             <td>{{ comment.likes }}</td>
             <td>{{ comment.user_likes }}</td>

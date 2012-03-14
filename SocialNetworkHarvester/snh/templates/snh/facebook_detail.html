@@ -13,6 +13,26 @@
                                     
                                     },
                                 });
+		            $('#other_posts_table').dataTable({
+                                    "iDisplayLength": 100,
+                                    "sPaginationType": "full_numbers",
+                                    "sDom": 'pT<"clear">lfrtip',
+                                    "aaSorting": [[ 0, "desc" ]],
+                                    "oTableTools": {
+                                                "sSwfPath" : "/static/swf/copy_cvs_xls_pdf.swf"
+                                    
+                                    },
+                                });
+		            $('#comments_table').dataTable({
+                                    "iDisplayLength": 100,
+                                    "sPaginationType": "full_numbers",
+                                    "sDom": 'pT<"clear">lfrtip',
+                                    "aaSorting": [[ 0, "desc" ]],
+                                    "oTableTools": {
+                                                "sSwfPath" : "/static/swf/copy_cvs_xls_pdf.swf"
+                                    
+                                    },
+                                });
 
 	                } 
     );
@@ -20,7 +40,8 @@
 {% endblock %}
 
 {% block content %}
-<h1>Facebook: {{ fbuser.name }} </h1>
+<h1>Facebook</h1>
+<h1>{{ fbuser.name }} </h1>
 <table id="user_table" class="pretty">
     <thead>
     <tr>
@@ -59,7 +80,8 @@
     </tbody>
 </table>
 
-<h1>Facebook wall for: {{ fbuser.name }} </h1>
+<h1>{{ fbuser.name }}'s wall</h1>
+<h1>Total: {{ len }} </h1>
 <table id="post_table" class="pretty">
     <thead>
         <tr>
@@ -82,7 +104,7 @@
         {% for post in posts %}
         <tr onclick="document.location.href='/facebook_post/{{ post.fid }}/'">
             <td>{{ post.created_time.ctime }}</td>
-            <td>{{ post.ffrom.name|default_if_none:post.ffrom.username|default_if_none:post.ffrom.fid }}</td>
+            <td><a href="/facebook_detail/{{ post.ffrom.fid }}/">{{ post.ffrom.name|default_if_none:post.ffrom.username }} / ({{ post.ffrom.fid }})</a></td>
             <td>{{ post.story|default_if_none:""|urlize }}{{ post.message|default_if_none:""|urlize }} </td>
             <td>{{ post.story_tags|default_if_none:"" }}{{ post.message_tags|default_if_none:"" }} </td>
             <td>{{ post.link|urlize }}</td>
@@ -96,7 +118,78 @@
             <td>{{ post.updated_time.ctime }}</td>
         </tr>
         {% endfor %}
+    </tbody>
+</table>
+
+<h1>{{ fbuser.name }} posts on other walls</h1>
+<h1>Total: {{ len_other_posts }} </h1>
+<table id="other_posts_table" class="pretty">
+    <thead>
+        <tr>
+            <th>Created time</th>
+            <th>from</th>
+            <th>to</th>
+            <th>story / message</th>
+            <th>story_tags / message_tags</th>
+            <th>link</th>
+            <th>name</th>
+            <th>caption</th>
+            <th>description</th>
+            <th>type</th>
+            <th>likes_count</th>
+            <th>comments_count</th>
+            <th>created_time</th>
+            <th>updated_time</th>
+        </tr>
+    </thead>
     <tbody>
+        {% for post in other_posts %}
+        <tr onclick="document.location.href='/facebook_post/{{ post.fid }}/'">
+            <td>{{ post.created_time.ctime }}</td>
+            <td><a href="/facebook_detail/{{ post.ffrom.fid }}/">{{ post.ffrom.name|default_if_none:post.ffrom.username }} / ({{ post.ffrom.fid }})</a></td>
+            <td><a href="/facebook_detail/{{ post.user.fid }}/">{{ post.user.name|default_if_none:post.user.username }} / ({{ post.user.fid }})</a></td>
+            <td>{{ post.story|default_if_none:""|urlize }}{{ post.message|default_if_none:""|urlize }} </td>
+            <td>{{ post.story_tags|default_if_none:"" }}{{ post.message_tags|default_if_none:"" }} </td>
+            <td>{{ post.link|urlize }}</td>
+            <td>{{ post.name|default_if_none:"" }}</td>
+            <td>{{ post.caption|default_if_none:""|urlize }}</td>
+            <td>{{ post.description|default_if_none:""|urlize }}</td>
+            <td>{{ post.ftype|default_if_none:"" }}</td>
+            <td>{{ post.likes_count|default_if_none:"0" }}</td>
+            <td>{{ post.comments_count|default_if_none:"0" }}</td>
+            <td>{{ post.created_time.ctime }}</td>
+            <td>{{ post.updated_time.ctime }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h1>{{ fbuser.name }} comments</h1>
+<h1>Total: {{ len_comments }} </h1>
+
+<table id="comments_table" class="pretty">
+    <thead>
+        <tr>
+            <th>Created time</th>
+            <th>from</th>
+            <th>Message</th>
+            <th>Likes</th>
+            <th>User likes</th>
+            <th>Type</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for comment in comments %}
+        <tr onclick="document.location.href='/facebook_post/{{ comment.post.fid }}/'" >
+            <td id="date">{{ comment.created_time.ctime }}</td>
+            <td><a href="/facebook_detail/{{ comment.ffrom.fid }}/">{{ comment.ffrom.name }} / ({{ comment.ffrom.fid }})</a></td>
+            <td>{{ comment.message|urlize }}</td>
+            <td>{{ comment.likes }}</td>
+            <td>{{ comment.user_likes }}</td>
+            <td>{{ comment.ftype }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
 
 {% endblock %}

@@ -19,32 +19,55 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td>is_active</td>
+                        <td>Is active</td>
                         <td>{{ th.is_active }}</td>
                     </tr>
                     <tr>
-                        <td>harvest_in_progress</td>
+                        <td>Harvest in progress</td>
                         <td>{{ th.harvest_in_progress }}</td>
                     </tr>
                     <tr>
-                        <td>last_user_harvest_was_aborted</td>
-                        <td>{{ th.last_user_harvest_was_aborted }}</td>
+                        <td>Current harvest start time</td>
+                        <td>{{ th.current_harvest_start_time }}</td>
                     </tr>
                     <tr>
-                        <td>retry_user_after_abortion</td>
-                        <td>{{ th.retry_user_after_abortion }}</td>
+                        <td>Current harvested user</td>
+                        <td>{{ th.current_harvested_user }}</td>
                     </tr>
                     <tr>
-                        <td>last_harvest_start_time</td>
+                        <td>Token remaining hits</td>
+                        <td>{{ th.remaining_hits }}</td>
+                    </tr>
+                    <tr>
+                        <td>Token hourly limit</td>
+                        <td>{{ th.hourly_limit }}</td>
+                    </tr>                    <tr>
+                        <td>Token reset time</td>
+                        <td>{{ th.reset_time }}</td>
+                    </tr>
+                    <tr>
+                        <td>Last harvest start time</td>
                         <td>{{ th.last_harvest_start_time }}</td>
                     </tr>
                     <tr>
-                        <td>last_harvest_end_time</td>
+                        <td>Last harvest end time</td>
                         <td>{{ th.last_harvest_end_time }}</td>
                     </tr>
                     <tr>
-                        <td>current_harvest_start_time</td>
-                        <td>{{ th.current_harvest_start_time }}</td>
+                        <td>Last user was aborted</td>
+                        <td>{{ th.last_user_harvest_was_aborted }}</td>
+                    </tr>
+                    <tr>
+                        <td>Last harvested user</td>
+                        <td>{{ th.last_harvested_user }}</td>
+                    </tr>
+                    <tr>
+                        <td>Retry after abortion</td>
+                        <td>{{ th.retry_user_after_abortion }}</td>
+                    </tr>
+                    <tr>
+                        <td>Don't harvest further than (in days)</td>
+                        <td>{{ th.dont_harvest_further_than }}</td>
                     </tr>
 
                 </tbody>
@@ -59,32 +82,44 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td>is_active</td>
+                        <td>Is active</td>
                         <td>{{ th.is_active }}</td>
                     </tr>
                     <tr>
-                        <td>harvest_in_progress</td>
+                        <td>Harvest in progress</td>
                         <td>{{ th.harvest_in_progress }}</td>
                     </tr>
                     <tr>
-                        <td>last_user_harvest_was_aborted</td>
-                        <td>{{ th.last_user_harvest_was_aborted }}</td>
+                        <td>Current harvest start time</td>
+                        <td>{{ th.current_harvest_start_time }}</td>
                     </tr>
                     <tr>
-                        <td>retry_user_after_abortion</td>
-                        <td>{{ th.retry_user_after_abortion }}</td>
+                        <td>Current harvested user</td>
+                        <td>{{ th.current_harvested_user }}</td>
                     </tr>
                     <tr>
-                        <td>last_harvest_start_time</td>
+                        <td>Last harvest start time</td>
                         <td>{{ th.last_harvest_start_time }}</td>
                     </tr>
                     <tr>
-                        <td>last_harvest_end_time</td>
+                        <td>Last harvest end time</td>
                         <td>{{ th.last_harvest_end_time }}</td>
                     </tr>
                     <tr>
-                        <td>current_harvest_start_time</td>
-                        <td>{{ th.current_harvest_start_time }}</td>
+                        <td>Last user was aborted</td>
+                        <td>{{ th.last_user_harvest_was_aborted }}</td>
+                    </tr>
+                    <tr>
+                        <td>Last harvested user</td>
+                        <td>{{ th.last_harvested_user }}</td>
+                    </tr>
+                    <tr>
+                        <td>Retry after abortion</td>
+                        <td>{{ th.retry_user_after_abortion }}</td>
+                    </tr>
+                    <tr>
+                        <td>Don't harvest further than (in days)</td>
+                        <td>{{ th.dont_harvest_further_than }}</td>
                     </tr>
 
                 </tbody>

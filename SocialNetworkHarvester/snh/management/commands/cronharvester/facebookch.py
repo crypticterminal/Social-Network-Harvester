@@ -90,7 +90,11 @@ def get_comment_paging(page):
         new_page = True
     return ["__after_id",__after_id], new_page
 
-def get_facebook_list(harvester, url, related_object, page_func):
+def get_timedelta(fb_time):
+    ts = date_val = datetime.strptime(fb_time,'%Y-%m-%dT%H:%M:%S+0000')
+    return (datetime.utcnow() - ts).days
+
+def get_facebook_list(harvester, url, related_object, page_func, history_limit=True):
     complete_list = []
     page = 0
     retry = 0
@@ -100,6 +104,9 @@ def get_facebook_list(harvester, url, related_object, page_func):
         try:
             logger.debug(u"%s %s page:%d retry:%d" % (harvester, related_object, page, retry))
             latest_page = harvester.api_call("get",{"path":url,until[0]:until[1],"limit":limit})
+            delta = 0
+            last_post_time = ""
+            max_age_reached = False
 
             if "data" in latest_page and latest_page["data"]:
                 logger.debug(u"%s %s page:%d retry:%d adding: %d objects" % (harvester, 
@@ -107,22 +114,40 @@ def get_facebook_list(harvester, url, related_object, page_func):
                                                                                         page, 
                                                                                         retry, 
                                                                                         len(latest_page["data"])))
-                complete_list += latest_page["data"]
+                for data in latest_page["data"]:
+                    last_post_time = data["created_time"]
+                    delta = get_timedelta(last_post_time)
+                    if delta >= harvester.dont_harvest_further_than:
+                        max_age_reached = True
+                    else:
+                        complete_list.append(data)
+                
             else:
-                logger.debug(u"%s %s page:%d retry:%d No more data? %s" % (harvester, 
+                logger.debug(u"%s %s page:%d retry:%d No more data?" % (harvester, 
                                                                                     related_object, 
                                                                                     page, 
                                                                                     retry, 
-                                                                                    ""))
+                                                                                    ))
+                break
+
+            if max_age_reached:
+                logger.debug(u"%s %s page:%d retry:%d Max age reached. now:%s then:%s delta:%s" % (harvester, 
+                                                                                    related_object, 
+                                                                                    page, 
+                                                                                    retry, 
+                                                                                    datetime.utcnow(),
+                                                                                    last_post_time,
+                                                                                    delta,
+                                                                                    ))
                 break
 
             until, new_page = page_func(latest_page)
             if not new_page:
-                logger.debug(u"%s %s page:%d retry:%d No new page? %s" % (harvester, 
+                logger.debug(u"%s %s page:%d retry:%d No new page?" % (harvester, 
                                                                                     related_object, 
                                                                                     page, 
                                                                                     retry, 
-                                                                                    ""))
+                                                                                    ))
                 break
 
             retry = 0
@@ -171,23 +196,24 @@ def get_user(harvester, user):
     while True:
         try:
             fbuser = harvester.api_call("get",{"path":url})
+            break
         except FacepyError, fex:
             (retry, need_a_break) = manage_facebook_exception(retry, harvester, user, fex)
             if need_a_break:
                 logger.debug(u"%s %s retry:%d FacepyError:breaking, too many retry!" % (harvester, 
-                                                                                                    user, 
-                                                                                                    retry, 
-                                                                                                ))
+                                                                                        user, 
+                                                                                        retry, 
+                                                                                        ))
                 break
             else:
                 sleeper(retry)   
         except:
-            (retry, need_a_break) = manage_exception(retry, harvester, related_object)
+            (retry, need_a_break) = manage_exception(retry, harvester, user)
             if need_a_break:
                 logger.debug("u%s %s retry:%d Error:breaking, too many retry!" % (harvester, 
-                                                                                            user, 
-                                                                                            retry, 
-                                                                                            ))
+                                                                                    user, 
+                                                                                    retry, 
+                                                                                    ))
                 break
             else:
                 sleeper(retry)
