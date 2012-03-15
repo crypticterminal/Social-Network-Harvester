@@ -18,11 +18,6 @@ class FacebookHarvester(AbstractHaverster):
 
     fbusers_to_harvest = models.ManyToManyField('FBUser', related_name='fbusers_to_harvest')
 
-    last_harvested_user = models.ForeignKey('FBUser',  related_name='last_harvested_user', null=True)
-    current_harvested_user = models.ForeignKey('FBUser', related_name='current_harvested_user',  null=True)
-
-    haverst_deque = None
-
     #a bug or my limited knowledge of the framework.. cannot import fandjango.models here :(
     def set_client(self, client):
         self.client = client
@@ -33,59 +28,26 @@ class FacebookHarvester(AbstractHaverster):
         return self.client
 
     def end_current_harvest(self):
-        if self.current_harvested_user:
-            self.last_harvested_user = self.current_harvested_user
         super(FacebookHarvester, self).end_current_harvest()
 
     def api_call(self, method, params):
         super(FacebookHarvester, self).api_call(method, params)
         c = self.get_client()   
         metp = getattr(c, method)
-        return metp(**params)
+        ret = metp(**params)
+        return ret 
 
     def get_last_harvested_user(self):
-        return self.last_harvested_user
+        return None
     
     def get_current_harvested_user(self):
-        return self.current_harvested_user
+        return None
 
     def get_next_user_to_harvest(self):
-
-        if self.current_harvested_user:
-            self.last_harvested_user = self.current_harvested_user
-
-        if self.haverst_deque is None:
-            self.build_harvester_sequence()
-
-        try:
-            self.current_harvested_user = self.haverst_deque.pop()
-        except IndexError:
-            self.current_harvested_user = None
-
-        return self.current_harvested_user
-
-    def build_harvester_sequence(self):
-        self.haverst_deque = deque()
-        all_users = self.fbusers_to_harvest.all()
-
-        if self.last_harvested_user:
-            count = 0
-            for user in all_users:
-                if user == self.last_harvested_user:
-                    break
-                count = count + 1
-            retry_last_on_fail = 1 if self.retry_user_after_abortion and self.last_user_harvest_was_aborted else 0
-            self.haverst_deque.extend(all_users[count+retry_last_on_fail:])
-            self.haverst_deque.extend(all_users[:count+retry_last_on_fail])
-        else:
-            self.haverst_deque.extend(all_users)
+        return None
 
     def get_stats(self):
         parent_stats = super(FacebookHarvester, self).get_stats()
-        parent_stats["concrete"] = {
-                                    "last_harvested_user":unicode(self.last_harvested_user),
-                                    "current_harvested_user":unicode(self.current_harvested_user),
-                                    }
         return parent_stats
 
 class FBUser(models.Model):
@@ -98,7 +60,7 @@ class FBUser(models.Model):
    
     pmk_id =  models.AutoField(primary_key=True)
 
-    fid = models.CharField(max_length=255, null=True, unique=True)
+    fid = models.CharField(max_length=255, null=True)
     name = models.CharField(max_length=255, null=True)
     username = models.CharField(max_length=255, null=True)
     website = models.ForeignKey('URL', related_name="fbuser.website", null=True)
@@ -234,6 +196,7 @@ class FBUser(models.Model):
         if model_changed:
             self.model_update_date = datetime.utcnow()
             self.error_on_update = False
+            #print self.pmk_id, self.fid, self
             self.save()
 
         return model_changed
@@ -249,7 +212,7 @@ class FBPost(models.Model):
     pmk_id =  models.AutoField(primary_key=True)
     user = models.ForeignKey('FBUser')
 
-    fid = models.CharField(max_length=255, null=True, unique=True)
+    fid = models.CharField(max_length=255, null=True)
     ffrom = models.ForeignKey('FBUser', related_name='fbpost.from', null=True)
     to = models.ManyToManyField('FBUser', related_name='fbpost.to', null=True)
     message = models.TextField(null=True)
@@ -417,8 +380,8 @@ class FBPost(models.Model):
             self.error_on_update = False
             #logger.debug(u"FBPost exist and changed! %s" % (self.fid))
             self.save()
-        else:
-            logger.debug(u">>>>>>>>>>>>>>>>>>>FBPost exist and unchanged! %s" % (self.fid))
+        #else:
+        #    logger.debug(u">>>>>>>>>>>>>>>>>>>FBPost exist and unchanged! %s" % (self.fid))
    
         return model_changed
         
@@ -432,7 +395,7 @@ class FBComment(models.Model):
 
     pmk_id =  models.AutoField(primary_key=True)
 
-    fid = models.CharField(max_length=255, null=True, unique=True)
+    fid = models.CharField(max_length=255, null=True)
     ffrom = models.ForeignKey('FBUser', related_name="fbcomment.ffrom", null=True)
     message = models.TextField(null=True)
     created_time = models.DateTimeField(null=True)
@@ -504,8 +467,8 @@ class FBComment(models.Model):
             self.error_on_update = False
             #logger.debug(u"FBComment exist and changed! %s" % (self.fid))
             self.save()
-        else:
-            logger.debug(u">>>>>>>>>>>>>>>>>>FBComment exist and unchanged! %s" % (self.fid))
+        #else:
+        #    logger.debug(u">>>>>>>>>>>>>>>>>>FBComment exist and unchanged! %s" % (self.fid))
             
    
         return model_changed
