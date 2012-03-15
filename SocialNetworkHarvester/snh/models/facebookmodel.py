@@ -356,24 +356,27 @@ class FBPost(models.Model):
 
         if "to" in facebook_model:
             prop_val = facebook_model["to"]
+           
             for fbuser in prop_val["data"]:
-                
-                user = None
-                try:
-                    user = FBUser.objects.filter(fid=fbuser["id"])[0]
-                except:
-                    pass
+                if fbuser:
+                    touser = None
+                    try:
+                        touser = FBUser.objects.filter(fid=fbuser["id"])[0]
+                    except:
+                        pass
 
-                if user is None:
-                    user = FBUser(fid=fbuser["id"])
-                    user.update_from_facebook(fbuser)
-                    user.save()
-                    self.to.add(user)
-                    model_changed = True
-                else:
-                    if user not in self.to.all():
-                        self.to.add(user)
-                        model_changed = True     
+                    if touser is None:
+                        touser = FBUser(fid=fbuser["id"])
+                        touser.update_from_facebook(fbuser)
+                        touser.save()
+                        self.to.add(touser)
+                        model_changed = True
+                    else:
+                        if touser not in self.to.all():
+                            self.to.add(touser)
+                            model_changed = True     
+                #else:
+                #    print "user is none!!!",  prop_val, facebook_model
 
         if model_changed:
             self.model_update_date = datetime.utcnow()
