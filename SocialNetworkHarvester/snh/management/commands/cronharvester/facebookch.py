@@ -251,6 +251,7 @@ def update_user_statuses(harvester, statuses, snhuser):
         try:
             try:
                 fb_status = FBPost.objects.get(fid__exact=status["id"])
+                logger.error(u"STATUS EXISTS!!!! %s" % status["id"])
             except ObjectDoesNotExist:
                 fb_status = FBPost(user=snhuser)
                 fb_status.save()
@@ -409,6 +410,7 @@ def update_user_comments(harvester, fbcomments, status):
         try:
             try:
                 snh_comment = FBComment.objects.get(fid__exact=fbcomment["id"])
+                logger.error(u"COMMENT EXISTS!!!! %s" % fbcomment["id"])
             except ObjectDoesNotExist:
                 snh_comment = FBComment()
                 snh_comment.save()

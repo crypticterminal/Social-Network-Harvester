@@ -381,10 +381,10 @@ class FBPost(models.Model):
         if model_changed:
             self.model_update_date = datetime.utcnow()
             self.error_on_update = False
-            logger.error(u"-------------------FBPost exist and changed! %s" % (self.fid))
+            #logger.debug(u"FBPost exist and changed! %s" % (self.fid))
             self.save()
-        else:
-            logger.error(u">>>>>>>>>>>>>>>>>>>FBPost exist and unchanged! %s" % (self.fid))
+        #else:
+        #    logger.debug(u">>>>>>>>>>>>>>>>>>>FBPost exist and unchanged! %s" % (self.fid))
    
         return model_changed
         
@@ -468,10 +468,11 @@ class FBComment(models.Model):
         if model_changed:
             self.model_update_date = datetime.utcnow()
             self.error_on_update = False
-            logger.error(u"-------------------FBPost exist and changed! %s" % (self.fid))
+            #logger.debug(u"FBComment exist and changed! %s" % (self.fid))
             self.save()
-        else:
-            logger.error(u">>>>>>>>>>>>>>>>>>>FBPost exist and unchanged! %s" % (self.fid))
-
+        #else:
+        #    logger.debug(u">>>>>>>>>>>>>>>>>>FBComment exist and unchanged! %s" % (self.fid))
+            
+   
         return model_changed
 
