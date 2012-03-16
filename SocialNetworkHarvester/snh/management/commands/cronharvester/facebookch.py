@@ -33,38 +33,38 @@ def sleeper(retry_count):
     wait_delay = 60 if wait_delay > 60 else wait_delay
     time.sleep(wait_delay)
 
-#def manage_exception(retry_count, harvester, related_object):
-#    msg = u"Exception for the harvester %s for the object %s. Retry:%d" % (harvester, 
-#                                                                                unicode(related_object), 
-#                                                                                retry_count)
-#    logger.exception(msg)
-#    retry_count += 1
-#    return (retry_count, retry_count > harvester.max_retry_on_fail)
+def manage_exception(retry_count, harvester, related_object):
+    msg = u"Exception for the harvester %s for the object %s. Retry:%d" % (harvester, 
+                                                                                unicode(related_object), 
+                                                                                retry_count)
+    logger.exception(msg)
+    retry_count += 1
+    return (retry_count, retry_count > harvester.max_retry_on_fail)
 
-#def manage_facebook_exception(retry_count, harvester, related_object, fex):
-#    retry_count += 1
-#
-#    if unicode(fex).startswith(u"(#803)"):
-#        user.error_triggered = True
-#        user.save()
-#        msg = u"Exception for the harvester %s for the object %s. Retry:%d. The user does not exists!" % (harvester, 
-#                                                                                                                unicode(related_object), 
-#                                                                                                                retry_count)
-#        logger.exception(msg)
-#        need_a_break = True
-#    elif unicode(fex).startswith("Unknown path components:"):
-#        msg = u"Exception for the harvester %s for the object %s. Retry:%d. Unknown path components." % (harvester, 
-#                                                                                                                unicode(related_object), 
-#                                                                                                                retry_count)
-#        logger.exception(msg)
-#        need_a_break = True                    
-#    else:
-#        msg = u"Exception for the harvester %s for the object %s. Retry:%d. Unknown facepy exception!" % (harvester, 
-#                                                                                                                unicode(related_object), 
-#                                                                                                                retry_count)
-#        logger.exception(msg)
-#
-#    return (retry_count, retry_count > harvester.max_retry_on_fail)
+def manage_facebook_exception(retry_count, harvester, related_object, fex):
+    retry_count += 1
+
+    if unicode(fex).startswith(u"(#803)"):
+        user.error_triggered = True
+        user.save()
+        msg = u"Exception for the harvester %s for the object %s. Retry:%d. The user does not exists!" % (harvester, 
+                                                                                                                unicode(related_object), 
+                                                                                                                retry_count)
+        logger.exception(msg)
+        need_a_break = True
+    elif unicode(fex).startswith("Unknown path components:"):
+        msg = u"Exception for the harvester %s for the object %s. Retry:%d. Unknown path components." % (harvester, 
+                                                                                                                unicode(related_object), 
+                                                                                                                retry_count)
+        logger.exception(msg)
+        need_a_break = True                    
+    else:
+        msg = u"Exception for the harvester %s for the object %s. Retry:%d. Unknown facepy exception!" % (harvester, 
+                                                                                                                unicode(related_object), 
+                                                                                                                retry_count)
+        logger.exception(msg)
+
+    return (retry_count, retry_count > harvester.max_retry_on_fail)
 
 def get_timedelta(fb_time):
     ts = date_val = datetime.strptime(fb_time,'%Y-%m-%dT%H:%M:%S+0000')
