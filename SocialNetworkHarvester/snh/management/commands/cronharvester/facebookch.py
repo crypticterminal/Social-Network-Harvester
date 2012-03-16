@@ -94,158 +94,6 @@ def get_timedelta(fb_time):
     ts = datetime.strptime(fb_time,'%Y-%m-%dT%H:%M:%S+0000')
     return (datetime.utcnow() - ts).days
 
-#def get_facebook_list(harvester, url, related_object, page_func, history_limit=True):
-#    complete_list = []
-#    page = 0
-#    retry = 0
-#    until = ["until",None]
-#    limit = 6000
-#    while True:
-#        try:
-#            usage = resource.getrusage(resource.RUSAGE_SELF)
-#            logger.info(u"%s %s page:%d retry:%d Mem:%s KB" % (harvester, related_object, page, retry, unicode(getattr(usage, "ru_maxrss")/(1024.0))))
-#            latest_page = harvester.api_call("get",{"path":url,until[0]:until[1],"limit":limit})
-#            delta = 0
-#            last_post_time = ""
-#            max_age_reached = False#
-#
-#            if "data" in latest_page and latest_page["data"]:
-#                logger.debug(u"%s %s page:%d retry:%d adding: %d objects" % (harvester, 
-#                                                                                        related_object, 
-#                                                                                        page, 
-#                                                                                        retry, 
-#                                                                                        len(latest_page["data"])))
-#                for data in latest_page["data"]:
-#                    last_post_time = data["created_time"]
-#                    delta = get_timedelta(last_post_time)
-#                    if delta >= harvester.dont_harvest_further_than:
-#                        max_age_reached = True
-#                    else:
-#                        complete_list.append(data)
-#                
-#            else:
-#                logger.debug(u"%s %s page:%d retry:%d No more data?" % (harvester, 
-#                                                                                    related_object, 
-#                                                                                    page, 
-#                                                                                    retry, 
-#                                                                                    ))
-#                break#
-#
-#            if max_age_reached:
-#                logger.debug(u"%s %s page:%d retry:%d Max age reached. now:%s then:%s delta:%s" % (harvester, 
-#                                                                                    related_object, 
-#                                                                                    page, 
-#                                                                                    retry, 
-#                                                                                    datetime.utcnow(),
-#                                                                                    last_post_time,
-#                                                                                    delta,
-#                                                                                    ))
-#                break#
-#
-#            until, new_page = page_func(latest_page)
-#            if not new_page:
-#                logger.debug(u"%s %s page:%d retry:%d No new page?" % (harvester, 
-#                                                                                    related_object, 
-#                                                                                    page, 
-#                                                                                    retry, 
-#                                                                                    ))
-#                break#
-#
-#            retry = 0
-#            page += 1
-#            latest_page = None##
-#
-#        except FacepyError, fex:
-#            (retry, need_a_break) = manage_facebook_exception(retry, harvester, related_object, fex)
-#            if need_a_break:
-#                logger.debug(u"%s %s page:%d retry:%d FacepyError:breaking, too many retry!" % (harvester, 
-#                                                                                                            related_object, 
-#                                                                                                            page, 
-#                                                                                                            retry, 
-#                                                                                                ))
-#                break
-#            else:
-#                sleeper(retry)
-#        except:
-#            (retry, need_a_break) = manage_exception(retry, harvester, related_object)
-#            if need_a_break:
-#                logger.debug("u%s %s page:%d retry:%d Error:breaking, too many retry!" % (harvester, 
-#                                                                                                    related_object, 
-#                                                                                                    page, 
-#                                                                                                    retry, 
-#                                                                                            ))
-#                break
-#            else:
-#                sleeper(retry)
-#    return complete_list
-
-#def get_latest_statuses(harvester, user):#
-#
-#    urlid = user.fid if user.fid else user.username
-#    url = u"%s/feed" % urlid
-#    usage = resource.getrusage(resource.RUSAGE_SELF)
-#    logger.debug(u"%s %s %s Will get statuses. Mem:%sKB" % (harvester, user, url,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
-#    latest_statuses = get_facebook_list(harvester, url, user, get_status_paging)
-#    return latest_statuses
-
-#def get_user(harvester, user):#
-#
-#    urlid = user.fid if user.fid else user.username
-#    url = u"%s" % urlid
-#    logger.debug(u"%s %s %s Will get user" % (harvester, user, url))
-#    fbuser = None
-#    retry = 0#
-#
-#    while True:
-#        try:
-#            fbuser = harvester.api_call("get",{"path":url})
-#            break
-#        except FacepyError, fex:
-#            (retry, need_a_break) = manage_facebook_exception(retry, harvester, user, fex)
-#            if need_a_break:
-#                logger.debug(u"%s %s retry:%d FacepyError:breaking, too many retry!" % (harvester, 
-#                                                                                        user, 
-#                                                                                        retry, 
-#                                                                                        ))
-#                break
-#            else:
-#                sleeper(retry)   
-#        except:
-#            (retry, need_a_break) = manage_exception(retry, harvester, user)
-#            if need_a_break:
-#                logger.debug("u%s %s retry:%d Error:breaking, too many retry!" % (harvester, 
-#                                                                                    user, 
-#                                                                                    retry, 
-#                                                                                    ))
-#                break
-#            else:
-#                sleeper(retry)
-#    return fbuser
-
-#def get_comments(harvester, status, user, count, total):#
-#
-#    latest_comments = []
-#    url = u"%s/comments" % status.fid
-#    usage = resource.getrusage(resource.RUSAGE_SELF)
-#    logger.debug(u"%s %s %s Will get comment. Mem:%s KB" % (harvester, user, url,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
-#    latest_comments = get_facebook_list(harvester, url, status, get_comment_paging)
-#    return latest_comments
-
-#def update_comment(harvester, status, user, count, total):
-#    
-#    comments = get_comments(harvester, status, user, count, total)
-#    logger.debug(u"%s-%s:%s %d/%d.Adding (%d) comments to db." % (harvester, unicode(user), status.fid if status.fid else "0", count, total, len(comments)))
-#    for comment in comments:
-#        try:
-#            try:
-#                fb_comment = FBComment.objects.get(fid__exact=comment["id"])
-#            except ObjectDoesNotExist:
-#                fb_comment = FBComment()
-#            fb_comment.update_from_facebook(comment,status)                
-#        except:
-#            msg = u"%s-%s:%s %d/%d.Cannot update comment %s for %s:(%s)" % (harvester, unicode(user), status.fid if status.fid else "0", count, total, unicode(status), unicode(fb_comment), fb_comment.fid if fb_comment.fid else "0")
-#            logger.exception(msg) 
-
 def update_user_statuses(harvester, statuses, snhuser):
     for status in statuses:
         try:
@@ -273,7 +121,6 @@ def build_json_user_batch(user_batch):
             logger.info(u"Skipping: %s(%s) because user has triggered the error flag." % (unicode(snhuser), snhuser.fid if snhuser.fid else "0"))
     json_batch = json.dumps(py_batch)
     return json_batch, batch_man
-
 
 def manage_error_from_batch(harvester, bman, fbobj):
 
@@ -307,15 +154,19 @@ def generic_batch_processor(harvester, bman_list, update_func):
 
     while bman_list:
         usage = resource.getrusage(resource.RUSAGE_SELF)
-        logger.info(u"New batch: %s Mem:%s KB" % (harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
+        logger.info(u"New batch. Size:%d for %s Mem:%s KB" % (len(bman_list), harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
         split_bman = [bman_list[i:i+step_size] for i  in range(0, len(bman_list), step_size)]
+
+        bman_count = 0
+        bman_total = len(split_bman)
+
         for bman in split_bman:
             retry = 0
+            bman_count += 1
             while True:
                 try:
                     usage = resource.getrusage(resource.RUSAGE_SELF)
-                    logger.debug(u"New bman: len:%s retry:%d Mem:%s KB" % (len(bman), retry, getattr(usage, "ru_maxrss")/(1024.0)))
-                    next_bman_list = []
+                    logger.debug(u"New bman(%d/%d) len:%s InQueue:%d retry:%d Mem:%s KB" % (bman_count, bman_total, len(bman), len(next_bman_list), retry, getattr(usage, "ru_maxrss")/(1024.0)))
                     obj_pos = 0
                     pyb = [bman[j]["request"] for j in range(0, len(bman))]
                     batch_result = harvester.api_call("batch",{"batch":json.dumps(pyb)})
@@ -351,6 +202,7 @@ def generic_batch_processor(harvester, bman_list, update_func):
                     else:
                         sleeper(retry)
         bman_list = next_bman_list
+        next_bman_list = []
 
 def update_user_from_batch(harvester, snhuser, fbuser):
     snhuser.update_from_facebook(fbuser)
@@ -369,6 +221,8 @@ def update_user_batch(harvester):
         else:
             logger.info(u"Skipping user update: %s(%s) because user has triggered the error flag." % (unicode(snhuser), snhuser.fid if snhuser.fid else "0"))
 
+    usage = resource.getrusage(resource.RUSAGE_SELF)
+    logger.info(u"Will harvest users for %s Mem:%s KB" % (harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
     generic_batch_processor(harvester, batch_man, update_user_from_batch)
 
 def update_user_status_from_batch(harvester, snhuser, fbstatus_page):
@@ -403,6 +257,8 @@ def update_user_statuses_batch(harvester):
         else:
             logger.info(u"Skipping status update: %s(%s) because user has triggered the error flag." % (unicode(snhuser), snhuser.fid if snhuser.fid else "0"))
 
+    usage = resource.getrusage(resource.RUSAGE_SELF)
+    logger.info(u"Will harvest statuses for %s Mem:%s KB" % (harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
     generic_batch_processor(harvester, batch_man, update_user_status_from_batch)
 
 def update_user_comments(harvester, fbcomments, status):
@@ -454,6 +310,8 @@ def update_user_comments_batch(harvester):
         else:
             logger.info(u"Skipping comments update: %s(%s) because user has triggered the error flag." % (unicode(snhuser), snhuser.fid if snhuser.fid else "0"))
 
+    usage = resource.getrusage(resource.RUSAGE_SELF)
+    logger.info(u"Will harvest comments for %s Mem:%s KB" % (harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
     generic_batch_processor(harvester, batch_man, update_user_comments_from_batch)
 
 
