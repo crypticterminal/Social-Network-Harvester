@@ -6,7 +6,7 @@ import logging
 PROJECT_PATH = os.path.abspath(os.path.split(__file__)[0])
 LOG_LEVEL = logging.DEBUG
 
-DEBUG = True
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -29,9 +29,6 @@ DATABASES = {
 FACEBOOK_APPLICATION_ID = 'xxx'
 FACEBOOK_APPLICATION_SECRET_KEY = 'xxx'
 FACEBOOK_APPLICATION_NAMESPACE = 'xxx'
-FACEBOOK_APPLICATION_ID = '185608784880417'
-FACEBOOK_APPLICATION_SECRET_KEY = 'b24c662159aa015776945e0f597c7561'
-FACEBOOK_APPLICATION_NAMESPACE = 'archivistique'
 FACEBOOK_APPLICATION_INITIAL_PERMISSIONS = [
                                             'user_about_me','friends_about_me',
                                             'user_activities','friends_activities',
