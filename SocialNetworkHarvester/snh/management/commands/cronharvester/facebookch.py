@@ -28,9 +28,9 @@ def run_facebook_harvester():
             run_harvester_v3(harvester)
 
 def sleeper(retry_count):
-    retry_delay = 10
+    retry_delay = 1
     wait_delay = retry_count*retry_delay
-    wait_delay = 60 if wait_delay > 60 else wait_delay
+    wait_delay = 10 if wait_delay > 10 else wait_delay
     time.sleep(wait_delay)
 
 def manage_exception(retry_count, harvester, related_object):
@@ -78,7 +78,6 @@ def get_status_paging(page):
         url = urlparse.parse_qs(page[u"paging"][u"next"])
         until = url[u"until"][0]
         new_page = True
-        url = None
     return ["until",until], new_page
 
 def get_comment_paging(page):
@@ -94,12 +93,13 @@ def get_timedelta(fb_time):
     ts = datetime.strptime(fb_time,'%Y-%m-%dT%H:%M:%S+0000')
     return (datetime.utcnow() - ts).days
 
-def update_user_statuses(harvester, statuses, snhuser):
-    for status in statuses:
+def update_user_statuses(harvester, statuses):
+    for res in statuses:
+        status = eval(res.result)
+        snhuser = FBUser.objects.get(fid__exact=res.parent)
         try:
             try:
                 fb_status = FBPost.objects.get(fid__exact=status["id"])
-                logger.error(u"STATUS EXISTS!!!! %s" % status["id"])
             except ObjectDoesNotExist:
                 fb_status = FBPost(user=snhuser)
                 fb_status.save()
@@ -125,19 +125,25 @@ def build_json_user_batch(user_batch):
 def manage_error_from_batch(harvester, bman, fbobj):
 
     need_a_break = False
-    error = unicode(fbobj).split(":")[1].strip()
-    snh_obj = bman["snh_obj"]
+    try:
+        error = unicode(fbobj).split(":")[1].strip()
+    except:
+        logger.exception("Bug error: %s, fbobj: %s", error, fbobj)
+        error = None
 
-    if unicode(error).startswith(u"(#803)"):
-        snh_obj.error_triggered = True
-        snh_obj.save()
-        need_a_break = True
-        msg = u"The object does not exists. snh_user:%s" % (unicode(snh_obj))
-        logger.error(msg)
-    elif unicode(error).startswith("Unknown path components:"):
-        msg = u"Unknown path components for %s. Error:%s" %(unicode(snh_obj), fanobj)
-        logger.error(msg)
-        need_a_break = True                    
+    if error:
+        snh_obj = bman["snh_obj"]
+
+        if unicode(error).startswith(u"(#803)"):
+            snh_obj.error_triggered = True
+            snh_obj.save()
+            need_a_break = True
+            msg = u"The object does not exists. snh_user:%s" % (unicode(snh_obj))
+            logger.error(msg)
+        elif unicode(error).startswith("Unknown path components:"):
+            msg = u"Unknown path components for %s. Error:%s" %(unicode(snh_obj), fanobj)
+            logger.error(msg)
+            need_a_break = True                    
 
     bman["retry"] += 1
     if bman["retry"] > harvester.max_retry_on_fail:
@@ -147,14 +153,16 @@ def manage_error_from_batch(harvester, bman, fbobj):
     
     return need_a_break
 
-def generic_batch_processor(harvester, bman_list, update_func):
+def generic_batch_processor(harvester, bman_list):
 
+    total_retry = 0
     step_size = 50
     next_bman_list = []
+    global_retry = 0
 
     while bman_list:
         usage = resource.getrusage(resource.RUSAGE_SELF)
-        logger.info(u"New batch. Size:%d for %s Mem:%s KB" % (len(bman_list), harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
+        logger.info(u"New batch. Size:%d for %s Mem:%s MB" % (len(bman_list), harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
         split_bman = [bman_list[i:i+step_size] for i  in range(0, len(bman_list), step_size)]
 
         bman_count = 0
@@ -166,16 +174,16 @@ def generic_batch_processor(harvester, bman_list, update_func):
             while True:
                 try:
                     usage = resource.getrusage(resource.RUSAGE_SELF)
-                    logger.debug(u"New bman(%d/%d) len:%s InQueue:%d retry:%d Mem:%s KB" % (bman_count, bman_total, len(bman), len(next_bman_list), retry, getattr(usage, "ru_maxrss")/(1024.0)))
+                    logger.debug(u"New bman(%d/%d) len:%s InQueue:%d retry:%d total_retry:%d Mem:%s KB" % (bman_count, bman_total, len(bman), len(next_bman_list), retry, total_retry, getattr(usage, "ru_maxrss")/(1024.0)))
                     obj_pos = 0
                     pyb = [bman[j]["request"] for j in range(0, len(bman))]
                     batch_result = harvester.api_call("batch",{"batch":json.dumps(pyb)})
                     for fbobj in batch_result:
                         bman_obj = bman[obj_pos]
-                        if type(fbobj) == type(dict()):
-                            next = update_func(harvester, bman_obj["snh_obj"], fbobj)
+                        if type(fbobj) == dict:
+                            next = bman_obj["callback"](harvester, bman_obj["snh_obj"], fbobj)
                             if next:
-                                next_bman_list.append(next)
+                                next_bman_list += next
                         else:
                             if not manage_error_from_batch(harvester, bman_obj, fbobj):
                                 next_bman_list.append(bman_obj)
@@ -183,6 +191,7 @@ def generic_batch_processor(harvester, bman_list, update_func):
                     break
                 except FacepyError, fex:
                     (retry, need_a_break) = manage_facebook_exception(retry, harvester, bman, fex)
+                    total_retry += 1
                     if need_a_break:
                         logger.warning(u"%s %s retry:%d FacepyError:breaking, too many retry!" % (harvester, 
                                                                                                 bman, 
@@ -193,6 +202,7 @@ def generic_batch_processor(harvester, bman_list, update_func):
                         sleeper(retry)
                 except:
                     (retry, need_a_break) = manage_exception(retry, harvester, bman)
+                    total_retry += 1
                     if need_a_break:
                         logger.warning("u%s %s retry:%d Error:breaking, too many retry!" % (harvester, 
                                                                                             bman, 
@@ -202,6 +212,8 @@ def generic_batch_processor(harvester, bman_list, update_func):
                     else:
                         sleeper(retry)
         bman_list = next_bman_list
+        usage = resource.getrusage(resource.RUSAGE_SELF)
+        logger.debug(u"END bman(%d/%d) len:%s InQueue:%d Mem:%s MB" % (bman_count, bman_total, len(bman), len(next_bman_list), getattr(usage, "ru_maxrss")/(1024.0)))
         next_bman_list = []
 
 def update_user_from_batch(harvester, snhuser, fbuser):
@@ -216,31 +228,41 @@ def update_user_batch(harvester):
     for snhuser in all_users:
         if not snhuser.error_triggered:
             uid = snhuser.fid if snhuser.fid else snhuser.username
-            d = {"method": "GET", "relative_url": u"%s" % unicode(uid)}
-            batch_man.append({"snh_obj":snhuser,"retry":0,"request":d})
+            d = {"method": "GET", "relative_url": uid}
+            batch_man.append({"snh_obj":snhuser,"retry":0,"request":d, "callback":update_user_from_batch})
         else:
             logger.info(u"Skipping user update: %s(%s) because user has triggered the error flag." % (unicode(snhuser), snhuser.fid if snhuser.fid else "0"))
 
     usage = resource.getrusage(resource.RUSAGE_SELF)
-    logger.info(u"Will harvest users for %s Mem:%s KB" % (harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
-    generic_batch_processor(harvester, batch_man, update_user_from_batch)
+    logger.info(u"Will harvest users for %s Mem:%s MB" % (harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
+    generic_batch_processor(harvester, batch_man)
 
 def update_user_status_from_batch(harvester, snhuser, fbstatus_page):
-    next_bman = None
+    next_bman = []
     status_count = len(fbstatus_page["data"])
 
     if status_count:
         usage = resource.getrusage(resource.RUSAGE_SELF)
-        logger.debug(u"Updating %d statuses: %s Mem:%s KB" % (status_count, harvester, unicode(getattr(usage, "ru_maxrss")/(1024.0))))
+        logger.debug(u"Updating %d statuses: %s Mem:%s MB" % (status_count, harvester, unicode(getattr(usage, "ru_maxrss")/(1024.0))))
 
-        update_user_statuses(harvester, fbstatus_page["data"], snhuser)
+        #update_user_statuses(harvester, fbstatus_page["data"], snhuser)        
+        for status in fbstatus_page["data"]:
+            res = FBResult()
+            res.harvester = harvester
+            res.result = status
+            res.ftype = "FBPost"
+            res.parent = snhuser.fid
+            res.save()
+            d = {"method": "GET", "relative_url": u"%s/comments?limit=300" % unicode(status["id"])}
+            next_bman.append({"snh_obj":str(status["id"]),"retry":0,"request":d, "callback":update_user_comments_from_batch})
+            
         paging, new_page = get_status_paging(fbstatus_page)
 
         delta = get_timedelta(fbstatus_page["data"][status_count-1]["created_time"])
 
         if new_page and delta < harvester.dont_harvest_further_than:
-            d = {"method": "GET", "relative_url": u"%s/feed?limit=6000&%s=%s" % (unicode(snhuser.fid), paging[0], paging[1])}
-            next_bman = {"snh_obj":snhuser,"retry":0,"request":d}
+            d = {"method": "GET", "relative_url": u"%s/feed?limit=300&%s=%s" % (unicode(snhuser.fid), paging[0], paging[1])}
+            next_bman.append({"snh_obj":snhuser,"retry":0,"request":d,"callback":update_user_status_from_batch})
 
     return next_bman
 
@@ -252,79 +274,75 @@ def update_user_statuses_batch(harvester):
     for snhuser in all_users:
         if not snhuser.error_triggered:
             uid = snhuser.fid if snhuser.fid else snhuser.username
-            d = {"method": "GET", "relative_url": u"%s/feed?limit=6000" % unicode(uid)}
-            batch_man.append({"snh_obj":snhuser,"retry":0,"request":d})
+            d = {"method": "GET", "relative_url": u"%s/feed?limit=300" % unicode(uid)}
+            batch_man.append({"snh_obj":snhuser,"retry":0,"request":d,"callback":update_user_status_from_batch})
         else:
             logger.info(u"Skipping status update: %s(%s) because user has triggered the error flag." % (unicode(snhuser), snhuser.fid if snhuser.fid else "0"))
 
     usage = resource.getrusage(resource.RUSAGE_SELF)
-    logger.info(u"Will harvest statuses for %s Mem:%s KB" % (harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
-    generic_batch_processor(harvester, batch_man, update_user_status_from_batch)
+    logger.info(u"Will harvest statuses for %s Mem:%s MB" % (harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
+    generic_batch_processor(harvester, batch_man)
 
-def update_user_comments(harvester, fbcomments, status):
-    for fbcomment in fbcomments:
+def update_user_comments(harvester, fbcomments):
+    for fbresult in fbcomments:
+        fbcomment = eval(fbresult.result)
+        status = FBPost.objects.get(fid__exact=fbresult.parent)
         try:
             try:
                 snh_comment = FBComment.objects.get(fid__exact=fbcomment["id"])
-                logger.error(u"COMMENT EXISTS!!!! %s" % fbcomment["id"])
             except ObjectDoesNotExist:
                 snh_comment = FBComment()
                 snh_comment.save()
             snh_comment.update_from_facebook(fbcomment, status)                
         except:
-            msg = u"Cannot update comment %s for status %s" % (fbcomment, status.fid if status.fid else "0")
+            msg = u"Cannot update comment %s" % (fbcomment)
             logger.exception(msg) 
 
-def update_user_comments_from_batch(harvester, status, fbcomments_page):
-    next_bman = None
+def update_user_comments_from_batch(harvester, statusid, fbcomments_page):
+    next_bman = []
     comment_count = len(fbcomments_page["data"])
 
     if comment_count:
         usage = resource.getrusage(resource.RUSAGE_SELF)
-        logger.debug(u"Updating %d comments: %s Mem:%s KB" % (comment_count, harvester, unicode(getattr(usage, "ru_maxrss")/(1024.0))))
+        logger.debug(u"Updating %d comments: %s Mem:%s MB" % (comment_count, harvester, unicode(getattr(usage, "ru_maxrss")/(1024.0))))
 
-        update_user_comments(harvester, fbcomments_page["data"], status)
+        #update_user_comments(harvester, fbcomments_page["data"], status)
+        for comment in fbcomments_page["data"]:
+            res = FBResult()
+            res.harvester = harvester
+            res.result = comment
+            res.ftype = "FBComment"
+            res.parent = statusid
+            res.save()
+
         paging, new_page = get_comment_paging(fbcomments_page)
 
         delta = get_timedelta(fbcomments_page["data"][comment_count-1]["created_time"])
 
         if new_page and delta < harvester.dont_harvest_further_than:
-            d = {"method": "GET", "relative_url": u"%s/comments?limit=6000&%s=%s" % (unicode(status.fid), paging[0], paging[1])}
-            next_bman = {"snh_obj":status,"retry":0,"request":d}
+            d = {"method": "GET", "relative_url": u"%s/comments?limit=300&%s=%s" % (statusid, paging[0], paging[1])}
+            next_bman.append({"snh_obj":statusid,"retry":0,"request":d,"callback":update_user_comments_from_batch})
         
     return next_bman
-
-def update_user_comments_batch(harvester):
-
-    all_users = harvester.fbusers_to_harvest.all()
-    batch_man = []
-
-    for snhuser in all_users:
-        if not snhuser.error_triggered:
-            not_further_than = datetime.utcnow() - timedelta(days=harvester.dont_harvest_further_than)
-            all_user_statuses = FBPost.objects.filter(created_time__lt=not_further_than)
-            for status in all_user_statuses:
-                d = {"method": "GET", "relative_url": u"%s/comments?limit=6000" % unicode(status.fid)}
-                batch_man.append({"snh_obj":status,"retry":0,"request":d})
-                
-        else:
-            logger.info(u"Skipping comments update: %s(%s) because user has triggered the error flag." % (unicode(snhuser), snhuser.fid if snhuser.fid else "0"))
-
-    usage = resource.getrusage(resource.RUSAGE_SELF)
-    logger.info(u"Will harvest comments for %s Mem:%s KB" % (harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
-    generic_batch_processor(harvester, batch_man, update_user_comments_from_batch)
-
 
 def run_harvester_v3(harvester):
     harvester.start_new_harvest()
     try:
         update_user_batch(harvester)
         update_user_statuses_batch(harvester)
-        update_user_comments_batch(harvester)
+        #update_user_comments_batch(harvester)
+        results = FBResult.objects.filter(ftype="FBPost")
+        update_user_statuses(harvester, results)
+
+        results = FBResult.objects.filter(ftype="FBComment")
+        update_user_comments(harvester, results)
+
+
+
     except:
         logger.exception(u"EXCEPTION: %s" % harvester)
     finally:
         usage = resource.getrusage(resource.RUSAGE_SELF)
         harvester.end_current_harvest()
-        logger.info(u"End: %s Stats:%s Mem:%s KB" % (harvester,unicode(harvester.get_stats()),unicode(getattr(usage, "ru_maxrss")/(1024.0))))
+        logger.info(u"End: %s Stats:%s Mem:%s MB" % (harvester,unicode(harvester.get_stats()),unicode(getattr(usage, "ru_maxrss")/(1024.0))))
 

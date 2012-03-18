@@ -15,7 +15,6 @@ class FacebookHarvester(AbstractHaverster):
         app_label = "snh"
 
     client = None
-
     fbusers_to_harvest = models.ManyToManyField('FBUser', related_name='fbusers_to_harvest')
 
     #a bug or my limited knowledge of the framework.. cannot import fandjango.models here :(
@@ -49,6 +48,18 @@ class FacebookHarvester(AbstractHaverster):
     def get_stats(self):
         parent_stats = super(FacebookHarvester, self).get_stats()
         return parent_stats
+
+class FBResult(models.Model):
+    class Meta:
+        app_label = "snh"
+
+    def __unicode__(self):
+        return unicode(self.username)   
+
+    harvester = models.ForeignKey("FacebookHarvester")
+    result = models.TextField(null=True)
+    ftype = models.TextField(null=True)
+    parent = models.TextField(null=True)
 
 class FBUser(models.Model):
 
