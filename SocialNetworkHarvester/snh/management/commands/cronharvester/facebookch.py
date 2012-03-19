@@ -2,6 +2,8 @@
 
 import sys
 import time
+import Queue
+import threading
 import urlparse
 import resource
 import json
@@ -125,11 +127,11 @@ def build_json_user_batch(user_batch):
 def manage_error_from_batch(harvester, bman, fbobj):
 
     need_a_break = False
+    error = None
     try:
         error = unicode(fbobj).split(":")[1].strip()
     except:
-        logger.exception("Bug error: %s, fbobj: %s", error, fbobj)
-        error = None
+        logger.exception("Bug error: fbobj: %s", fbobj)
 
     if error:
         snh_obj = bman["snh_obj"]
@@ -174,7 +176,7 @@ def generic_batch_processor(harvester, bman_list):
             while True:
                 try:
                     usage = resource.getrusage(resource.RUSAGE_SELF)
-                    logger.debug(u"New bman(%d/%d) len:%s InQueue:%d retry:%d total_retry:%d Mem:%s KB" % (bman_count, bman_total, len(bman), len(next_bman_list), retry, total_retry, getattr(usage, "ru_maxrss")/(1024.0)))
+                    logger.info(u"New bman(%d/%d) len:%s InQueue:%d retry:%d total_retry:%d Mem:%s KB" % (bman_count, bman_total, len(bman), len(next_bman_list), retry, total_retry, getattr(usage, "ru_maxrss")/(1024.0)))
                     obj_pos = 0
                     pyb = [bman[j]["request"] for j in range(0, len(bman))]
                     batch_result = harvester.api_call("batch",{"batch":json.dumps(pyb)})
@@ -251,6 +253,7 @@ def update_user_status_from_batch(harvester, snhuser, fbstatus_page):
             res.harvester = harvester
             res.result = status
             res.ftype = "FBPost"
+            res.fid = status["id"]
             res.parent = snhuser.fid
             res.save()
             d = {"method": "GET", "relative_url": u"%s/comments?limit=300" % unicode(status["id"])}
@@ -312,6 +315,7 @@ def update_user_comments_from_batch(harvester, statusid, fbcomments_page):
             res.harvester = harvester
             res.result = comment
             res.ftype = "FBComment"
+            res.fid = comment["id"]
             res.parent = statusid
             res.save()
 
@@ -325,17 +329,134 @@ def update_user_comments_from_batch(harvester, statusid, fbcomments_page):
         
     return next_bman
 
+queue = Queue.Queue()
+
+class ThreadStatus(threading.Thread):
+    def __init__(self, queue):
+        threading.Thread.__init__(self)
+        self.queue = queue
+
+    def run(self):
+        logger.info(u"Starting ThreadStatus")
+
+        while True: 
+            try:
+                fid = self.queue.get()
+
+                user = FBUser.objects.get(fid__exact=fid)
+                results = FBResult.objects.filter(fid__startswith=fid).filter(ftype__exact="FBPost")
+                for elem in results:
+                    self.update_user_status(eval(elem.result),user)
+                    elem.delete()
+
+                #signals to queue job is done
+            except:
+                msg = u"Error in ThreadStatus"
+                logger.exception(msg)                 
+            finally:
+                self.queue.task_done()
+        logger.info(u"Ending ThreadStatus")
+
+
+    def update_user_status(self, status, user):
+        try:
+            try:
+                
+                fb_status = FBPost.objects.get(fid__exact=status["id"])
+            except ObjectDoesNotExist:
+                fb_status = FBPost(user=user)
+                fb_status.save()
+            fb_status.update_from_facebook(status,user)
+        except:
+            msg = u"Cannot update status %s for %s" % (unicode(status), user.fid if user.fid else "0")
+            logger.exception(msg) 
+
+class ThreadComment(threading.Thread):
+    def __init__(self, queue):
+        threading.Thread.__init__(self)
+        self.queue = queue
+
+    def run(self):
+        logger.info(u"Starting ThreadComment")
+        while True: 
+            try:
+                fid = self.queue.get()
+
+                post = FBPost.objects.get(fid__exact=fid)
+                results = FBResult.objects.filter(fid__startswith=fid).filter(ftype__exact="FBComment")
+                for elem in results:
+                    self.update_comment_status(eval(elem.result),post)
+                    elem.delete()
+
+                #signals to queue job is done
+            except:
+                msg = u"Error in ThreadComment"
+                logger.exception(msg)                 
+            finally:
+                self.queue.task_done()
+        logger.info(u"Ending ThreadComment")
+
+    def update_comment_status(self, comment, post):
+        try:
+            try:
+                
+                fbcomment = FBComment.objects.get(fid__exact=comment["id"])
+            except ObjectDoesNotExist:
+                fbcomment = FBComment(post=post)
+                fbcomment.save()
+            fbcomment.update_from_facebook(comment,post)
+        except:
+            msg = u"Cannot update comment %s for %s" % (unicode(comment), post.fid if post.fid else "0")
+            logger.exception(msg) 
+
+
+def compute_new_post(harvester):
+    global queue
+    queue = Queue.Queue()
+    all_users = harvester.fbusers_to_harvest.values("fid")
+    for user in all_users:
+        queue.put(user["fid"])
+
+    for i in range(4):
+        t = ThreadStatus(queue)
+        t.setDaemon(True)
+        t.start()
+      
+    queue.join()
+
+
+def compute_new_comment(harvester):
+    global queue
+    queue = Queue.Queue()
+
+    all_posts = FBPost.objects.values("fid")
+    for post in all_posts:
+        queue.put(post["fid"])
+
+    for i in range(4):
+        t = ThreadComment(queue)
+        t.setDaemon(True)
+        t.start()
+      
+    queue.join()
+
 def run_harvester_v3(harvester):
     harvester.start_new_harvest()
     try:
         update_user_batch(harvester)
         update_user_statuses_batch(harvester)
-        #update_user_comments_batch(harvester)
-        results = FBResult.objects.filter(ftype="FBPost")
-        update_user_statuses(harvester, results)
 
-        results = FBResult.objects.filter(ftype="FBComment")
-        update_user_comments(harvester, results)
+        start = time.time()
+        logger.info(u"Starting results computation")
+        compute_new_post(harvester)       
+        compute_new_comment(harvester)       
+        logger.info(u"Results computation complete in %ss" % (time.time() - start))
+
+        #results = FBResult.objects.filter(ftype="FBPost")
+        #update_user_statuses(harvester, results)
+
+        #results = FBResult.objects.filter(ftype="FBComment")
+        #update_user_comments(harvester, results)
 
 
 
