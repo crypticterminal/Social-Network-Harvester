@@ -8,7 +8,10 @@ from snh.models.twittermodel import TWUser
 from snh.models.facebookmodel import FacebookHarvester
 from snh.models.facebookmodel import FBUser
 
+from snh.models.dailymotionmodel import DailyMotionHarvester
+from snh.models.dailymotionmodel import DMUser
 
+#############
 class TwitterHarvesterInline(admin.StackedInline):
     model = TwitterHarvester.twusers_to_harvest.through
     extra = 1
@@ -37,6 +40,7 @@ class TWUserAdmin(admin.ModelAdmin):
 admin.site.register(TwitterHarvester, TwitterHarvesterAdmin)
 admin.site.register(TWUser, TWUserAdmin)
 
+##############
 class FacebookHarvesterInline(admin.StackedInline):
     model = FacebookHarvester.fbusers_to_harvest.through
     extra = 1
@@ -60,4 +64,32 @@ class FBUserAdmin(admin.ModelAdmin):
 
 admin.site.register(FacebookHarvester, FacebookHarvesterAdmin)
 admin.site.register(FBUser, FBUserAdmin)
+
+##############
+class DailyMotionHarvesterInline(admin.StackedInline):
+    model = DailyMotionHarvester.dmusers_to_harvest.through
+    extra = 1
+
+class DailyMotionHarvesterAdmin(admin.ModelAdmin):
+    fields = [
+                u'harvester_name', 
+                u'key', 
+                u'secret', 
+                u'user', 
+                u'password', 
+                u'is_active',
+                u'dont_harvest_further_than',
+                u'max_retry_on_fail',
+                #u'full_harvest_on_next_run',
+            ]
+
+    inlines = [DailyMotionHarvesterInline]
+
+class DMUserAdmin(admin.ModelAdmin):
+    fields = [
+                u'screenname', 
+            ]
+
+admin.site.register(DailyMotionHarvester, DailyMotionHarvesterAdmin)
+admin.site.register(DMUser, DMUserAdmin)
 
