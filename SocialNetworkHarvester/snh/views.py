@@ -74,8 +74,10 @@ def facebook_detail(request, user_id):
 def facebook_post(request, post_id):
     post = get_object_or_404(FBPost, fid=post_id)
     comments = FBComment.objects.filter(post=post)
+    likes_user = post.likes_from.all()
     return render_to_response(u'snh/facebook_post.html', {u'fbuser': post.user, 
                                                             u'post':post, 
+                                                            u'likes_user':likes_user, 
                                                             u'comments':comments,
                                                             })
 

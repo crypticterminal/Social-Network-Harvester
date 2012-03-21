@@ -180,8 +180,8 @@ class DMVideo(models.Model):
     views_last_month = models.IntegerField(null=True)
     ftype = models.CharField(max_length=255, null=True)
     
-    #channel = news',    
-    #channel.name = News',    
+    #channel = news',
+    #channel.name = News',
     #channel.id = news',
     #channel.description = models.TextField(null=True)
 

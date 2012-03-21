@@ -150,7 +150,7 @@ def manage_error_from_batch(harvester, bman, fbobj):
 
     bman["retry"] += 1
     if bman["retry"] > harvester.max_retry_on_fail:
-        msg = u"Max retry for %s. Error:%s" %(unicode(snh_obj), fbobj)
+        msg = u"Max retry for %s. Error:%s" %(bman, fbobj)
         logger.error(msg)
         need_a_break = True                   
     
@@ -250,6 +250,16 @@ def update_user_status_from_batch(harvester, snhuser, fbstatus_page):
 
         #update_user_statuses(harvester, fbstatus_page["data"], snhuser)        
         for status in fbstatus_page["data"]:
+            lc_param = ""
+
+            try:
+                latest_comments = FBComment.objects.filter(fid__startswith=status["id"]).order_by("-created_time")
+                for comment in latest_comments:
+                    lc_param = "&__after_id=%s" % comment.fid
+                    break
+            except ObjectDoesNotExist:
+                pass
+                
             res = FBResult()
             res.harvester = harvester
             res.result = status
@@ -257,7 +267,7 @@ def update_user_status_from_batch(harvester, snhuser, fbstatus_page):
             res.fid = status["id"]
             res.parent = snhuser.fid
             res.save()
-            d = {"method": "GET", "relative_url": u"%s/comments?limit=300" % unicode(status["id"])}
+            d = {"method": "GET", "relative_url": u"%s/comments?limit=300%s" % (unicode(status["id"]), lc_param)}
             next_bman.append({"snh_obj":str(status["id"]),"retry":0,"request":d, "callback":update_user_comments_from_batch})
             
         paging, new_page = get_status_paging(fbstatus_page)
@@ -360,12 +370,9 @@ class ThreadStatus(threading.Thread):
                 
         logger.info(u"ThreadStatus %s. End." % self)
 
-
-
     def update_user_status(self, status, user):
         try:
             try:
-                
                 fb_status = FBPost.objects.get(fid__exact=status["id"])
             except ObjectDoesNotExist:
                 fb_status = FBPost(user=user)
@@ -387,12 +394,13 @@ class ThreadComment(threading.Thread):
 
             try:
                 fid = self.queue.get()
-
-                post = FBPost.objects.get(fid__exact=fid)
-                results = FBResult.objects.filter(fid__startswith=fid).filter(ftype__exact="FBComment")
-                for elem in results:
-                    self.update_comment_status(eval(elem.result), post)
-
+                if fid:
+                    post = FBPost.objects.get(fid__exact=fid)
+                    results = FBResult.objects.filter(fid__startswith=fid).filter(ftype__exact="FBComment")
+                    for elem in results:
+                        self.update_comment_status(eval(elem.result), post)
+                else:
+                    logger.error(u"ThreadComment %s. fid is none! %s." % (self, fid))
                 #signals to queue job is done
             except Queue.Empty:
                 logger.info(u"ThreadComment %s. Queue is empty." % self)
@@ -412,7 +420,6 @@ class ThreadComment(threading.Thread):
     def update_comment_status(self, comment, post):
         try:
             try:
-                
                 fbcomment = FBComment.objects.get(fid__exact=comment["id"])
             except ObjectDoesNotExist:
                 fbcomment = FBComment(post=post)
@@ -430,7 +437,7 @@ def compute_new_post(harvester):
     for user in all_users:
         queue.put(user["fid"])
 
-    for i in range(8):
+    for i in range(4):
         t = ThreadStatus(queue)
         t.setDaemon(True)
         t.start()
@@ -445,7 +452,7 @@ def compute_new_comment(harvester):
     for post in all_posts:
         queue.put(post["fid"])
 
-    for i in range(8):
+    for i in range(4):
         t = ThreadComment(queue)
         t.setDaemon(True)
         t.start()
@@ -457,7 +464,6 @@ def run_harvester_v3(harvester):
     try:
         update_user_batch(harvester)
         update_user_statuses_batch(harvester)
-
         start = time.time()
         logger.info(u"Starting results computation")
         compute_new_post(harvester) 

@@ -180,7 +180,7 @@ class FBUser(models.Model):
         for prop in props_to_check:
             if props_to_check[prop] in fb_user and unicode(self.__dict__[prop]) != unicode(fb_user[props_to_check[prop]]):
                 self.__dict__[prop] = fb_user[props_to_check[prop]]
-                #print "prop changed. %s was %s is %s" % (prop, old_val, self.__dict__[prop])
+                #print "prop changed. %s = %s" % (prop, self.__dict__[prop])
                 model_changed = True
 
         for prop in date_to_check:
@@ -226,7 +226,7 @@ class FBPost(models.Model):
 
     fid = models.CharField(max_length=255, null=True)
     ffrom = models.ForeignKey('FBUser', related_name='fbpost.from', null=True)
-    to = models.ManyToManyField('FBUser', related_name='fbpost.to', null=True)
+    #to = models.ManyToManyField('FBUser', related_name='fbpost.to', null=True)
     message = models.TextField(null=True)
     message_tags_raw = models.TextField(null=True) #not supported but saved
     picture = models.ForeignKey('URL', related_name="fbpost.picture", null=True)
@@ -243,6 +243,7 @@ class FBPost(models.Model):
     likes_from = models.ManyToManyField('FBUser', related_name='fbpost.likes_from', null=True)
     likes_count = models.IntegerField(null=True)
     comments_count = models.IntegerField(null=True)
+    shares_count = models.IntegerField(null=True)
     place_raw = models.TextField(null=True) #not supported but saved 
     story =  models.TextField(null=True)
     story_tags_raw = models.TextField(null=True) #not supported but saved 
@@ -315,6 +316,7 @@ class FBPost(models.Model):
         subitem_to_check = {
                             u"likes_count":[u"likes",u"count"],
                             u"comments_count":[u"comments",u"count"],
+                            u"shares_count":[u"shares",u"count"],
                             }
 
         date_to_check = [u"created_time", u"updated_time"]
@@ -333,6 +335,8 @@ class FBPost(models.Model):
                     self.__dict__[prop] != facebook_model[subprop[0]][subprop[1]]:
                 self.__dict__[prop] = facebook_model[subprop[0]][subprop[1]]
                 model_changed = True
+                if prop == "shares_count":
+                    print prop, facebook_model[subprop[0]], self.__dict__[prop], self.fid
 
         for prop in date_to_check:
             fb_val = facebook_model[prop]
@@ -366,27 +370,47 @@ class FBPost(models.Model):
             self.ffrom = self_prop
             model_changed = True
 
-        if "to" in facebook_model:
-            prop_val = facebook_model["to"]
-           
-            for fbuser in prop_val["data"]:
-                if fbuser:
-                    touser = None
-                    try:
-                        touser = FBUser.objects.filter(fid=fbuser["id"])[0]
-                    except:
-                        pass
+        if "likes" in facebook_model:
+            if "data" in facebook_model["likes"]:
+                likes = facebook_model["likes"]["data"]
+                for fbuser in likes:
+                    if self.likes_from.filter(fid__exact=fbuser["id"]).count() == 0:
+                        user_like = None
+                        try:
+                            user_like = FBUser.objects.get(fid__exact=fbuser["id"])
+                        except:
+                            pass
+                        if user_like is None:
+                            user_like = FBUser(fid=fbuser["id"])
+                            user_like.update_from_facebook(fbuser)
+                            user_like.save()
 
-                    if touser is None:
-                        touser = FBUser(fid=fbuser["id"])
-                        touser.update_from_facebook(fbuser)
-                        touser.save()
-                        self.to.add(touser)
+                        self.likes_from.add(user_like)
                         model_changed = True
-                    else:
-                        if touser not in self.to.all():
-                            self.to.add(touser)
-                            model_changed = True     
+                        print "saved", facebook_model["likes"]["data"], self, self.fid
+
+
+        #if "to" in facebook_model:
+        #    prop_val = facebook_model["to"]
+        #   
+        #    for fbuser in prop_val["data"]:
+        #        if fbuser:
+        #            touser = None
+        #            try:
+        #                touser = FBUser.objects.filter(fid=fbuser["id"])[0]
+        #            except:
+        #                pass#
+        #
+        #            if touser is None:
+        #                touser = FBUser(fid=fbuser["id"])
+        #                touser.update_from_facebook(fbuser)
+        #                touser.save()
+        #                self.to.add(touser)
+        #                model_changed = True
+        #            else:
+        #                if touser not in self.to.all():
+        #                    self.to.add(touser)
+        #                    model_changed = True     
                 #else:
                 #    print "user is none!!!",  prop_val, facebook_model
 

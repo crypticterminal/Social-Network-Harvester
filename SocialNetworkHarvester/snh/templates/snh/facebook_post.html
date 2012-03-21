@@ -72,10 +72,12 @@
             <th>caption</th>
             <th>description</th>
             <th>type</th>
-            <th>likes_count</th>
-            <th>comments_count</th>
-            <th>created_time</th>
-            <th>updated_time</th>
+            <th>likes count</th>
+            <th>liked by</th>
+            <th>shares count</th>
+            <th>comments count</th>
+            <th>created time</th>
+            <th>updated time</th>
         </tr>
     </thead>
     <tbody>
@@ -90,6 +92,12 @@
             <td>{{ post.description|default_if_none:""|urlize }}</td>
             <td>{{ post.ftype|default_if_none:"" }}</td>
             <td>{{ post.likes_count|default_if_none:"0" }}</td>
+            <td>
+            {% for u in likes_user %}
+                <a href="/facebook_detail/{{ u.fid }}/">{{ u.name }} / ({{ u.fid }}),</a>
+            {% endfor %} 
+            </td>
+            <td>{{ post.shares_count|default_if_none:"0" }}</td>
             <td>{{ post.comments_count|default_if_none:"0" }}</td>
             <td>{{ post.created_time.ctime }}</td>
             <td>{{ post.updated_time.ctime }}</td>
