@@ -68,11 +68,6 @@ def manage_facebook_exception(retry_count, harvester, related_object, fex):
 
     return (retry_count, retry_count > harvester.max_retry_on_fail)
 
-def get_timedelta(fb_time):
-    ts = date_val = datetime.strptime(fb_time,'%Y-%m-%dT%H:%M:%S+0000')
-    return (datetime.utcnow() - ts).days
-
-
 def get_status_paging(page):
     until = None
     new_page = False

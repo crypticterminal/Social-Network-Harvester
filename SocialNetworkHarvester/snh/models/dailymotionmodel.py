@@ -38,7 +38,7 @@ class DailyMotionHarvester(AbstractHaverster):
                       'client_id' : self.key,
                       'client_secret' : self.secret,
                       'username' : self.user,
-                      'password' : self.fpass,
+                      'password' : self.password,
                       'scope':'write'
                       }
 
@@ -50,7 +50,7 @@ class DailyMotionHarvester(AbstractHaverster):
             self.access_token = result['access_token']
             self.refresh_token = result['refresh_token']
 
-            self.uurl='?access_token='+access_token
+            self.uurl='?access_token=' + self.access_token
             
         return self.uurl
 
@@ -63,16 +63,29 @@ class DailyMotionHarvester(AbstractHaverster):
             self.last_harvested_user = self.current_harvested_user
         super(DailyMotionHarvester, self).end_current_harvest()
 
+    def check_error(self, result):
+        #Unrecognized value ()...
+        #Unsufficient scope for `fields' parameter
+        if result:
+            if type(result) == dict:
+                if "error" not in result:
+                    return result
+                else:
+                    raise Exception("DMError:(%s)-[%s] %s!!!" % (result["error"]["code"],result["error"]["type"], result["error"]["message"]))
+            else:
+                raise Exception("Result is not a dict!!!")
+        else:
+            raise Exception("Empty result!!!")
+
     def api_call(self, method, params):
         super(DailyMotionHarvester, self).api_call(method, params)
 
         job=json.dumps({"call":"%s %s" % (method, params),"args":None})
-        data = urlencode(values)
-        req = urllib2.Request(BASE+UURL, job, {'content-type': 'application/json'})
+        req = urllib2.Request(self.base+self.get_token(), job, {'content-type': 'application/json'})
         response = urllib2.urlopen(req)
         result=json.load(response)
 
-        return result
+        return self.check_error(result)
 
     def get_last_harvested_user(self):
         return self.last_harvested_user
@@ -127,23 +140,72 @@ class DMUser(models.Model):
 
     pmk_id =  models.AutoField(primary_key=True)
 
-    fid = models.BigIntegerField(null=True)
+    fid = models.CharField(max_length=255, null=True)
+    username = models.CharField(max_length=255, null=True)
     screenname = models.CharField(max_length=255, null=True)
-    status = models.CharField(max_length=255, null=True)
-    avatar_small_url = models.ForeignKey('URL', related_name="dmuser.avatar_small_url", null=True)
+    gender = models.CharField(max_length=255, null=True)
     description = models.TextField(null=True)
     language = models.CharField(max_length=255, null=True)
-    url = models.ForeignKey('URL', related_name="dmuser.url", null=True)
-    gender = models.CharField(max_length=255, null=True)
-    username = models.CharField(max_length=255, null=True)
-    videos_total = models.IntegerField(null=True)
-    videostar = models.ForeignKey('DMVideo', related_name="dmuser.videostar", null=True)
-    avatar_large_url = models.ForeignKey('URL', related_name="dmuser.avatar_large_url", null=True)
-    avatar_medium_url = models.ForeignKey('URL', related_name="dmuser.avatar_medium_url", null=True)
-    views_total = models.IntegerField(null=True)
-    created_time = models.DateTimeField(null=True)
+    status = models.CharField(max_length=255, null=True)
     ftype = models.CharField(max_length=255, null=True)
-    screenname = models.CharField(max_length=255, null=True)
+
+    url = models.ForeignKey('URL', related_name="dmuser.url", null=True)
+
+    avatar_small_url = models.ForeignKey('URL', related_name="dmuser.avatar_small_url", null=True)
+    avatar_medium_url = models.ForeignKey('URL', related_name="dmuser.avatar_medium_url", null=True)
+    avatar_large_url = models.ForeignKey('URL', related_name="dmuser.avatar_large_url", null=True)
+
+    videostar = models.ForeignKey('DMVideo', related_name="dmuser.videostar", null=True)
+    views_total = models.IntegerField(null=True)
+    videos_total = models.IntegerField(null=True)
+    created_time = models.DateTimeField(null=True)
+
+    error_triggered = models.BooleanField()
+    updated_time = models.DateTimeField(null=True)
+
+    def update_from_dailymotion(self, dm_user):
+        model_changed = False
+        props_to_check = {
+                            u"fid":u"id",
+                            u"screenname":u"screenname",
+                            u"username":u"username",
+                            u"gender":u"gender",
+                            u"description":u"description",
+                            u"language":u"language",
+                            u"status":u"status",
+                            u"views_total":u"views_total",
+                            u"videos_total":u"videos_total",
+                            u"ftype":u"type",
+                            }
+
+        #date_to_check = {"created_time":"created_time"}
+        date_to_check = {}
+
+        for prop in props_to_check:
+            if props_to_check[prop] in dm_user and unicode(self.__dict__[prop]) != unicode(dm_user[props_to_check[prop]]):
+                self.__dict__[prop] = dm_user[props_to_check[prop]]
+                print "prop changed. %s = %s" % (prop, dm_user[props_to_check[prop]])
+                model_changed = True
+
+        for prop in date_to_check:
+            if date_to_check[prop] in dm_user and self.__dict__[prop] != dm_user[date_to_check[prop]]:
+                date_val = datetime.strptime(dm_user[prop],'%m/%d/%Y')
+                if self.__dict__[prop] != date_val:
+                    self.__dict__[prop] = date_val
+                    model_changed = True
+
+        #(changed, self_prop) = self.update_url_fk(self.website, "website", dm_user)
+        #if changed:
+        #    self.website = self_prop
+        #    model_changed = True
+            
+        if model_changed:
+            self.model_update_date = datetime.utcnow()
+            #print self.pmk_id, self.fid, self, self.__dict__, dm_user
+            self.save()
+
+        return model_changed
+
 
 class DMVideo(models.Model):
 
