@@ -11,48 +11,14 @@ import urllib2
 from django.db import models
 from snh.models.common import *
 
-class DailyMotionHarvester(AbstractHaverster):
+class YoutubeHarvester(AbstractHaverster):
 
-    base = 'https://api.dailymotion.com/json'
-    oauth = 'https://api.dailymotion.com/oauth/token'
+    ytusers_to_harvest = models.ManyToManyField('YTUser', related_name='ytusers_to_harvest')
 
-    key = models.CharField(max_length=255, null=True)
-    secret = models.CharField(max_length=255, null=True)
-    user = models.CharField(max_length=255, null=True)
-    password = models.CharField(max_length=255, null=True)
-
-    access_token = None
-    refresh_token = None
-    uurl = None
-
-    dmusers_to_harvest = models.ManyToManyField('DMUser', related_name='dmusers_to_harvest')
-
-    last_harvested_user = models.ForeignKey('DMUser',  related_name='last_harvested_user', null=True)
-    current_harvested_user = models.ForeignKey('DMUser', related_name='current_harvested_user',  null=True)
+    last_harvested_user = models.ForeignKey('YTUser',  related_name='last_harvested_user', null=True)
+    current_harvested_user = models.ForeignKey('YTUser', related_name='current_harvested_user',  null=True)
 
     haverst_deque = None
-
-    def get_token(self):
-        if not self.access_token:
-            values = {'grant_type' : 'password',
-                      'client_id' : self.key,
-                      'client_secret' : self.secret,
-                      'username' : self.user,
-                      'password' : self.password,
-                      'scope':'write'
-                      }
-
-            data = urlencode(values)
-            req = urllib2.Request(self.oauth, data)
-            response = urllib2.urlopen(req)
-
-            result=json.load(response)
-            self.access_token = result['access_token']
-            self.refresh_token = result['refresh_token']
-
-            self.uurl='?access_token=' + self.access_token
-            
-        return self.uurl
 
     def update_client_stats(self):
         self.save()
@@ -63,29 +29,9 @@ class DailyMotionHarvester(AbstractHaverster):
             self.last_harvested_user = self.current_harvested_user
         super(DailyMotionHarvester, self).end_current_harvest()
 
-    def check_error(self, result):
-        #Unrecognized value ()...
-        #Unsufficient scope for `fields' parameter
-        if result:
-            if type(result) == dict:
-                if "error" not in result:
-                    return result
-                else:
-                    raise Exception("DMError:(%s)-[%s] %s!!!" % (result["error"]["code"],result["error"]["type"], result["error"]["message"]))
-            else:
-                raise Exception("Result is not a dict!!!")
-        else:
-            raise Exception("Empty result!!!")
-
     def api_call(self, method, params):
-        super(DailyMotionHarvester, self).api_call(method, params)
-
-        job=json.dumps({"call":"%s %s" % (method, params),"args":None})
-        req = urllib2.Request(self.base+self.get_token(), job, {'content-type': 'application/json'})
-        response = urllib2.urlopen(req)
-        result=json.load(response)
-
-        return self.check_error(result)
+        super(YoutubeHarvester, self).api_call(method, params)
+        return None
 
     def get_last_harvested_user(self):
         return self.last_harvested_user
@@ -111,7 +57,7 @@ class DailyMotionHarvester(AbstractHaverster):
 
     def build_harvester_sequence(self):
         self.haverst_deque = deque()
-        all_users = self.dmusers_to_harvest.all()
+        all_users = self.ytusers_to_harvest.all()
 
         if self.last_harvested_user:
             count = 0
@@ -130,7 +76,7 @@ class DailyMotionHarvester(AbstractHaverster):
         parent_stats["concrete"] = {}
         return parent_stats
             
-class DMUser(models.Model):
+class YTUser(models.Model):
 
     class Meta:
         app_label = "snh"
@@ -141,13 +87,28 @@ class DMUser(models.Model):
     pmk_id =  models.AutoField(primary_key=True)
 
     fid = models.CharField(max_length=255, null=True)
-    username = models.CharField(max_length=255, null=True)
-    screenname = models.CharField(max_length=255, null=True)
+
+    uri = models.ForeignKey('URL', related_name="ytuser.uri, null=True)
+    age = models.IntegerField(null=True)
     gender = models.CharField(max_length=255, null=True)
+    location = models.CharField(max_length=255, null=True)
+
+    username = models.CharField(max_length=255, null=True)
+    first_name = models.CharField(max_length=255, null=True)
+    last_name = models.CharField(max_length=255, null=True)
+    relationship = models.CharField(max_length=255, null=True)
     description = models.TextField(null=True)
-    language = models.CharField(max_length=255, null=True)
-    status = models.CharField(max_length=255, null=True)
-    ftype = models.CharField(max_length=255, null=True)
+
+    link = models.ManyToMany('URL', related_name="ytuser.link")
+    
+    company = models.CharField(max_length=255, null=True)
+    occupation = models.TextField(null=True)
+    school = models.CharField(max_length=255, null=True)
+    hobbies = models.TextField(null=True)
+    movies = models.TextField(null=True)
+    music = models.TextField(null=True)
+    books = models.TextField(null=True)
+    hometown = models.CharField(max_length=255, null=True)
 
     url = models.ForeignKey('URL', related_name="dmuser.url", null=True)
 
@@ -182,7 +143,7 @@ class DMUser(models.Model):
                 model_changed = True
         return model_changed, self_prop
 
-    def update_from_dailymotion(self, dm_user):
+    def update_from_youtube(self, dm_user):
         model_changed = False
         props_to_check = {
                             u"fid":u"id",
@@ -217,22 +178,7 @@ class DMUser(models.Model):
         if changed:
             self.url = self_prop
             model_changed = True
-            
-        (changed, self_prop) = self.update_url_fk(self.avatar_small_url, "avatar_small_url", dm_user)
-        if changed:
-            self.avatar_small_url = self_prop
-            model_changed = True
-            
-        (changed, self_prop) = self.update_url_fk(self.avatar_medium_url, "avatar_medium_url", dm_user)
-        if changed:
-            self.avatar_medium_url = self_prop
-            model_changed = True
-            
-        (changed, self_prop) = self.update_url_fk(self.avatar_large_url, "avatar_large_url", dm_user)
-        if changed:
-            self.avatar_large_url = self_prop
-            model_changed = True
-            
+                    
         if model_changed:
             self.model_update_date = datetime.utcnow()
             #print self.pmk_id, self.fid, self, self.__dict__, dm_user

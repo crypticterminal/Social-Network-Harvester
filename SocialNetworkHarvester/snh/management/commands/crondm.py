@@ -9,7 +9,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from snh.management.commands.cronharvester import dailymotionch
 
 import snhlogger
-logger = snhlogger.init_logger(__name__, "facebook.log")
+logger = snhlogger.init_logger(__name__, "dailymotion.log")
 
 class Command(BaseCommand):
     #args = '<poll_id poll_id ...>'
@@ -17,13 +17,13 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         try:
-            logger.info("Will run the Facebook harvesters.")
+            logger.info("Will run the Dailymotion harvesters.")
             dailymotionch.run_dailymotion_harvester()
         except:
-            msg = u"Highest exception for the facebook cron. Not good."
+            msg = u"Highest exception for the dailymotion cron. Not good."
             logger.exception(msg)
 
-        logger.info("The harvest has end for the Facebook harvesters.")
+        logger.info("The harvest has end for the DailyMotion harvesters.")
 
 
 
