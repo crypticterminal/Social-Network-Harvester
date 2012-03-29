@@ -126,7 +126,7 @@ class DailyMotionHarvester(AbstractHaverster):
             self.haverst_deque.extend(all_users)
 
     def get_stats(self):
-        parent_stats = super(TwitterHarvester, self).get_stats()
+        parent_stats = super(DailyMotionHarvester, self).get_stats()
         parent_stats["concrete"] = {}
         return parent_stats
             
@@ -374,18 +374,6 @@ class DMVideo(models.Model):
                             "created_time":"created_time",
                             "taken_time":"taken_time",
                             "modified_time":"modified_time",
-                            }
-
-        url_to_check = {
-                            self.url:"url",
-                            self.tiny_url:"tiny_url",
-                            self.live_publish_url:"live_publish_url",
-                            self.thumbnail_url:"thumbnail_url",
-                            self.thumbnail_small_url:"thumbnail_small_url",
-                            self.thumbnail_medium_url:"thumbnail_medium_url",
-                            self.thumbnail_large_url:"thumbnail_large_url",
-                            self.embed_url:"embed_url",
-                            self.swf_url:"swf_url",
                             }
 
         if self.user != snh_user:
