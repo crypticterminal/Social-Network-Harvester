@@ -3,10 +3,8 @@ from collections import deque
 from datetime import datetime
 import time
 
-from httplib2 import Http
-from urllib import urlencode
-import json
-import urllib2
+import gdata.youtube
+import gdata.youtube.service
 
 from django.db import models
 from snh.models.common import *
@@ -17,6 +15,8 @@ class YoutubeHarvester(AbstractHaverster):
 
     last_harvested_user = models.ForeignKey('YTUser',  related_name='last_harvested_user', null=True)
     current_harvested_user = models.ForeignKey('YTUser', related_name='current_harvested_user',  null=True)
+
+    client = gdata.youtube.service.YouTubeService()
 
     haverst_deque = None
 
@@ -31,7 +31,9 @@ class YoutubeHarvester(AbstractHaverster):
 
     def api_call(self, method, params):
         super(YoutubeHarvester, self).api_call(method, params)
-        return None
+        metp = getattr(self.client, method)
+        ret = metp(**params)
+        return ret
 
     def get_last_harvested_user(self):
         return self.last_harvested_user
@@ -132,10 +134,15 @@ class YTUser(models.Model):
                 model_changed = True
         return model_changed, self_prop
 
+    def isUTF8(self, text):
+        try:
+            text = unicode(text, 'UTF-8', 'strict')
+            return True
+        except UnicodeDecodeError:
+            return False
     def update_from_youtube(self, yt_user):
         model_changed = False
         props_to_check = {
-                            u"age":u"age",
                             u"gender":u"gender",
                             u"location":u"location",
                             u"username":u"username",
@@ -152,27 +159,26 @@ class YTUser(models.Model):
                             u"hometown":u"hometown",
                             }
 
-        #date_to_check = {"created_time":"created_time"}
-        date_to_check = {}
+        if yt_user.age and \
+                yt_user.age.text and \
+                self.age != int(yt_user.age.text):
+            self.age = int(yt_user.age.text)
+            print "age change %d" % self.age 
+            model_changed = True
 
         for prop in props_to_check:
-            if props_to_check[prop] in yt_user and unicode(self.__dict__[prop]) != unicode(yt_user[props_to_check[prop]]):
-                self.__dict__[prop] = yt_user[props_to_check[prop]]
-                #print "prop changed. %s = %s" % (prop, yt_user[props_to_check[prop]])
+            if props_to_check[prop] in yt_user.__dict__ and \
+                    yt_user.__dict__[props_to_check[prop]] and \
+                    yt_user.__dict__[props_to_check[prop]].text and \
+                    self.__dict__[prop] != unicode(yt_user.__dict__[props_to_check[prop]].text, 'UTF-8'):
+
+                if not self.isUTF8(yt_user.__dict__[props_to_check[prop]].text):
+                    print "UTF", prop
+
+                self.__dict__[prop] = unicode(yt_user.__dict__[props_to_check[prop]].text, 'UTF-8')
+                print "prop changed. %s = %s" % (prop, self.__dict__[prop]) 
                 model_changed = True
-
-        for prop in date_to_check:
-            if date_to_check[prop] in yt_user and self.__dict__[prop] != yt_user[date_to_check[prop]]:
-                date_val = datetime.strptime(yt_user[prop],'%m/%d/%Y')
-                if self.__dict__[prop] != date_val:
-                    self.__dict__[prop] = date_val
-                    model_changed = True
-
-        (changed, self_prop) = self.update_url_fk(self.uri, "uri", yt_user)
-        if changed:
-            self.url = self_prop
-            model_changed = True
-                    
+            
         if model_changed:
             self.model_update_date = datetime.utcnow()
             #print self.pmk_id, self.fid, self, self.__dict__, yt_user
@@ -213,35 +219,35 @@ class YTVideo(models.Model):
                 model_changed = True
         return model_changed, self_prop
 
-    def update_from_Youtube(self, snh_user, dm_video):
+    def update_from_youtube(self, snh_user, dm_video):
         model_changed = False
         props_to_check = {
-                            #u"fid":u"id",
+                            u"description":u"description",
                             }
 
-        date_to_check = {
-                            #"created_time":"created_time",
-                            }
+        if yt_user.age and \
+                yt_user.age.text and \
+                self.age != int(yt_user.age.text):
+            self.age = int(yt_user.age.text)
+            print "age change %d" % self.age 
+            model_changed = True
 
         for prop in props_to_check:
-            if props_to_check[prop] in dm_video and unicode(self.__dict__[prop]) != unicode(dm_video[props_to_check[prop]]):
-                self.__dict__[prop] = dm_video[props_to_check[prop]]
+            if props_to_check[prop] in yt_user.__dict__ and \
+                    yt_user.__dict__[props_to_check[prop]] and \
+                    yt_user.__dict__[props_to_check[prop]].text and \
+                    self.__dict__[prop] != unicode(yt_user.__dict__[props_to_check[prop]].text, 'UTF-8'):
+
+                if not self.isUTF8(yt_user.__dict__[props_to_check[prop]].text):
+                    print "UTF", prop
+
+                self.__dict__[prop] = unicode(yt_user.__dict__[props_to_check[prop]].text, 'UTF-8')
+                print "prop changed. %s = %s" % (prop, self.__dict__[prop]) 
                 model_changed = True
-
-        for prop in date_to_check:
-            if date_to_check[prop] in dm_video and self.__dict__[prop] != dm_video[date_to_check[prop]]:
-                date_val = datetime.fromtimestamp(float(dm_video[prop]))
-                if self.__dict__[prop] != date_val:
-                    self.__dict__[prop] = date_val
-                    model_changed = True
-
-        #(changed, self_prop) = self.update_url_fk(self.swf_url, "swf_url", dm_video)
-        #if changed:
-        #    self.swf_url = self_prop
-        #    model_changed = True
             
         if model_changed:
             self.model_update_date = datetime.utcnow()
+            #print self.pmk_id, self.fid, self, self.__dict__, yt_user
             self.save()
 
         return model_changed

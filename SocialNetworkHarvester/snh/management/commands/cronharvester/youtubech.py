@@ -31,7 +31,40 @@ def get_timedelta(dm_time):
     return (datetime.utcnow() - ts).days
 
 def update_users(harvester):
-    pass
+
+    all_users = harvester.ytusers_to_harvest.all()
+
+    for snhuser in all_users:
+        if not snhuser.error_triggered:
+            uid = snhuser.fid if snhuser.fid else snhuser.username
+            ytuser = harvester.api_call("GetYouTubeUserEntry",{"username":uid})
+            snhuser.update_from_youtube(ytuser)
+        else:
+            logger.info(u"Skipping user update: %s(%s) because user has triggered the error flag." % (unicode(snhuser), snhuser.fid if snhuser.fid else "0"))
+
+    usage = resource.getrusage(resource.RUSAGE_SELF)
+    logger.info(u"Will harvest users for %s Mem:%s MB" % (harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
+
+def update_all_videos(harvester):
+
+    all_users = harvester.ytusers_to_harvest.all()
+
+    for snhuser in all_users:
+        if not snhuser.error_triggered:
+            get_vid_url = 'http://gdata.youtube.com/feeds/api/users/%s/uploads' % snhuser.username
+            while get_vid_url:
+                video_list = harvester.api_call("GetYouTubeVideoFeed",{"uri":get_vid_url})
+                for video in video_list.entry:
+                    print video.id.text
+                print video_list.GetNextLink().href
+                get_vid_url = video_list.GetNextLink().href
+            #ytuser = harvester.api_call("GetYouTubeUserEntry",{"username":uid})
+            #snhuser.update_from_youtube(ytuser)
+        else:
+            logger.info(u"Skipping user update: %s(%s) because user has triggered the error flag." % (unicode(snhuser), snhuser.fid if snhuser.fid else "0"))
+
+    usage = resource.getrusage(resource.RUSAGE_SELF)
+    logger.info(u"Will harvest users for %s Mem:%s MB" % (harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
 
 def run_harvester_v1(harvester):
     harvester.start_new_harvest()
@@ -39,7 +72,7 @@ def run_harvester_v1(harvester):
 
         start = time.time()
         update_users(harvester)
-        #update_all_videos(harvester)
+        update_all_videos(harvester)
         logger.info(u"Results computation complete in %ss" % (time.time() - start))
 
     except:
