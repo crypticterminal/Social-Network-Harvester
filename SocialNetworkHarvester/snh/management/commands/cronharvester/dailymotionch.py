@@ -194,6 +194,8 @@ def update_user(harvester, userid):
 def update_users(harvester):
 
     all_users = harvester.dmusers_to_harvest.all()
+    usage = resource.getrusage(resource.RUSAGE_SELF)
+    logger.info(u"Will harvest users for %s Mem:%s MB" % (harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
 
     for snhuser in all_users:
         if not snhuser.error_triggered:
@@ -201,8 +203,156 @@ def update_users(harvester):
         else:
             logger.info(u"Skipping user update: %s(%s) because user has triggered the error flag." % (unicode(snhuser), snhuser.fid if snhuser.fid else "0"))
 
+
+def update_users_friends_fans(harvester):
+
+    all_users = harvester.dmusers_to_harvest.all()
+
     usage = resource.getrusage(resource.RUSAGE_SELF)
-    logger.info(u"Will harvest users for %s Mem:%s MB" % (harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
+    logger.info(u"Will harvest users fans, friends and following. %s Mem:%s MB" % (harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
+
+    for snhuser in all_users:
+        if not snhuser.error_triggered:
+            update_user_fans(harvester, snhuser)
+            update_user_friends(harvester, snhuser)
+            update_user_following(harvester, snhuser)
+        else:
+            logger.info(u"Skipping user update: %s(%s) because user has triggered the error flag." % (unicode(snhuser), snhuser.fid if snhuser.fid else "0"))
+
+
+def update_user_fans(harvester, snhuser):
+
+    has_more = True
+    page = 0
+    while has_more:
+        page += 1
+        result = harvester.api_call("GET",
+                                    str(
+                                        "/user/%(username)s/fans?page=%(page)d&limit=%(limit)d&fields="
+                                        "id,"
+                                        "type,"
+                                        "status,"
+                                        "username,"
+                                        "screenname,"
+                                        #"fullname," #access_required
+                                        "created_time,"
+                                        "description,"
+                                        "language,"
+                                        "gender,"
+                                        #"email," #access_required
+                                        #"birthday," #access_required
+                                        #"ip," #access_required
+                                        #"useragent," #access_required
+                                        "views_total,"
+                                        "videos_total,"
+                                        #"cloudkey," #access_required
+                                        "url,"
+                                        "avatar_small_url,"
+                                        "avatar_medium_url,"
+                                        "avatar_large_url"
+                                        "" %
+                                        {
+                                            "username":snhuser.username,
+                                            "page":page,
+                                            "limit":100,
+                                        })
+                                    )
+
+        for i in result["result"]["list"]:
+            logger.debug(u"---------fans:%s" % i["id"])
+            snhuser.update_fan_from_dailymotion(i)
+
+        has_more = result["result"]["has_more"]
+
+
+def update_user_friends(harvester, snhuser):
+
+    has_more = True
+    page = 0
+    while has_more:
+        page += 1
+        result = harvester.api_call("GET",
+                                    str(
+                                        "/user/%(username)s/friends?page=%(page)d&limit=%(limit)d&fields="
+                                        "id,"
+                                        "type,"
+                                        "status,"
+                                        "username,"
+                                        "screenname,"
+                                        #"fullname," #access_required
+                                        "created_time,"
+                                        "description,"
+                                        "language,"
+                                        "gender,"
+                                        #"email," #access_required
+                                        #"birthday," #access_required
+                                        #"ip," #access_required
+                                        #"useragent," #access_required
+                                        "views_total,"
+                                        "videos_total,"
+                                        #"cloudkey," #access_required
+                                        "url,"
+                                        "avatar_small_url,"
+                                        "avatar_medium_url,"
+                                        "avatar_large_url"
+                                        "" %
+                                        {
+                                            "username":snhuser.username,
+                                            "page":page,
+                                            "limit":100,
+                                        })
+                                    )
+
+        for i in result["result"]["list"]:
+            logger.debug(u"---------friends:%s" % i["id"])
+            snhuser.update_friend_from_dailymotion(i)
+
+        has_more = result["result"]["has_more"]
+
+def update_user_following(harvester, snhuser):
+
+    has_more = True
+    page = 0
+    while has_more:
+        page += 1
+        result = harvester.api_call("GET",
+                                    str(
+                                        "/user/%(username)s/following?page=%(page)d&limit=%(limit)d&fields="
+                                        "id,"
+                                        "type,"
+                                        "status,"
+                                        "username,"
+                                        "screenname,"
+                                        #"fullname," #access_required
+                                        "created_time,"
+                                        "description,"
+                                        "language,"
+                                        "gender,"
+                                        #"email," #access_required
+                                        #"birthday," #access_required
+                                        #"ip," #access_required
+                                        #"useragent," #access_required
+                                        "views_total,"
+                                        "videos_total,"
+                                        #"cloudkey," #access_required
+                                        "url,"
+                                        "avatar_small_url,"
+                                        "avatar_medium_url,"
+                                        "avatar_large_url"
+                                        "" %
+                                        {
+                                            "username":snhuser.username,
+                                            "page":page,
+                                            "limit":100,
+                                        })
+                                    )
+
+        for i in result["result"]["list"]:
+            logger.debug(u"---------following:%s" % i["id"])
+            snhuser.update_friend_from_dailymotion(i)
+
+        has_more = result["result"]["has_more"]
+
 
 def get_video(harvester, videoid):
     result = harvester.api_call("GET",
@@ -328,13 +478,13 @@ def update_video(harvester, snhuser, dmvideo):
 
     try:
         try:
-            snh_video = DMVideo.objects.get(fid__exact=videoid["id"])
+            snh_video = DMVideo.objects.get(fid__exact=dmvideo["id"])
         except ObjectDoesNotExist:
             snh_video = DMVideo(user=snhuser)
             snh_video.save()
         snh_video.update_from_dailymotion(snhuser, dmvideo)                
     except:
-        msg = u"Cannot update video %s" % (videoid["id"])
+        msg = u"Cannot update video %s" % (dmvideo["id"])
         logger.exception(msg) 
 
     return snh_video
@@ -420,7 +570,8 @@ def update_all_videos(harvester):
     video_list = []
     for snhuser in all_users:
         if not snhuser.error_triggered:
-            logger.debug(u"%s" % snhuser.screenname)
+            usage = resource.getrusage(resource.RUSAGE_SELF)
+            logger.info(u"Will harvest %s video for %s Mem:%s MB" % (snhuser.screenname, harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
             has_more = True
             page = 0
             out_of_window = False
@@ -439,7 +590,7 @@ def update_all_videos(harvester):
                 for i in result["result"]["list"]:
 
                     dmvideo = get_video(harvester, i["id"])
-                    published =  datetime.fromtimestamp(float(dm_video["created_time"]))
+                    published =  datetime.fromtimestamp(float(dmvideo["created_time"]))
                     if published < harvester.harvest_window_to:
                         logger.debug(u"---------vid:%s" % i["id"])
                         snh_video = update_video(harvester,snhuser,dmvideo)
@@ -454,15 +605,13 @@ def update_all_videos(harvester):
         else:
             logger.info(u"Skipping user update: %s(%s) because user has triggered the error flag." % (unicode(snhuser), snhuser.fid if snhuser.fid else "0"))
 
-    usage = resource.getrusage(resource.RUSAGE_SELF)
-    logger.info(u"Will harvest users for %s Mem:%s MB" % (harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
 
 def run_harvester_v1(harvester):
     harvester.start_new_harvest()
     try:
-
         start = time.time()
         update_users(harvester)
+        update_users_friends_fans(harvester)
         update_all_videos(harvester)
         logger.info(u"Results computation complete in %ss" % (time.time() - start))
 

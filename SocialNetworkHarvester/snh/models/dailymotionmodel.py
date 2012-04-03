@@ -11,6 +11,10 @@ import urllib2
 from django.db import models
 from snh.models.common import *
 
+
+import snhlogger
+logger = snhlogger.init_logger(__name__, "dailymotion.log")
+
 class DailyMotionHarvester(AbstractHaverster):
 
     base = 'https://api.dailymotion.com/json'
@@ -64,15 +68,17 @@ class DailyMotionHarvester(AbstractHaverster):
         super(DailyMotionHarvester, self).end_current_harvest()
 
     def check_error(self, result):
-        #Unrecognized value ()...
-        #Unsufficient scope for `fields' parameter
         if result:
             if type(result) == dict:
                 if "error" not in result:
-                    return result
+                    return result, False
+                elif result["error"]["code"] == 500:
+                    logger.info("DMError:(%s)-[%s] %s!!!" % (result["error"]["code"],result["error"]["type"], result["error"]["message"]))
+                    return None, True
                 else:
                     raise Exception("DMError:(%s)-[%s] %s!!!" % (result["error"]["code"],result["error"]["type"], result["error"]["message"]))
             else:
+                logger.error("Result is not a dict!!! %s" % result)
                 raise Exception("Result is not a dict!!!")
         else:
             raise Exception("Empty result!!!")
@@ -80,12 +86,20 @@ class DailyMotionHarvester(AbstractHaverster):
     def api_call(self, method, params):
         super(DailyMotionHarvester, self).api_call(method, params)
 
-        job=json.dumps({"call":"%s %s" % (method, params),"args":None})
-        req = urllib2.Request(self.base+self.get_token(), job, {'content-type': 'application/json'})
-        response = urllib2.urlopen(req)
-        result=json.load(response)
+        retry_count = 0
+        retry = True
+        ret_val = None
+        while retry_count < self.max_retry_on_fail and retry:
+            if retry_count > 0:
+                logger.info("Retrying last API call... %d/%d" % (retry_count, self.max_retry_on_fail))
+            retry_count += 1
+            job=json.dumps({"call":"%s %s" % (method, params),"args":None})
+            req = urllib2.Request(self.base+self.get_token(), job, {'content-type': 'application/json'})
+            response = urllib2.urlopen(req)
+            result=json.load(response)
+            ret_val, retry = self.check_error(result)
 
-        return self.check_error(result)
+        return ret_val
 
     def get_last_harvested_user(self):
         return self.last_harvested_user
@@ -151,6 +165,10 @@ class DMUser(models.Model):
 
     url = models.ForeignKey('URL', related_name="dmuser.url", null=True)
 
+    fans = models.ManyToManyField('DMUser', related_name='dmuser.fans')
+    friends = models.ManyToManyField('DMUser', related_name='dmuser.friends')
+    following = models.ManyToManyField('DMUser', related_name='dmuser.following')
+
     avatar_small_url = models.ForeignKey('URL', related_name="dmuser.avatar_small_url", null=True)
     avatar_medium_url = models.ForeignKey('URL', related_name="dmuser.avatar_medium_url", null=True)
     avatar_large_url = models.ForeignKey('URL', related_name="dmuser.avatar_large_url", null=True)
@@ -182,6 +200,92 @@ class DMUser(models.Model):
                 model_changed = True
         return model_changed, self_prop
 
+    def update_fan_from_dailymotion(self, fan):
+        model_changed = False
+
+        if self.fans.filter(fid__exact=fan["id"]).count() == 0:
+            snh_user = None
+            try:
+                snh_user = DMUser.objects.get(fid__exact=fan["id"])
+                snh_user.update_from_dailymotion(fan)
+                snh_user.save()
+
+            except:
+                pass
+            if snh_user is None:
+                snh_user = DMUser(
+                                    fid=fan["id"],
+                                    screenname=fan["screenname"],
+                                    )
+                snh_user.update_from_dailymotion(fan)
+                snh_user.save()
+
+            self.fans.add(snh_user)
+            model_changed = True
+
+        if model_changed:
+            self.model_update_date = datetime.utcnow()
+            self.save()
+
+        return model_changed
+
+    def update_friend_from_dailymotion(self, friend):
+        model_changed = False
+
+        if self.friends.filter(fid__exact=friend["id"]).count() == 0:
+            snh_user = None
+            try:
+                snh_user = DMUser.objects.get(fid__exact=friend["id"])
+                snh_user.update_from_dailymotion(friend)
+                snh_user.save()
+            except:
+                pass
+            if snh_user is None:
+                snh_user = DMUser(
+                                    fid=friend["id"],
+                                    screenname=friend["screenname"],
+                                    )
+                snh_user.update_from_dailymotion(friend)
+                snh_user.save()
+
+            self.friends.add(snh_user)
+            model_changed = True
+
+        if model_changed:
+            self.model_update_date = datetime.utcnow()
+            self.save()
+
+        return model_changed
+
+    def update_following_from_dailymotion(self, following):
+        model_changed = False
+
+        if self.following.filter(fid__exact=following["id"]).count() == 0:
+            snh_user = None
+            try:
+                snh_user = DMUser.objects.get(fid__exact=following["id"])
+                snh_user.update_from_dailymotion(following)
+                snh_user.save()
+
+            except:
+                pass
+            if snh_user is None:
+                snh_user = DMUser(
+                                    fid=following["id"],
+                                    screenname=following["screenname"],
+                                    )
+                snh_user.update_from_dailymotion(following)
+                snh_user.save()
+
+            self.following.add(snh_user)
+            model_changed = True
+
+        if model_changed:
+            self.model_update_date = datetime.utcnow()
+            self.save()
+
+        return model_changed
+
     def update_from_dailymotion(self, dm_user):
         model_changed = False
         props_to_check = {
@@ -197,7 +301,7 @@ class DMUser(models.Model):
                             u"ftype":u"type",
                             }
 
-        #date_to_check = {"created_time":"created_time"}
+        date_to_check = {"created_time":"created_time"}
         date_to_check = {}
 
         for prop in props_to_check:
