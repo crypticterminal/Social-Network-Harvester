@@ -153,6 +153,7 @@ def update_all_videos(harvester):
             while get_vid_url and not out_of_window:
                 video_list = harvester.api_call("GetYouTubeVideoFeed",{"uri":get_vid_url})
                 for video in video_list.entry:
+
                     published = datetime.strptime(video.published.text,'%Y-%m-%dT%H:%M:%S.000Z')
                     if published < harvester.harvest_window_to:
                         snhvideo = update_video(snhuser, video)

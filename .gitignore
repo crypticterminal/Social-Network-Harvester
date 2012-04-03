@@ -3,4 +3,4 @@ generate.py
 settings.py
 *.log
 *.pkl
-upload/*.*
+upload/

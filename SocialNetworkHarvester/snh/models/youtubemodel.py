@@ -232,7 +232,7 @@ class YTVideo(models.Model):
     view_count = models.IntegerField(null=True)
     duration = models.IntegerField(null=True)
 
-    video_file = models.FileField(upload_to="./", null=True, blank=True)
+    video_file_path = models.TextField(null=True)
 
     def update_from_youtube(self, snh_user, yt_video):
         model_changed = False

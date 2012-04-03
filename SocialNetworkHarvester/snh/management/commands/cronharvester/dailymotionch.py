@@ -204,7 +204,7 @@ def update_users(harvester):
     usage = resource.getrusage(resource.RUSAGE_SELF)
     logger.info(u"Will harvest users for %s Mem:%s MB" % (harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
 
-def update_video(harvester, snhuser, videoid):
+def get_video(harvester, videoid):
     result = harvester.api_call("GET",
                                 str(
                                     "/video/%(id)s?fields="
@@ -322,15 +322,19 @@ def update_video(harvester, snhuser, videoid):
                                     )
                                 )
     dmvideo = result["result"]
+    return dmvideo
+
+def update_video(harvester, snhuser, dmvideo):
+
     try:
         try:
-            snh_video = DMVideo.objects.get(fid__exact=videoid)
+            snh_video = DMVideo.objects.get(fid__exact=videoid["id"])
         except ObjectDoesNotExist:
             snh_video = DMVideo(user=snhuser)
             snh_video.save()
         snh_video.update_from_dailymotion(snhuser, dmvideo)                
     except:
-        msg = u"Cannot update video %s" % (videoid)
+        msg = u"Cannot update video %s" % (videoid["id"])
         logger.exception(msg) 
 
     return snh_video
@@ -433,11 +437,15 @@ def update_all_videos(harvester):
                                                 )
                                             )
                 for i in result["result"]["list"]:
-                    logger.debug(u"---------vid:%s" % i["id"])
-                    snh_video = update_video(harvester,snhuser,i["id"])
-                    update_all_comments(harvester, snh_video)
-                    if snh_video.created_time > harvester.harvest_window_from or \
-                        snh_video.created_time < harvester.harvest_window_to:
+
+                    dmvideo = get_video(harvester, i["id"])
+                    published =  datetime.fromtimestamp(float(dm_video["created_time"]))
+                    if published < harvester.harvest_window_to:
+                        logger.debug(u"---------vid:%s" % i["id"])
+                        snh_video = update_video(harvester,snhuser,dmvideo)
+                        update_all_comments(harvester, snh_video)
+
+                    if published < harvester.harvest_window_from:
                         out_of_window = True
                         break
 
