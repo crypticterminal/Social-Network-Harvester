@@ -333,7 +333,7 @@ def update_video(harvester, snhuser, videoid):
         msg = u"Cannot update video %s" % (videoid)
         logger.exception(msg) 
 
-    return True, snh_video
+    return snh_video
 
 def update_all_comments(harvester, snhvideo):
 
@@ -419,7 +419,8 @@ def update_all_videos(harvester):
             logger.debug(u"%s" % snhuser.screenname)
             has_more = True
             page = 0
-            while has_more:
+            out_of_window = False
+            while has_more and not out_of_window:
                 page += 1
                 result = harvester.api_call("GET",
                                             str(
@@ -433,11 +434,14 @@ def update_all_videos(harvester):
                                             )
                 for i in result["result"]["list"]:
                     logger.debug(u"---------vid:%s" % i["id"])
-                    in_harvest_window, snh_video = update_video(harvester,snhuser,i["id"])
+                    snh_video = update_video(harvester,snhuser,i["id"])
                     update_all_comments(harvester, snh_video)
-                    if not in_harvest_window:
+                    if snh_video.created_time > harvester.harvest_window_from or \
+                        snh_video.created_time < harvester.harvest_window_to:
+                        out_of_window = True
                         break
-                has_more = result["result"]["has_more"] and in_harvest_window
+
+                has_more = result["result"]["has_more"]
                 logger.debug(u"---------page:%d" % page)
         else:
             logger.info(u"Skipping user update: %s(%s) because user has triggered the error flag." % (unicode(snhuser), snhuser.fid if snhuser.fid else "0"))

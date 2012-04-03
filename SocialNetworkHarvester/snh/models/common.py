@@ -31,8 +31,8 @@ class AbstractHaverster(models.Model):
 
     dont_harvest_further_than = models.IntegerField(null=True)
 
-    harvest_window_start = models.DateTimeField(null=True)
-    harvest_window_end = models.DateTimeField(null=True)
+    harvest_window_from = models.DateTimeField(null=True)
+    harvest_window_to = models.DateTimeField(null=True)
 
     full_harvest_on_next_run = models.BooleanField()
 

@@ -30,7 +30,7 @@ class Command(BaseCommand):
             videos = DMVideo.objects.all()
             for vid in videos:
                 logger.info("will extract: %s" % vid.url)
-                ret = subprocess.call(["youtube-dl","-oupload/%(id)s.%(ext)s", "%s" % vid.url])
+                ret = subprocess.call(["youtube-dl","-oupload/dailymotion_%(id)s.%(ext)s", "%s" % vid.url])
                 if ret != 0:
                     logger.info("error:%s" % ret)
                     break

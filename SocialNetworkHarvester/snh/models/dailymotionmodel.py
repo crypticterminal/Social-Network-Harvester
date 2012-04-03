@@ -312,6 +312,8 @@ class DMVideo(models.Model):
     geoblocking = models.TextField(null=True)
     in_3d = models.BooleanField()
 
+    video_file = models.FileField(upload_to="./")
+
     def update_url_fk(self, self_prop, face_prop, dailymotion_model):
         model_changed = False
         if face_prop in dailymotion_model:

@@ -16,7 +16,9 @@ class YoutubeHarvester(AbstractHaverster):
     last_harvested_user = models.ForeignKey('YTUser',  related_name='last_harvested_user', null=True)
     current_harvested_user = models.ForeignKey('YTUser', related_name='current_harvested_user',  null=True)
 
-    client = gdata.youtube.service.YouTubeService()
+    dev_key = models.TextField(null=True)
+
+    client = None
 
     haverst_deque = None
 
@@ -30,7 +32,12 @@ class YoutubeHarvester(AbstractHaverster):
         super(YoutubeHarvester, self).end_current_harvest()
 
     def api_call(self, method, params):
+        if self.client is None:
+            self.client = gdata.youtube.service.YouTubeService()
+            self.client.developer_key = self.dev_key
+            print self.dev_key         
         super(YoutubeHarvester, self).api_call(method, params)
+        time.sleep(0.7)
         metp = getattr(self.client, method)
         ret = metp(**params)
         return ret
@@ -115,34 +122,14 @@ class YTUser(models.Model):
     error_triggered = models.BooleanField()
     updated_time = models.DateTimeField(null=True)
 
-    def update_url_fk(self, self_prop, face_prop, Youtube_model):
-        model_changed = False
-        if face_prop in Youtube_model:
-            prop_val = Youtube_model[face_prop]
-            if self_prop is None or self_prop.original_url != prop_val:
-                url = None
-                try:
-                    url = URL.objects.filter(original_url=prop_val)[0]
-                except:
-                    pass
+    last_web_access = models.DateTimeField(null=True)
+    subscriber_count = models.IntegerField(null=True)
+    video_watch_count = models.IntegerField(null=True)
+    view_count = models.IntegerField(null=True)
 
-                if url is None:
-                    url = URL(original_url=prop_val)
-                    url.save()
-
-                self_prop = url
-                model_changed = True
-        return model_changed, self_prop
-
-    def isUTF8(self, text):
-        try:
-            text = unicode(text, 'UTF-8', 'strict')
-            return True
-        except UnicodeDecodeError:
-            return False
     def update_from_youtube(self, yt_user):
         model_changed = False
-        props_to_check = {
+        text_to_check = {
                             u"gender":u"gender",
                             u"location":u"location",
                             u"username":u"username",
@@ -159,24 +146,55 @@ class YTUser(models.Model):
                             u"hometown":u"hometown",
                             }
 
+        split_uri = yt_user.id.text.split("/")
+        fid = split_uri[len(split_uri)-1]
+
+        if self.fid != fid:
+            self.fid = fid
+            model_changed = True
+
         if yt_user.age and \
                 yt_user.age.text and \
                 self.age != int(yt_user.age.text):
             self.age = int(yt_user.age.text)
-            print "age change %d" % self.age 
+            #print "age change %d" % self.age 
             model_changed = True
 
-        for prop in props_to_check:
-            if props_to_check[prop] in yt_user.__dict__ and \
-                    yt_user.__dict__[props_to_check[prop]] and \
-                    yt_user.__dict__[props_to_check[prop]].text and \
-                    self.__dict__[prop] != unicode(yt_user.__dict__[props_to_check[prop]].text, 'UTF-8'):
+        yt_last_web_access = yt_user.statistics.last_web_access
+        date_val = datetime.strptime(yt_last_web_access,'%Y-%m-%dT%H:%M:%S.000Z')
+        if self.last_web_access != date_val:
+            self.last_web_access = date_val
+            model_changed = True
 
-                if not self.isUTF8(yt_user.__dict__[props_to_check[prop]].text):
-                    print "UTF", prop
+        if yt_user.statistics and \
+                yt_user.statistics.subscriber_count and \
+                self.subscriber_count != int(yt_user.statistics.subscriber_count):
+            self.subscriber_count = int(yt_user.statistics.subscriber_count)
+            #rint "subscriber_count change %d" % self.subscriber_count 
+            model_changed = True
 
-                self.__dict__[prop] = unicode(yt_user.__dict__[props_to_check[prop]].text, 'UTF-8')
-                print "prop changed. %s = %s" % (prop, self.__dict__[prop]) 
+        if yt_user.statistics and \
+                yt_user.statistics.video_watch_count and \
+                self.video_watch_count != int(yt_user.statistics.video_watch_count):
+            self.video_watch_count = int(yt_user.statistics.video_watch_count)
+            #print "video_watch_count change %d" % self.video_watch_count 
+            model_changed = True
+
+        if yt_user.statistics and \
+                yt_user.statistics.view_count and \
+                self.view_count != int(yt_user.statistics.view_count):
+            self.view_count = int(yt_user.statistics.view_count)
+            #print "view_count change %d" % self.view_count 
+            model_changed = True
+
+        for prop in text_to_check:
+            if text_to_check[prop] in yt_user.__dict__ and \
+                    yt_user.__dict__[text_to_check[prop]] and \
+                    yt_user.__dict__[text_to_check[prop]].text and \
+                    self.__dict__[prop] != unicode(yt_user.__dict__[text_to_check[prop]].text, 'UTF-8'):
+
+                self.__dict__[prop] = unicode(yt_user.__dict__[text_to_check[prop]].text, 'UTF-8')
+                #print "prop changed. %s = %s" % (prop, self.__dict__[prop]) 
                 model_changed = True
             
         if model_changed:
@@ -198,56 +216,129 @@ class YTVideo(models.Model):
     
     user = models.ForeignKey('YTUser',  related_name='ytvideo.user')
     fid =  models.CharField(max_length=255, null=True)
-    uri = models.ForeignKey('URL', related_name="ytvideo.uri", null=True)
+    url = models.ForeignKey('URL', related_name="ytvideo.url", null=True)
+    player_url = models.ForeignKey('URL', related_name="ytvideo.player_url", null=True)
+    swf_url = models.ForeignKey('URL', related_name="ytvideo.swf_url", null=True)
+    title = models.TextField(null=True)
 
-    def update_url_fk(self, self_prop, face_prop, Youtube_model):
+    published = models.DateTimeField(null=True)
+    updated = models.DateTimeField(null=True)
+    recorded = models.DateTimeField(null=True)
+
+    description = models.TextField(null=True)
+    category =  models.CharField(max_length=255, null=True)
+    #tags = Many2Many
+    favorite_count = models.IntegerField(null=True)
+    view_count = models.IntegerField(null=True)
+    duration = models.IntegerField(null=True)
+
+    video_file = models.FileField(upload_to="./", null=True, blank=True)
+
+    def update_from_youtube(self, snh_user, yt_video):
         model_changed = False
-        if face_prop in Youtube_model:
-            prop_val = Youtube_model[face_prop]
-            if self_prop is None or self_prop.original_url != prop_val:
-                url = None
-                try:
-                    url = URL.objects.filter(original_url=prop_val)[0]
-                except:
-                    pass
-
-                if url is None:
-                    url = URL(original_url=prop_val)
-                    url.save()
-
-                self_prop = url
-                model_changed = True
-        return model_changed, self_prop
-
-    def update_from_youtube(self, snh_user, dm_video):
-        model_changed = False
-        props_to_check = {
+        text_to_check = {
+                            u"title":u"title",
                             u"description":u"description",
                             }
+        split_uri = yt_video.id.text.split("/")
+        fid = split_uri[len(split_uri)-1]
 
-        if yt_user.age and \
-                yt_user.age.text and \
-                self.age != int(yt_user.age.text):
-            self.age = int(yt_user.age.text)
-            print "age change %d" % self.age 
+        if self.fid != fid:
+            self.fid = fid
             model_changed = True
 
-        for prop in props_to_check:
-            if props_to_check[prop] in yt_user.__dict__ and \
-                    yt_user.__dict__[props_to_check[prop]] and \
-                    yt_user.__dict__[props_to_check[prop]].text and \
-                    self.__dict__[prop] != unicode(yt_user.__dict__[props_to_check[prop]].text, 'UTF-8'):
+        if self.url is None or self.url.original_url != yt_video.id.text:
+            url = None
+            try:
+                url = URL.objects.filter(original_url=yt_video.id.text)[0]
+            except:
+                pass
 
-                if not self.isUTF8(yt_user.__dict__[props_to_check[prop]].text):
-                    print "UTF", prop
+            if url is None:
+                url = URL(original_url=yt_video.id.text)
+                url.save()
+            self.url = url
+            model_changed = True
 
-                self.__dict__[prop] = unicode(yt_user.__dict__[props_to_check[prop]].text, 'UTF-8')
-                print "prop changed. %s = %s" % (prop, self.__dict__[prop]) 
+        if self.player_url is None or self.player_url.original_url != yt_video.media.player.url:
+            url = None
+            try:
+                url = URL.objects.filter(original_url=yt_video.media.player.url)[0]
+            except:
+                pass
+
+            if url is None:
+                url = URL(original_url=yt_video.media.player.url)
+                url.save()
+            self.player_url = url
+            model_changed = True
+
+        if self.swf_url is None or self.swf_url.original_url != yt_video.GetSwfUrl():
+            url = None
+            try:
+                url = URL.objects.filter(original_url=yt_video.GetSwfUrl())[0]
+            except:
+                pass
+
+            if url is None:
+                url = URL(original_url=yt_video.GetSwfUrl())
+                url.save()
+            self.swf_url = url
+            model_changed = True
+
+        for prop in text_to_check:
+            if text_to_check[prop] in yt_video.media.__dict__ and \
+                    yt_video.media.__dict__[text_to_check[prop]] and \
+                    yt_video.media.__dict__[text_to_check[prop]].text and \
+                    self.__dict__[prop] != unicode(yt_video.media.__dict__[text_to_check[prop]].text, 'UTF-8'):
+
+                self.__dict__[prop] = unicode(yt_video.media.__dict__[text_to_check[prop]].text, 'UTF-8')
+                #print "prop changed. %s = %s" % (prop, self.__dict__[prop]) 
                 model_changed = True
-            
+
+        yt_published = yt_video.published.text
+        date_val = datetime.strptime(yt_published,'%Y-%m-%dT%H:%M:%S.000Z')
+        if self.published != date_val:
+            self.published = date_val
+            model_changed = True
+
+        yt_updated = yt_video.updated.text
+        date_val = datetime.strptime(yt_updated,'%Y-%m-%dT%H:%M:%S.000Z')
+        if self.updated != date_val:
+            self.updated = date_val
+            model_changed = True
+
+        if yt_video.recorded:
+            yt_recorded = yt_video.recorded.text
+            date_val = datetime.strptime(yt_recorded,'%Y-%m-%d')
+            if self.recorded != date_val:
+                self.recorded = date_val
+                model_changed = True
+
+        if yt_video.statistics and \
+                yt_video.statistics.view_count and \
+                self.view_count != int(yt_video.statistics.view_count):
+            self.view_count = int(yt_video.statistics.view_count)
+            #print "view_count change %d" % self.view_count 
+            model_changed = True
+
+        if yt_video.statistics and \
+                yt_video.statistics.favorite_count and \
+                self.favorite_count != int(yt_video.statistics.favorite_count):
+            self.favorite_count = int(yt_video.statistics.favorite_count)
+            #print "favorite_count change %d" % self.favorite_count 
+            model_changed = True
+
+        if yt_video.media.duration and \
+                yt_video.media.duration.seconds and \
+                self.duration != int(yt_video.media.duration.seconds):
+            self.duration = int(yt_video.media.duration.seconds)
+            #print "duration change %d" % self.duration 
+            model_changed = True
+        
         if model_changed:
             self.model_update_date = datetime.utcnow()
-            #print self.pmk_id, self.fid, self, self.__dict__, yt_user
+            #print self.pmk_id, self.fid, self, self.__dict__, yt_video
             self.save()
 
         return model_changed
@@ -265,19 +356,29 @@ class YTComment(models.Model):
     fid =  models.CharField(max_length=255, null=True)
 
     user = models.ForeignKey('YTUser',  related_name='ytcomment.user', null=True)
-    video = models.ForeignKey('DMVideo',  related_name='ytcomment.video')
+    video = models.ForeignKey('YTVideo',  related_name='ytcomment.video')
     message = models.TextField(null=True)
 
+    published = models.DateTimeField(null=True)
+    updated = models.DateTimeField(null=True)
 
-    def update_from_Youtube(self, snh_video, snh_user, yt_comment):
+    def update_from_youtube(self, snh_video, snh_user, yt_comment):
         model_changed = False
-        props_to_check = {
+        text_to_check = {
                             u"message":u"message",
                             }
 
         date_to_check = {
                             #"created_time":"created_time",
                             }
+
+        split_uri = yt_comment.id.text.split("/")
+        fid = split_uri[len(split_uri)-1]
+
+        if self.fid != fid:
+            self.fid = fid
+            model_changed = True
+
 
         if self.video != snh_video:
             self.video = snh_video
@@ -287,17 +388,23 @@ class YTComment(models.Model):
             self.user = snh_user
             model_changed = True
 
-        for prop in props_to_check:
-            if props_to_check[prop] in yt_comment and unicode(self.__dict__[prop]) != unicode(yt_comment[props_to_check[prop]]):
-                self.__dict__[prop] = yt_comment[props_to_check[prop]]
-                model_changed = True
+        yt_published = yt_comment.published.text
+        date_val = datetime.strptime(yt_published,'%Y-%m-%dT%H:%M:%S.000Z')
+        if self.published != date_val:
+            self.published = date_val
+            model_changed = True
 
-        for prop in date_to_check:
-            if date_to_check[prop] in yt_comment and self.__dict__[prop] != yt_comment[date_to_check[prop]]:
-                date_val = datetime.fromtimestamp(float(yt_comment[prop]))
-                if self.__dict__[prop] != date_val:
-                    self.__dict__[prop] = date_val
-                    model_changed = True
+        yt_updated = yt_comment.updated.text
+        date_val = datetime.strptime(yt_updated,'%Y-%m-%dT%H:%M:%S.000Z')
+        if self.updated != date_val:
+            self.updated = date_val
+            model_changed = True
+
+
+        content = unicode(yt_comment.content.text, 'UTF-8')
+        if self.message != content:
+            self.message = content
+            model_changed = True
 
         if model_changed:
             self.model_update_date = datetime.utcnow()
