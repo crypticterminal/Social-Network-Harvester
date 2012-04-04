@@ -74,38 +74,27 @@ def manage_twitter_exception(retry_count, harvester, user, page, tex):
 
     return (retry_count, retry_count > harvester.max_retry_on_fail)
 
-def get_timedelta(twitter_time):
-    ts = datetime.strptime(twitter_time,'%a %b %d %H:%M:%S +0000 %Y')
-    return (datetime.utcnow() - ts).days
-
-
 def get_latest_statuses(harvester, user):
 
     page = 1
     retry = 0
     lsp = []
     latest_statuses = []
+    too_old = False
 
-    while True:
+    while not too_old:
         try:
             logger.debug(u"%s:%s(%d):%d" % (harvester, unicode(user), user.fid if user.fid else 0, page))
             lsp = get_latest_statuses_page(harvester, user, page)
             
-            if lsp:
-                latest_statuses += lsp
-            else:
-                break
-
-            if get_timedelta(lsp[len(lsp)-1].created_at) >= harvester.dont_harvest_further_than:
-                logger.debug(u"%s:%s(%d). max date reached. Now:%s, Status.created_at:%s, Delta:%s" % 
-                                                                (harvester, 
-                                                                unicode(user), 
-                                                                user.fid if user.fid else 0, 
-                                                                datetime.utcnow(), 
-                                                                datetime.strptime(lsp[len(lsp)-1].created_at,'%a %b %d %H:%M:%S +0000 %Y'), 
-                                                                get_timedelta(lsp[len(lsp)-1].created_at)
-                                                                ))
-                break
+            for status in lsp:
+                status_time = datetime.strptime(status.created_at,'%a %b %d %H:%M:%S +0000 %Y')
+                if status_time > harvester.harvest_window_from and \
+                        status_time < harvester.harvest_window_to:
+                    latest_statuses.append(status)
+                if status_time < harvester.harvest_window_from:
+                    too_old = True
+                    break
 
             page = page + 1
             retry = 0

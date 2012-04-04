@@ -9,8 +9,6 @@ import resource
 import json
 
 
-from datetime import timedelta
-
 from django.core.exceptions import ObjectDoesNotExist
 from facepy.exceptions import FacepyError
 from fandjango.models import User as FanUser
@@ -84,12 +82,9 @@ def get_comment_paging(page):
     if u"paging" in page and u"next" in page[u"paging"]:
         url = urlparse.parse_qs(page[u"paging"][u"next"])
         __after_id = url[u"__after_id"][0]
+        offset = url[u"offset"][0]
         new_page = True
-    return ["__after_id",__after_id], new_page
-
-def get_timedelta(fb_time):
-    ts = datetime.strptime(fb_time,'%Y-%m-%dT%H:%M:%S+0000')
-    return (datetime.utcnow() - ts).days
+    return "offset=%s&__after_id%s" % (offset, __after_id), new_page
 
 def update_user_statuses(harvester, statuses):
     for res in statuses:
@@ -239,38 +234,45 @@ def update_user_batch(harvester):
 def update_user_status_from_batch(harvester, snhuser, fbstatus_page):
     next_bman = []
     status_count = len(fbstatus_page["data"])
+    too_old = False
 
     if status_count:
         usage = resource.getrusage(resource.RUSAGE_SELF)
         logger.debug(u"Updating %d statuses: %s Mem:%s MB" % (status_count, harvester, unicode(getattr(usage, "ru_maxrss")/(1024.0))))
 
-        #update_user_statuses(harvester, fbstatus_page["data"], snhuser)        
         for status in fbstatus_page["data"]:
-            lc_param = ""
+            status_time = datetime.strptime(status["created_time"],'%Y-%m-%dT%H:%M:%S+0000')
+            if status_time > harvester.harvest_window_from and \
+                    status_time < harvester.harvest_window_to:
+                lc_param = ""
+                try:
+                    latest_comments = FBComment.objects.filter(fid__startswith=status["id"]).order_by("-created_time")
+                    for comment in latest_comments:
+                        lc_param = "&__after_id=%s" % comment.fid
+                        break
+                except ObjectDoesNotExist:
+                    pass
+                    
+                res = FBResult()
+                res.harvester = harvester
+                res.result = status
+                res.ftype = "FBPost"
+                res.fid = status["id"]
+                res.parent = snhuser.fid
+                res.save()
+                d = {"method": "GET", "relative_url": u"%s/comments?limit=300%s" % (unicode(status["id"]), lc_param)}
+                next_bman.append({"snh_obj":str(status["id"]),"retry":0,"request":d, "callback":update_user_comments_from_batch})
 
-            try:
-                latest_comments = FBComment.objects.filter(fid__startswith=status["id"]).order_by("-created_time")
-                for comment in latest_comments:
-                    lc_param = "&__after_id=%s" % comment.fid
-                    break
-            except ObjectDoesNotExist:
-                pass
-                
-            res = FBResult()
-            res.harvester = harvester
-            res.result = status
-            res.ftype = "FBPost"
-            res.fid = status["id"]
-            res.parent = snhuser.fid
-            res.save()
-            d = {"method": "GET", "relative_url": u"%s/comments?limit=300%s" % (unicode(status["id"]), lc_param)}
-            next_bman.append({"snh_obj":str(status["id"]),"retry":0,"request":d, "callback":update_user_comments_from_batch})
-            
+                d = {"method": "GET", "relative_url": u"%s/likes?limit=300%s" % (unicode(status["id"]), lc_param)}
+                next_bman.append({"snh_obj":str(status["id"]),"retry":0,"request":d, "callback":update_likes_from_batch})
+
+            if status_time < harvester.harvest_window_from:
+                too_old = True
+                break
+
         paging, new_page = get_status_paging(fbstatus_page)
 
-        delta = get_timedelta(fbstatus_page["data"][status_count-1]["created_time"])
-
-        if new_page and delta < harvester.dont_harvest_further_than:
+        if not too_old and new_page:
             d = {"method": "GET", "relative_url": u"%s/feed?limit=300&%s=%s" % (unicode(snhuser.fid), paging[0], paging[1])}
             next_bman.append({"snh_obj":snhuser,"retry":0,"request":d,"callback":update_user_status_from_batch})
 
@@ -316,7 +318,6 @@ def update_user_comments_from_batch(harvester, statusid, fbcomments_page):
         usage = resource.getrusage(resource.RUSAGE_SELF)
         logger.debug(u"Updating %d comments: %s Mem:%s MB" % (comment_count, harvester, unicode(getattr(usage, "ru_maxrss")/(1024.0))))
 
-        #update_user_comments(harvester, fbcomments_page["data"], status)
         for comment in fbcomments_page["data"]:
             res = FBResult()
             res.harvester = harvester
@@ -328,12 +329,34 @@ def update_user_comments_from_batch(harvester, statusid, fbcomments_page):
 
         paging, new_page = get_comment_paging(fbcomments_page)
 
-        delta = get_timedelta(fbcomments_page["data"][comment_count-1]["created_time"])
-
-        if new_page and delta < harvester.dont_harvest_further_than:
-            d = {"method": "GET", "relative_url": u"%s/comments?limit=300&%s=%s" % (statusid, paging[0], paging[1])}
+        if new_page:
+            d = {"method": "GET", "relative_url": u"%s/comments?limit=300&%s" % (statusid, paging)}
             next_bman.append({"snh_obj":statusid,"retry":0,"request":d,"callback":update_user_comments_from_batch})
         
+    return next_bman
+
+def update_likes_from_batch(harvester, statusid, fblikes_page):
+    next_bman = []
+    likes_count = len(fblikes_page["data"])
+
+    if likes_count:
+        usage = resource.getrusage(resource.RUSAGE_SELF)
+        logger.debug(u"Updating %d likes: %s statusid:%s Mem:%s MB" % (likes_count, statusid, harvester, unicode(getattr(usage, "ru_maxrss")/(1024.0))))
+
+        res = FBResult()
+        res.harvester = harvester
+        res.result = fblikes_page["data"]
+        res.ftype = "FBPost.likes"
+        res.fid = statusid
+        res.parent = statusid
+        res.save()
+
+        paging, new_page = get_comment_paging(fblikes_page)
+        
+        if new_page:
+            d = {"method": "GET", "relative_url": u"%s/likes?limit=300&%s" % (statusid, paging)}
+            next_bman.append({"snh_obj":statusid,"retry":0,"request":d,"callback":update_likes_from_batch})
+
     return next_bman
 
 queue = Queue.Queue()
@@ -366,16 +389,19 @@ class ThreadStatus(threading.Thread):
                 
         logger.info(u"ThreadStatus %s. End." % self)
 
-    def update_user_status(self, status, user):
+    def update_user_status(self, fbstatus, user):
         try:
             try:
-                fb_status = FBPost.objects.get(fid__exact=status["id"])
+                snh_status = FBPost.objects.get(fid__exact=fbstatus["id"])
             except ObjectDoesNotExist:
-                fb_status = FBPost(user=user)
-                fb_status.save()
-            fb_status.update_from_facebook(status,user)
+                snh_status = FBPost(user=user)
+                snh_status.save()
+            snh_status.update_from_facebook(fbstatus,user)
+            likes_list = FBResult.objects.filter(fid__startswith=fbstatus["id"]).filter(ftype__exact="FBPost.likes")
+            for likes in likes_list:
+                snh_status.update_likes_from_facebook(eval(likes.result))
         except:
-            msg = u"Cannot update status %s for %s" % (unicode(status), user.fid if user.fid else "0")
+            msg = u"Cannot update status %s for %s" % (unicode(fbstatus), user.fid if user.fid else "0")
             logger.exception(msg) 
 
 class ThreadComment(threading.Thread):

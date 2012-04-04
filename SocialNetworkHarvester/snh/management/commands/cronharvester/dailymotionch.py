@@ -507,10 +507,8 @@ def update_all_comments(harvester, snhvideo):
                                     )
         for i in result["result"]["list"]:
             logger.debug(u"---------comment:%s" % i["id"])
-            in_harvest_window, snh_comment = update_comment(harvester,snhvideo,i["id"])
-            if not in_harvest_window:
-                break
-        has_more = result["result"]["has_more"] and in_harvest_window
+            snh_comment = update_comment(harvester,snhvideo,i["id"])
+        has_more = result["result"]["has_more"]
         logger.debug(u"---------comment page:%d" % page)
 
 
@@ -561,7 +559,7 @@ def update_comment(harvester, snhvideo, dmcommentid):
         msg = u"Cannot update comment %s" % (dmcomment["id"])
         logger.exception(msg) 
 
-    return True, snh_comment
+    return snh_comment
 
 
 def update_all_videos(harvester):

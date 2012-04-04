@@ -294,6 +294,31 @@ class FBPost(models.Model):
         return model_changed, self_prop
 
 
+    def update_likes_from_facebook(self, likes):
+        model_changed = False
+
+        for fbuser in likes:
+            if self.likes_from.filter(fid__exact=fbuser["id"]).count() == 0:
+                user_like = None
+                try:
+                    user_like = FBUser.objects.get(fid__exact=fbuser["id"])
+                except:
+                    pass
+                if user_like is None:
+                    user_like = FBUser(fid=fbuser["id"])
+                    user_like.update_from_facebook(fbuser)
+                    user_like.save()
+
+                self.likes_from.add(user_like)
+                model_changed = True
+
+        if model_changed:
+            self.model_update_date = datetime.utcnow()
+            self.error_on_update = False
+            self.save()
+   
+        return model_changed
+
     def update_from_facebook(self, facebook_model, user):
         model_changed = False
         props_to_check = {
@@ -335,8 +360,6 @@ class FBPost(models.Model):
                     self.__dict__[prop] != facebook_model[subprop[0]][subprop[1]]:
                 self.__dict__[prop] = facebook_model[subprop[0]][subprop[1]]
                 model_changed = True
-                if prop == "shares_count":
-                    print prop, facebook_model[subprop[0]], self.__dict__[prop], self.fid
 
         for prop in date_to_check:
             fb_val = facebook_model[prop]
@@ -369,26 +392,6 @@ class FBPost(models.Model):
         if changed:
             self.ffrom = self_prop
             model_changed = True
-
-        if "likes" in facebook_model:
-            if "data" in facebook_model["likes"]:
-                likes = facebook_model["likes"]["data"]
-                for fbuser in likes:
-                    if self.likes_from.filter(fid__exact=fbuser["id"]).count() == 0:
-                        user_like = None
-                        try:
-                            user_like = FBUser.objects.get(fid__exact=fbuser["id"])
-                        except:
-                            pass
-                        if user_like is None:
-                            user_like = FBUser(fid=fbuser["id"])
-                            user_like.update_from_facebook(fbuser)
-                            user_like.save()
-
-                        self.likes_from.add(user_like)
-                        model_changed = True
-                        print "saved", facebook_model["likes"]["data"], self, self.fid
-
 
         #if "to" in facebook_model:
         #    prop_val = facebook_model["to"]
