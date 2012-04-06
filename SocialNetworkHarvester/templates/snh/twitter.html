@@ -1,0 +1,76 @@
+{% extends "snh/snh_base.html" %}
+{% block scripts %}
+<script type="text/javascript" charset="utf-8">
+	$(document).ready(function() {
+		$('#user_table').dataTable(
+            {
+                "iDisplayLength": 100, 
+                "sPaginationType": "full_numbers",
+                "sDom": 'T<"clear">lfrtip',
+                "oTableTools": {
+                            "sSwfPath" : "/static/swf/copy_cvs_xls_pdf.swf"
+                }
+            });
+		$('#search_table').dataTable(
+            {
+                "iDisplayLength": 100, 
+                "sPaginationType": "full_numbers",
+                "sDom": 'T<"clear">lfrtip',
+                "oTableTools": {
+                            "sSwfPath" : "/static/swf/copy_cvs_xls_pdf.swf"
+                }
+            });
+	} );
+</script>
+{% endblock %}
+
+{% block content %}
+<ul>
+<li><a href="/twitter/0">All users</a></li>
+{% for harv in harvesters %}
+<li><a href="/twitter/{{ harv.pmk_id }}">{{ harv.harvester_name }}</a></li>
+{% endfor %}
+</ul>
+<h1>Twitter harvest - List of users</h1>
+<table id="user_table" class="pretty" width="100%">
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Screen Name</th>
+        <th>Description</th>
+        <th>Followers count</th>
+        <th>Friends count</th>
+        <th>Statuses count</th>
+        <th>Listed count</th>
+    </tr>
+    </thead>
+    <tbody>
+{% for twuser in user_list %}
+    <tr onclick="document.location.href='/twitter_detail/{{ twuser.screen_name }}/'">
+        <td>{{ twuser.name }}</td>
+        <td>{{ twuser.screen_name }}</td>
+        <td>{{ twuser.description }}</td>
+        <td class="center">{{ twuser.followers_count|default_if_none:"0" }}</td>
+        <td class="center">{{ twuser.friends_count|default_if_none:"0" }}</td>
+        <td class="center">{{ twuser.statuses_count|default_if_none:"0" }}</td>
+        <td class="center">{{ twuser.listed_count|default_if_none:"0" }}</td>
+    </tr>
+{% endfor %}
+    </tbody>
+</table>
+<h1>Twitter harvest - List of search tag</h1>
+<table id="search_table" class="pretty" width="100%">
+    <thead>
+    <tr>
+        <th>Term</th>
+    </tr>
+    </thead>
+    <tbody>
+{% for search in searches %}
+    <tr onclick="document.location.href='/twitter_search_detail/{{ search.pmk_id }}/'">
+        <td>{{ search.term }}</td>
+    </tr>
+{% endfor %}
+    </tbody>
+</table>
+{% endblock %}

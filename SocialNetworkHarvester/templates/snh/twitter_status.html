@@ -1,0 +1,91 @@
+{% extends "snh/snh_base.html" %}
+{% block scripts %}
+{% endblock %}
+
+{% block content %}
+<h1>Twitter: {{ twuser.name|default_if_none:twuser.screen_name }} </h1>
+
+<table id="user_table" class="pretty">
+    <thead>
+    <tr class="head">
+    <th>Name</th>
+    <th>Screen Name</th>
+    <th>Description</th>
+    <th>Followers count</th>
+    <th>Friends count</th>
+    <th>Statuses count</th>
+    <th>Listed count</th>
+    <th>URL</th>
+    <th>Location</th>
+    <th>Time zone</th>
+    <th>UTC offset</th>
+    <th>Protected</th>
+    <th>Language</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr onclick="document.location.href='/twitter_detail/{{ twuser.screen_name }}/'">
+    <td>{{ twuser.name }}</td>
+    <td>{{ twuser.screen_name }}</td>
+    <td>{{ twuser.description }}</td>
+    <td>{{ twuser.followers_count }}</td>
+    <td>{{ twuser.friends_count }}</td>
+    <td>{{ twuser.statuses_count }}</td>
+    <td>{{ twuser.listed_count }}</td>
+    <td></td>
+    <td>{{ twuser.location }}</td>
+    <td>{{ twuser.time_zone }}</td>
+    <td>{{ twuser.utc_offset }}</td>
+    <td>{{ twuser.protected }}</td>
+    <td>{{ twuser.lang }}</td>
+    </tr>
+    </tbody>
+
+
+</table>
+<h1>Status detail</h1>
+<table id="post_table" class="pretty" width="100%" border="0" cellspacing="2" cellpadding="0">
+    <thead>
+    <tr class="head">
+        <th>ID</th>
+        <th>Created at</th>
+        <th>Text</th>
+        <th>Retweet count</th>
+        <th>Retweeted</th>
+        <th>source</th>
+        <th>Truncated</th>
+        <th>Favorited</th>
+        <th>Mentions</th>
+        <th>Hash tag</th>
+        <th>URLS</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr onclick="document.location.href='/twitter_status/{{ status.fid }}/'" >
+        <td>{{ status.fid }}</td>
+        <td id="date">{{ status.created_at.ctime }}</td>
+        <td>{{ status.text|urlize }}</td>
+        <td>{{ status.retweet_count }}</td>
+        <td>{{ status.retweeted }}</td>
+        <td>{{ status.source|safe }}</td>
+        <td>{{ status.truncated }}</td>
+        <td>{{ status.favorited }}</td>
+        <td>
+        {%  for mention in mentions %}
+            @{{ mention }} &nbsp;
+        {% endfor %}
+        </td>
+        <td>
+        {%  for tag in tags %}
+            #{{ tag }} &nbsp;
+        {% endfor %}
+        </td>
+        <td>
+        {%  for url in urls %}
+            {{ url|urlize }} &nbsp;
+        {% endfor %}
+        </td>
+    </tr>
+    <tbody>
+</table>
+{% endblock %}

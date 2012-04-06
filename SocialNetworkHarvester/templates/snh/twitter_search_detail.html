@@ -1,0 +1,49 @@
+{% extends "snh/snh_base.html" %}
+{% block scripts %}
+<script type="text/javascript" charset="utf-8">
+	$(document).ready(
+        function() {
+		            $('#post_table').dataTable({
+                                    "iDisplayLength": 100,
+                                    "sPaginationType": "full_numbers",
+                                    "sDom": 'pT<"clear">lfrtip',
+                                    "aaSorting": [[ 0, "desc" ]],
+                                    "oTableTools": {
+                                                "sSwfPath" : "/static/swf/copy_cvs_xls_pdf.swf"
+                                    }
+                                });
+	                } 
+    );
+</script>
+{% endblock %}
+
+{% block content %}
+<h1>Twitter statuses for : {{search.term }} </h1>
+<h1>Total: {{ len }} </h1>
+<table id="post_table" class="pretty">
+    <thead>
+    <tr class="head">
+        <th>Created at</th>
+        <th>from</th>
+        <th>text</th>
+        <th>Retweet count</th>
+        <th>Retweeted</th>
+        <th>source</th>
+        <th>truncated</th>
+        </tr>
+    </thead>
+    <tbody>
+{% for status in statuses %}
+    <tr onclick="document.location.href='/twitter_status/{{ status.fid }}/'" >
+        <td id="date">{{ status.created_at.ctime }}</td>
+        <td >{{ status.user.screen_name }}</td>
+        <td >{{ status.text|urlize }}</td>
+        <td class="center">{{ status.retweet_count }}</td>
+        <td class="center">{{ status.retweeted }}</td>
+        <td>{{ status.source|safe }}</td>
+        <td>{{ status.truncated }}</td>
+    </tr>
+{% endfor %}
+    <tbody>
+</table>
+{% endblock %}
