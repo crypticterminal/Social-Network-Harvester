@@ -295,7 +295,7 @@ def run_harvester_v2(harvester):
         if True:
             update_users_twython(harvester)
 
-        if False:
+        if True:
             user = harvester.get_next_user_to_harvest()
             while user and harvester.remaining_hits > 0:
                 if not user.error_triggered:
