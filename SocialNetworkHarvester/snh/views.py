@@ -3,6 +3,8 @@
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render_to_response, get_object_or_404, get_list_or_404, redirect
+from django.core.exceptions import ObjectDoesNotExist
+
 from fandjango.decorators import facebook_authorization_required
 from fandjango.models import User as FanUser
 
@@ -21,17 +23,32 @@ def index(request):
 def twitter(request, harvester_id):
     if harvester_id == "0":
         user_list = TWUser.objects.all()
+        search_list = TWSearch.objects.all()
     else:
         harvester = TwitterHarvester.objects.filter(pmk_id__exact=harvester_id)[0]
         user_list = harvester.twusers_to_harvest.all()
+        search_list = harvester.twsearch_to_harvest.all()
+        
     all_harvesters =  TwitterHarvester.objects.all()
-    return  render_to_response(u'snh/twitter.html',{u'user_list': user_list,"harvesters":all_harvesters})
+    return  render_to_response(u'snh/twitter.html',{u'user_list': user_list,"harvesters":all_harvesters,"searches":search_list})
 
 @login_required(login_url=u'/login/')
-def twitter_detail(request, user_id):
-    user = get_object_or_404(TWUser, fid=user_id)
+def twitter_detail(request, screen_name):
+    user = get_object_or_404(TWUser, screen_name=screen_name)
     statuses = TWStatus.objects.filter(user=user).order_by(u"created_at")
-    return render_to_response(u'snh/twitter_detail.html', {u'twuser': user, u'statuses':statuses, u'len':len(statuses)})
+    search_list = []
+    try:
+        search = TWSearch.objects.get(term__exact="@%s" % user.screen_name)
+        search_list = search.status_list.all()
+    except ObjectDoesNotExist:
+        pass
+    return render_to_response(u'snh/twitter_detail.html', {u'twuser': user, u'statuses':statuses,u"searches":search_list, u'len':len(statuses)})
+
+@login_required(login_url=u'/login/')
+def twitter_search_detail(request, search_pmkid):
+    search = get_object_or_404(TWSearch, pmk_id=search_pmkid)
+    statuses = search.status_list.all().order_by(u"created_at")
+    return render_to_response(u'snh/twitter_search_detail.html', {u'search': search, u'statuses':statuses, u'len':len(statuses)})
 
 @login_required(login_url=u'/login/')
 def twitter_status(request, status_id):
@@ -42,7 +59,6 @@ def twitter_status(request, status_id):
                                                             u'urls':status.text_urls.all(),
                                                             u'tags':status.hash_tags.all(),
                                                             })
-
 
 
 @login_required(login_url=u'/login/')
