@@ -205,6 +205,7 @@ def update_search(snh_search, snh_status):
 def call_search(harvester, term, page):
     retry = 0
     status_list = None
+    next_page = True
     while status_list is None:
         try:
             params = {   "parameters":{
@@ -217,7 +218,15 @@ def call_search(harvester, term, page):
                                     }
                                 }
             logger.info(u"Getting new page:%d retry:%d, params:%s" % (page,retry,params))
-            status_list = harvester.api_call("GetPlainSearch", params)
+            data = harvester.api_call("GetPlainSearch", params)
+            if "results" in data:
+                status_list = data["results"]
+            if "next_page" in data:
+                print data["next_page"], page
+            else:
+                next_page = False
+                print "No next page!", term, page
+
         except twitter.TwitterError, tex:
             (retry, need_a_break) = manage_twitter_exception(retry, harvester, term, page, tex)
             if need_a_break:
@@ -226,12 +235,12 @@ def call_search(harvester, term, page):
                 sleeper(retry)
 
     logger.info(u"Next page for %s: %s Hits to go: %d, len:%d" % (term, harvester, harvester.remaining_hits,len(status_list)))
-    return status_list
+    return status_list, next_page
 
 def search_term(harvester, twsearch):
     page = 1
     too_old = False
-    status_list = call_search(harvester, twsearch.term, page)
+    status_list, next_page = call_search(harvester, twsearch.term, page)
     while status_list and not too_old:
         page += 1
         for status in status_list:
@@ -243,11 +252,12 @@ def search_term(harvester, twsearch):
                 snh_status = status_from_search(harvester, status)
                 update_search(twsearch, snh_status)
 
-            if status_time < harvester.harvest_window_from:
+            if status_time < harvester.harvest_window_from or not next_page:
                 too_old = True
                 break
         logger.info(u"last status date: %s" % status_time)
-        status_list = call_search(harvester, twsearch.term, page)
+        if next_page:
+            status_list, next_page = call_search(harvester, twsearch.term, page)
 
 def update_user_twython(twuser, user):
         try:
