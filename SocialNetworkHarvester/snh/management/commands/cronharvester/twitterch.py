@@ -65,6 +65,7 @@ def manage_exception(retry_count, harvester, user, page):
 
 def manage_twitter_exception(retry_count, harvester, user, page, tex):
     retry_count += 1
+    need_a_break = retry_count > harvester.max_retry_on_fail
 
     if unicode(tex) == u"Not found":
         user.error_triggered = True
@@ -79,12 +80,15 @@ def manage_twitter_exception(retry_count, harvester, user, page, tex):
         msg = u"Exception for the harvester %s for %s at page %d. Retry:%d." % (harvester, unicode(user), page, retry_count)
         logger.exception(msg)
         raise
+    elif unicode(tex) == u"{u'error': u'Invalid query'}":
+        logger.debug(u"%s:%s:%d. Invalid query. Breaking." % (harvester, unicode(user), page))
+        need_a_break = True
     else:
-        print tex.__dict__
+        print tex
         msg = u"Exception for the harvester %s for %s at page %d. Retry:%d. %s" % (harvester, unicode(user), page, retry_count, tex)
         logger.exception(msg)
 
-    return (retry_count, retry_count > harvester.max_retry_on_fail)
+    return (retry_count, need_a_break)
 
 def get_latest_statuses(harvester, user):
 
@@ -180,7 +184,6 @@ def status_from_search(harvester, tw_status):
                             screen_name=tw_status["from_user"],
                          )
             user.save()
-
         try:
             snh_status = TWStatus.objects.get(fid__exact=tw_status["id"])
         except ObjectDoesNotExist:
@@ -221,15 +224,11 @@ def call_search(harvester, term, page):
             data = harvester.api_call("GetPlainSearch", params)
             if "results" in data:
                 status_list = data["results"]
-            if "next_page" in data:
-                print data["next_page"], page
-            else:
-                next_page = False
-                print "No next page!", term, page
 
         except twitter.TwitterError, tex:
             (retry, need_a_break) = manage_twitter_exception(retry, harvester, term, page, tex)
             if need_a_break:
+                status_list = []
                 break
             else:
                 sleeper(retry)
@@ -258,6 +257,50 @@ def search_term(harvester, twsearch):
         logger.info(u"last status date: %s" % status_time)
         if next_page:
             status_list, next_page = call_search(harvester, twsearch.term, page)
+
+def para_search_term(harvester, all_twsearch):
+    
+    searches = []
+    for twsearch in all_twsearch:
+        searches.append({
+                            "twsearch":twsearch,
+                            "page":1,
+                            "has_more":True
+                        })
+    new_page_in_the_box = True
+
+    while new_page_in_the_box:
+        new_page_in_the_box = False
+
+        for search in searches:
+            if search["has_more"]:
+                new_page_in_the_box = True
+
+                logger.info(u"Will search for %s at page %d" % (search["twsearch"].term, search["page"]))
+                status_list, has_more = call_search(harvester, search["twsearch"].term, search["page"])
+
+                search["page"] += 1
+                search["has_more"] = has_more
+
+                status_time = None
+                for status in status_list:
+
+                    status_time = datetime.strptime(status["created_at"],'%a, %d %b %Y %H:%M:%S +0000')
+                    if status_time > harvester.harvest_window_from and \
+                            status_time < harvester.harvest_window_to:
+
+                        snh_status = status_from_search(harvester, status)
+                        update_search(search["twsearch"], snh_status)
+
+                    if status_time < harvester.harvest_window_from:
+                        search["has_more"] = False
+                        break
+
+                if status_time is None or len(status_list) == 0:
+                    search["has_more"] = False
+                 
+                logger.info(u"last status date: %s" % status_time)
+
 
 def update_user_twython(twuser, user):
         try:
@@ -323,8 +366,7 @@ def run_harvester_search(harvester):
         logger.info(u"START SEARCH API: %s Stats:%s" % (harvester,unicode(harvester.get_stats())))
         try:
             all_twsearch = harvester.twsearch_to_harvest.all()
-            for twsearch in all_twsearch:
-                search_term(harvester, twsearch)
+            para_search_term(harvester, all_twsearch)
         except twitter.TwitterError, e:
             msg = u"ERROR for %s" % twsearch.term
             logger.exception(msg)    
