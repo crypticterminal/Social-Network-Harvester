@@ -6,8 +6,6 @@ import Queue
 import threading
 import urlparse
 import resource
-import json
-
 
 from django.core.exceptions import ObjectDoesNotExist
 from facepy.exceptions import FacepyError
@@ -171,7 +169,7 @@ def generic_batch_processor(harvester, bman_list):
                     logger.info(u"New bman(%d/%d) len:%s InQueue:%d retry:%d total_retry:%d Mem:%s KB" % (bman_count, bman_total, len(bman), len(next_bman_list), retry, total_retry, getattr(usage, "ru_maxrss")/(1024.0)))
                     obj_pos = 0
                     pyb = [bman[j]["request"] for j in range(0, len(bman))]
-                    batch_result = harvester.api_call("batch",{"batch":json.dumps(pyb)})
+                    batch_result = harvester.api_call("batch",{"requests":pyb})
                     for fbobj in batch_result:
                         bman_obj = bman[obj_pos]
                         if type(fbobj) == dict:
