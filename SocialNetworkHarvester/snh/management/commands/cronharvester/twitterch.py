@@ -81,7 +81,7 @@ def manage_twitter_exception(retry_count, harvester, user, page, tex):
         msg = u"Exception for the harvester %s for %s at page %d. Retry:%d." % (harvester, unicode(user), page, retry_count)
         logger.exception(msg)
         raise
-    elif unicode(tex) == u"{u'error': u'Invalid query'}":
+    elif unicode(tex) == u"{u'error': u'Invalid query'}" or unicode(tex) == u"Invalid query":
         logger.debug(u"%s:%s:%d. Invalid query. Breaking." % (harvester, unicode(user), page))
         need_a_break = True
     else:
@@ -335,7 +335,7 @@ def update_users_twython(harvester):
 def run_harvester_v2(harvester):
 
     harvester.start_new_harvest()
-    logger.info(u"START: %s Stats:%s" % (harvester,unicode(harvester.get_stats())))
+    logger.info(u"START REST: %s Stats:%s" % (harvester,unicode(harvester.get_stats())))
     try:
         if True:
             update_users_twython(harvester)
@@ -361,6 +361,8 @@ def run_harvester_v2(harvester):
             aborted_user = harvester.get_current_harvested_user()
             aborted_user.was_aborted = True
             aborted_user.save()
+    
+    logger.info(u"End REST: %s Stats:%s" % (harvester,unicode(harvester.get_stats())))
 
 def run_harvester_search(harvester):
             
@@ -373,7 +375,7 @@ def run_harvester_search(harvester):
             msg = u"ERROR for %s" % twsearch.term
             logger.exception(msg)    
         finally:
-            logger.info(u"End REST API: %s Stats:%s" % (harvester,unicode(harvester.get_stats())))
+            logger.info(u"End SEARCH API: %s Stats:%s" % (harvester,unicode(harvester.get_stats())))
         
     logger.info(u"End: %s Stats:%s" % (harvester,unicode(harvester.get_stats())))
 
