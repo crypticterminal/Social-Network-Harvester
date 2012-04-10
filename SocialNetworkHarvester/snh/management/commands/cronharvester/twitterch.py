@@ -3,6 +3,7 @@
 import twitter
 import time
 import datetime
+import urllib
 
 from twython.twython import TwythonError, TwythonAPILimit, TwythonAuthError, TwythonRateLimitError
 
@@ -211,17 +212,18 @@ def call_search(harvester, term, page):
     next_page = True
     while status_list is None:
         try:
-            params = {   "parameters":{
-                                        u"q":term, 
+            uniterm = urllib.urlencode({"k":term.encode('utf-8')}).split("=")[1:][0]
+            params = {   u"parameters":{
+                                        u"q":uniterm, 
                                         #since_max[0]:since_max[1], 
-                                        u"rpp":"100",
-                                        u"page":"%d" % page,
-                                        u"include_rts":"true", 
-                                        u"include_entities":"true",
+                                        u"rpp":u"100",
+                                        u"page":u"%d" % page,
+                                        u"include_rts":u"true", 
+                                        u"include_entities":u"true",
                                     }
                                 }
             logger.info(u"Getting new page:%d retry:%d, params:%s" % (page,retry,params))
-            data = harvester.api_call("GetPlainSearch", params)
+            data = harvester.api_call(u"GetPlainSearch", params)
             if "results" in data:
                 status_list = data["results"]
 
@@ -338,7 +340,7 @@ def run_harvester_v2(harvester):
         if True:
             update_users_twython(harvester)
 
-        if True:
+        if False:
             user = harvester.get_next_user_to_harvest()
             while user and harvester.remaining_hits > 0:
                 if not user.error_triggered:

@@ -93,7 +93,8 @@ class URL(models.Model):
     pmk_id =  models.AutoField(primary_key=True)
     original_url = models.TextField(null=True)
     unshorten_url = models.TextField(null=True)
-    last_snapshot_time = models.DateTimeField(null=True)
+    take_snapshot = models.BooleanField()
+    snapshot_file_path = models.TextField(null=True)
 
 class Tag(models.Model):
 
