@@ -149,7 +149,6 @@ def update_all_videos(harvester):
     for snhuser in all_users:
         out_of_window = False
         if not snhuser.error_triggered:
-            print snhuser.username
             get_vid_url = 'http://gdata.youtube.com/feeds/api/users/%s/uploads?' % snhuser.username
             while get_vid_url and not out_of_window:
                 video_list = harvester.api_call("GetYouTubeVideoFeed",{"uri":get_vid_url})
