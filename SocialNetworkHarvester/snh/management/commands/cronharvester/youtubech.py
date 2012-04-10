@@ -145,10 +145,11 @@ def update_all_comment(harvester,snhvideo):
 def update_all_videos(harvester):
 
     all_users = harvester.ytusers_to_harvest.all()
-    out_of_window = False
 
     for snhuser in all_users:
+        out_of_window = False
         if not snhuser.error_triggered:
+            print snhuser.username
             get_vid_url = 'http://gdata.youtube.com/feeds/api/users/%s/uploads?' % snhuser.username
             while get_vid_url and not out_of_window:
                 video_list = harvester.api_call("GetYouTubeVideoFeed",{"uri":get_vid_url})
@@ -162,8 +163,8 @@ def update_all_videos(harvester):
                     if published < harvester.harvest_window_from:
                         out_of_window = True
                         break
-
-                get_vid_url = video_list.GetNextLink().href
+                if not out_of_window:
+                    get_vid_url = video_list.GetNextLink().href
         else:
             logger.info(u"Skipping user update: %s(%s) because user has triggered the error flag." % (unicode(snhuser), snhuser.fid if snhuser.fid else "0"))
 

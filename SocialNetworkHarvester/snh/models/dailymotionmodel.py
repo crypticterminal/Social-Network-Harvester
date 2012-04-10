@@ -150,7 +150,7 @@ class DMUser(models.Model):
         app_label = "snh"
 
     def __unicode__(self):
-        return self.screenname
+        return self.username
 
     pmk_id =  models.AutoField(primary_key=True)
 

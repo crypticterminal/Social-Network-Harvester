@@ -138,7 +138,7 @@ class TWSearch(models.Model):
         app_label = "snh"
 
     def __unicode__(self):
-        return self.screen_name
+        return self.term
 
     pmk_id =  models.AutoField(primary_key=True)
     term = models.TextField(null=True)

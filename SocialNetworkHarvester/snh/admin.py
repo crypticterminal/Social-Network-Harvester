@@ -3,7 +3,7 @@
 from django.contrib import admin
 
 from snh.models.twittermodel import TwitterHarvester
-from snh.models.twittermodel import TWUser
+from snh.models.twittermodel import TWUser, TWSearch
 
 from snh.models.facebookmodel import FacebookHarvester
 from snh.models.facebookmodel import FBUser
@@ -16,6 +16,10 @@ from snh.models.youtubemodel import YTUser
 #############
 class TwitterHarvesterInline(admin.StackedInline):
     model = TwitterHarvester.twusers_to_harvest.through
+    extra = 1
+
+class TwitterSearchHarvesterInline(admin.StackedInline):
+    model = TwitterHarvester.twsearch_to_harvest.through
     extra = 1
 
 class TwitterHarvesterAdmin(admin.ModelAdmin):
@@ -32,7 +36,7 @@ class TwitterHarvesterAdmin(admin.ModelAdmin):
 
             ]
 
-    inlines = [TwitterHarvesterInline]
+    inlines = [TwitterHarvesterInline, TwitterSearchHarvesterInline]
 
 class TWUserAdmin(admin.ModelAdmin):
     fields = [
@@ -40,8 +44,14 @@ class TWUserAdmin(admin.ModelAdmin):
                 u'error_triggered', 
             ]
 
+class TWSearchAdmin(admin.ModelAdmin):
+    fields = [
+                u'term', 
+            ]
+
 admin.site.register(TwitterHarvester, TwitterHarvesterAdmin)
 admin.site.register(TWUser, TWUserAdmin)
+admin.site.register(TWSearch, TWSearchAdmin)
 
 ##############
 class FacebookHarvesterInline(admin.StackedInline):
@@ -90,7 +100,7 @@ class DailyMotionHarvesterAdmin(admin.ModelAdmin):
 
 class DMUserAdmin(admin.ModelAdmin):
     fields = [
-                u'screenname', 
+                u'username',
             ]
 
 admin.site.register(DailyMotionHarvester, DailyMotionHarvesterAdmin)
