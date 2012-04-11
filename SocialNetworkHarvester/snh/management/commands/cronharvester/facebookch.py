@@ -263,9 +263,9 @@ def update_user_status_from_batch(harvester, snhuser, fbstatus_page):
                 res.save()
                 d = {"method": "GET", "relative_url": u"%s/comments?limit=240%s" % (unicode(status["id"]), lc_param)}
                 next_bman.append({"snh_obj":str(status["id"]),"retry":0,"request":d, "callback":update_user_comments_from_batch})
-
-                d = {"method": "GET", "relative_url": u"%s/likes?limit=240%s" % (unicode(status["id"]), lc_param)}
-                next_bman.append({"snh_obj":str(status["id"]),"retry":0,"request":d, "callback":update_likes_from_batch})
+                if harvester.update_likes:
+                    d = {"method": "GET", "relative_url": u"%s/likes?limit=240%s" % (unicode(status["id"]), lc_param)}
+                    next_bman.append({"snh_obj":str(status["id"]),"retry":0,"request":d, "callback":update_likes_from_batch})
 
             if status_time < harvester.harvest_window_from:
                 too_old = True

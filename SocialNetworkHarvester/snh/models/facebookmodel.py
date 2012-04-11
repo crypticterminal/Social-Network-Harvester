@@ -16,6 +16,7 @@ class FacebookHarvester(AbstractHaverster):
 
     client = None
     fbusers_to_harvest = models.ManyToManyField('FBUser', related_name='fbusers_to_harvest')
+    update_likes = models.BooleanField()
 
     #a bug or my limited knowledge of the framework.. cannot import fandjango.models here :(
     def set_client(self, client):

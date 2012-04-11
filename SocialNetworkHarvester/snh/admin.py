@@ -62,6 +62,7 @@ class FacebookHarvesterAdmin(admin.ModelAdmin):
     fields = [
                 u'harvester_name', 
                 u'is_active',
+                u'update_likes',
                 u'max_retry_on_fail',
                 u'harvest_window_from',
                 u'harvest_window_to',
