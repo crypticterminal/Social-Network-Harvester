@@ -204,9 +204,10 @@ def update_search(snh_search, snh_status):
 
     if snh_search.status_list.filter(fid__exact=snh_status.fid).count() == 0:
         snh_search.status_list.add(snh_status)
+        snh_search.latest_status_harvested = snh_status
         snh_search.save()
 
-def call_search(harvester, term, page):
+def call_search(harvester, term, page, since_id=None):
     retry = 0
     status_list = None
     next_page = True
@@ -215,7 +216,7 @@ def call_search(harvester, term, page):
             uniterm = urllib.urlencode({"k":term.encode('utf-8')}).split("=")[1:][0]
             params = {   u"parameters":{
                                         u"q":uniterm, 
-                                        #since_max[0]:since_max[1], 
+                                        u"since_id":since_id, 
                                         u"rpp":u"100",
                                         u"page":u"%d" % page,
                                         u"include_rts":u"true", 
@@ -241,7 +242,10 @@ def call_search(harvester, term, page):
 def search_term(harvester, twsearch):
     page = 1
     too_old = False
-    status_list, next_page = call_search(harvester, twsearch.term, page)
+    since_id = None
+    if twsearch.latest_status_harvested is not None:
+        since_id = unicode(twsearch.latest_status_harvested.fid)
+    status_list, next_page = call_search(harvester, twsearch.term, page, since_id)
     while status_list and not too_old:
         page += 1
         for status in status_list:
@@ -258,16 +262,20 @@ def search_term(harvester, twsearch):
                 break
         logger.info(u"last status date: %s" % status_time)
         if next_page:
-            status_list, next_page = call_search(harvester, twsearch.term, page)
+            status_list, next_page = call_search(harvester, twsearch.term, page, since_id)
 
 def para_search_term(harvester, all_twsearch):
     
     searches = []
     for twsearch in all_twsearch:
+        since_id = None
+        if twsearch.latest_status_harvested is not None:
+            since_id = unicode(twsearch.latest_status_harvested.fid)
         searches.append({
                             "twsearch":twsearch,
                             "page":1,
-                            "has_more":True
+                            "has_more":True,
+                            "since_id":since_id,
                         })
     new_page_in_the_box = True
 
@@ -278,8 +286,8 @@ def para_search_term(harvester, all_twsearch):
             if search["has_more"]:
                 new_page_in_the_box = True
 
-                logger.info(u"Will search for %s at page %d" % (search["twsearch"].term, search["page"]))
-                status_list, has_more = call_search(harvester, search["twsearch"].term, search["page"])
+                logger.info(u"Will search for %s at page %d, since_id:%s" % (search["twsearch"].term, search["page"], search["since_id"]))
+                status_list, has_more = call_search(harvester, search["twsearch"].term, search["page"], search["since_id"])
 
                 search["page"] += 1
                 search["has_more"] = has_more
