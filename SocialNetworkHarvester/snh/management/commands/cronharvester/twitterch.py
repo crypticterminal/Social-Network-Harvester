@@ -37,8 +37,8 @@ def run_twitter_harvester():
 
 def get_latest_statuses_page(harvester, user, page):
 
-    since_max = [u"since_id",None]
-    if user.was_aborted:
+    since_max = [u"since_id", None]
+    if user.was_aborted and user.last_harvested_status:
         since_max = [u"max_id",user.last_harvested_status.fid]
         
     latest_statuses_page = harvester.api_call("GetUserTimeline",
