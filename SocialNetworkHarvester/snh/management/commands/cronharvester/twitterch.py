@@ -202,7 +202,7 @@ def status_from_search(harvester, tw_status):
 
 def update_search(snh_search, snh_status):
 
-    if snh_search.status_list.filter(fid__exact=snh_status.fid).count() == 0:
+    if snh_status and snh_search.status_list.filter(fid__exact=snh_status.fid).count() == 0:
         snh_search.status_list.add(snh_status)
         snh_search.latest_status_harvested = snh_status
         snh_search.save()
