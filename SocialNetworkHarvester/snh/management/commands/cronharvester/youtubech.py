@@ -3,6 +3,7 @@
 from datetime import timedelta
 import resource
 import time
+import urllib
 
 from django.db.models import Q
 from django.core.exceptions import ObjectDoesNotExist
@@ -34,7 +35,8 @@ def update_user(harvester, userid):
     snh_user = None
 
     try:
-        ytuser = harvester.api_call("GetYouTubeUserEntry",{"username":userid})
+        uniuserid = urllib.urlencode({"k":userid.encode('utf-8')}).split("=")[1:][0]
+        ytuser = harvester.api_call("GetYouTubeUserEntry",{"username":uniuserid})
         split_uri = ytuser.id.text.split("/")
         fid = split_uri[len(split_uri)-1]
         try:
@@ -48,7 +50,7 @@ def update_user(harvester, userid):
     except gdata.service.RequestError, e:
         msg = u"RequestError on user %s. Trying to update anyway" % (userid)
         logger.info(msg)
-        if e[0]["status"] == 403:
+        if e[0]["status"] == 403 or e[0]["status"] == 400:
             try:
                 snh_user = YTUser.objects.get(username__exact=userid)
             except ObjectDoesNotExist:
@@ -58,7 +60,6 @@ def update_user(harvester, userid):
                 snh_user.save()
             msg = u"SUCCESS! %s" % (userid)
             logger.info(msg) 
-
         else:
             msg = u"RequestError on user %s!!! Force update failed!!!" % (userid)
             logger.exception(msg)

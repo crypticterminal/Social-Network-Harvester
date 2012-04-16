@@ -155,7 +155,7 @@ class TWUser(models.Model):
 
     pmk_id =  models.AutoField(primary_key=True)
 
-    fid = models.BigIntegerField(null=True, unique=True)
+    fid = models.BigIntegerField(null=True)
     name = models.CharField(max_length=255, null=True)
     screen_name = models.CharField(max_length=255, null=True)
     lang = models.CharField(max_length=255, null=True)
@@ -452,25 +452,25 @@ class TWStatus(models.Model):
             if "user_mentions" in entities:
                 tw_prop_val = entities["user_mentions"]
                 for tw_mention in tw_prop_val:
-                    user = None
+                    usermention = None
                     try:
-                        user = TWUser.objects.get(Q(fid__exact=tw_mention["id"])|Q(screen_name__exact=tw_mention["screen_name"]))
-                        user.update_from_rawtwitter(tw_mention,twython)
-                        user.save()
+                        usermention = TWUser.objects.get(Q(fid__exact=tw_mention["id"])|Q(screen_name__exact=tw_mention["screen_name"]))
+                        usermention.update_from_rawtwitter(tw_mention,twython)
+                        usermention.save()
                     except:
                         pass
 
-                    if user is None:
-                        user = TWUser(
+                    if usermention is None:
+                        usermention = TWUser(
                                         fid=tw_mention["id"],
                                      )
-                        user.update_from_rawtwitter(tw_mention, twython)
-                        user.save()
-                        self.user_mentions.add(user)
+                        usermention.update_from_rawtwitter(tw_mention, twython)
+                        usermention.save()
+                        self.user_mentions.add(usermention)
                         model_changed = True
                     else:
-                        if user not in self.user_mentions.all():
-                            self.user_mentions.add(user)
+                        if usermention not in self.user_mentions.all():
+                            self.user_mentions.add(usermention)
                             model_changed = True    
 
         if model_changed:
@@ -554,21 +554,21 @@ class TWStatus(models.Model):
         if "user_mentions" in twitter_model.__dict__:
             tw_prop_val = twitter_model.__dict__["user_mentions"]
             for tw_mention in tw_prop_val:
-                user = None
+                usermention = None
                 try:
-                    user = TWUser.objects.filter(screen_name=tw_mention.screen_name)[0]
+                    usermention = TWUser.objects.filter(screen_name=tw_mention.screen_name)[0]
                 except:
                     pass
 
-                if user is None:
-                    user = TWUser(screen_name=tw_mention.screen_name)
-                    user.save()
-                    self.user_mentions.add(user)
+                if usermention is None:
+                    usermention = TWUser(screen_name=tw_mention.screen_name)
+                    usermention.save()
+                    self.user_mentions.add(usermention)
                     model_changed = True
                 else:
                     
-                    if user not in self.user_mentions.all():
-                        self.user_mentions.add(user)
+                    if usermention not in self.user_mentions.all():
+                        self.user_mentions.add(usermention)
                         model_changed = True    
 
         if model_changed:

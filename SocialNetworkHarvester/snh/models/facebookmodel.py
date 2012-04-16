@@ -277,7 +277,7 @@ class FBPost(models.Model):
         model_changed = False
         if face_prop in facebook_model:
             prop_val = facebook_model[face_prop]
-            if self_prop is None or self_prop.fid != prop_val["id"]:
+            if prop_val and (self_prop is None or self_prop.fid != prop_val["id"]):
                 user = None
                 try:
                     user = FBUser.objects.filter(fid=prop_val["id"])[0]
@@ -454,7 +454,7 @@ class FBComment(models.Model):
         model_changed = False
         if face_prop in facebook_model:
             prop_val = facebook_model[face_prop]
-            if self_prop is None or self_prop.fid != prop_val["id"]:
+            if prop_val and (self_prop is None or self_prop.fid != prop_val["id"]):
                 user = None
                 try:
                     user = FBUser.objects.filter(fid=prop_val["id"])[0]
