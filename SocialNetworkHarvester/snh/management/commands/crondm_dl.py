@@ -22,11 +22,11 @@ class Command(BaseCommand):
 
             videos = DMVideo.objects.all()
             for vid in videos:
-                username = vid.user.username
+                userfid = vid.user.fid
                 if vid.video_file_path is None:
                     logger.info("will extract: %s" % vid.url)
                     try:
-                        filename = subprocess.check_output(["youtube-dl","-odailymotion_%s_%s" % (username, "%(id)s.%(ext)s"), "--get-filename", "%s" % vid.url])
+                        filename = subprocess.check_output(["youtube-dl","-odailymotion_%s_%s" % (userfid, "%(id)s.%(ext)s"), "--get-filename", "%s" % vid.url])
                         filepath = os.path.join(MEDIA_ROOT,filename.strip("\n"))
                         output = subprocess.check_output(["youtube-dl","-o%s" % filepath, "%s" % vid.url])
                         vid.video_file_path = filepath

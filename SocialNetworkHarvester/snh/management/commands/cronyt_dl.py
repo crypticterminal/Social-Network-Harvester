@@ -22,11 +22,11 @@ class Command(BaseCommand):
 
             videos = YTVideo.objects.all()
             for vid in videos:
-                username = vid.user.username
+                userfid = vid.user.fid
                 if vid.video_file_path is None:
                     logger.info("will extract: %s" % vid.swf_url)
                     try:
-                        filename = subprocess.check_output(["youtube-dl","-oyoutube_%s_%s" % (username, "%(id)s.%(ext)s"), "--get-filename", "%s" % vid.swf_url])
+                        filename = subprocess.check_output(["youtube-dl","-oyoutube_%s_%s" % (userfid, "%(id)s.%(ext)s"), "--get-filename", "%s" % vid.swf_url])
                         filepath = os.path.join(MEDIA_ROOT,filename.strip("\n"))
                         output = subprocess.check_output(["youtube-dl","-o%s" % filepath, "%s" % vid.swf_url])
                         vid.video_file_path = filepath
