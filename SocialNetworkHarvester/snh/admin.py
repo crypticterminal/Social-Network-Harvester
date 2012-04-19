@@ -1,6 +1,8 @@
 # coding=UTF-8
 
 from django.contrib import admin
+from django.contrib.admin.widgets import FilteredSelectMultiple
+from django.db import models
 
 from snh.models.twittermodel import TwitterHarvester
 from snh.models.twittermodel import TWUser, TWSearch
@@ -14,18 +16,12 @@ from snh.models.dailymotionmodel import DMUser
 from snh.models.youtubemodel import YoutubeHarvester
 from snh.models.youtubemodel import YTUser
 #############
-class TwitterHarvesterInline(admin.StackedInline):
-    model = TwitterHarvester.twusers_to_harvest.through
-    extra = 1
-
-class TwitterSearchHarvesterInline(admin.StackedInline):
-    model = TwitterHarvester.twsearch_to_harvest.through
-    extra = 1
-
 class TwitterHarvesterAdmin(admin.ModelAdmin):
     fields = [
                 u'harvester_name', 
                 u'is_active', 
+                u'twusers_to_harvest',
+                u'twsearch_to_harvest',
                 u'consumer_key',
                 u'consumer_secret',
                 u'access_token_key',
@@ -35,8 +31,11 @@ class TwitterHarvesterAdmin(admin.ModelAdmin):
                 u'harvest_window_to',
 
             ]
+    formfield_overrides = {
+        #models.CharField: {'widget': TextInput(attrs={'size':'20'})},
+        models.ManyToManyField: {'widget': FilteredSelectMultiple("Item",False)},
+    }
 
-    inlines = [TwitterHarvesterInline, TwitterSearchHarvesterInline]
 
 class TWUserAdmin(admin.ModelAdmin):
     fields = [
@@ -54,21 +53,21 @@ admin.site.register(TWUser, TWUserAdmin)
 admin.site.register(TWSearch, TWSearchAdmin)
 
 ##############
-class FacebookHarvesterInline(admin.StackedInline):
-    model = FacebookHarvester.fbusers_to_harvest.through
-    extra = 1
-
 class FacebookHarvesterAdmin(admin.ModelAdmin):
     fields = [
                 u'harvester_name', 
                 u'is_active',
+                u'fbusers_to_harvest',
                 u'update_likes',
                 u'max_retry_on_fail',
                 u'harvest_window_from',
                 u'harvest_window_to',
             ]
 
-    inlines = [FacebookHarvesterInline]
+    formfield_overrides = {
+        #models.CharField: {'widget': TextInput(attrs={'size':'20'})},
+        models.ManyToManyField: {'widget': FilteredSelectMultiple("Item",False)},
+    }
 
 class FBUserAdmin(admin.ModelAdmin):
     fields = [
@@ -80,10 +79,6 @@ admin.site.register(FacebookHarvester, FacebookHarvesterAdmin)
 admin.site.register(FBUser, FBUserAdmin)
 
 ##############
-class DailyMotionHarvesterInline(admin.StackedInline):
-    model = DailyMotionHarvester.dmusers_to_harvest.through
-    extra = 1
-
 class DailyMotionHarvesterAdmin(admin.ModelAdmin):
     fields = [
                 u'harvester_name', 
@@ -92,12 +87,16 @@ class DailyMotionHarvesterAdmin(admin.ModelAdmin):
                 u'user', 
                 u'password', 
                 u'is_active',
+                u'dmusers_to_harvest',
                 u'max_retry_on_fail',
                 u'harvest_window_from',
                 u'harvest_window_to',
             ]
 
-    inlines = [DailyMotionHarvesterInline]
+    formfield_overrides = {
+        #models.CharField: {'widget': TextInput(attrs={'size':'20'})},
+        models.ManyToManyField: {'widget': FilteredSelectMultiple("Item",False)},
+    }
 
 class DMUserAdmin(admin.ModelAdmin):
     fields = [
@@ -108,21 +107,21 @@ admin.site.register(DailyMotionHarvester, DailyMotionHarvesterAdmin)
 admin.site.register(DMUser, DMUserAdmin)
 
 ##############
-class YoutubeHarvesterInline(admin.StackedInline):
-    model = YoutubeHarvester.ytusers_to_harvest.through
-    extra = 1
-
 class YoutubeHarvesterAdmin(admin.ModelAdmin):
     fields = [
                 u'harvester_name', 
                 u'dev_key', 
                 u'is_active',
+                u'ytusers_to_harvest',
                 u'max_retry_on_fail',
                 u'harvest_window_from',
                 u'harvest_window_to',
             ]
 
-    inlines = [YoutubeHarvesterInline]
+    formfield_overrides = {
+        #models.CharField: {'widget': TextInput(attrs={'size':'20'})},
+        models.ManyToManyField: {'widget': FilteredSelectMultiple("Item",False)},
+    }
 
 class YTUserAdmin(admin.ModelAdmin):
     fields = [

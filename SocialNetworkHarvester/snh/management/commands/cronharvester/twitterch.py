@@ -188,8 +188,8 @@ def status_from_search(harvester, tw_status):
                                 fid=tw_status["from_user_id"],
                                 screen_name=tw_status["from_user"],
                              )
-            user.save()
-            logger.info(u"New user created in status_from_search! %s", user)
+                user.save()
+                logger.info(u"New user created in status_from_search! %s", user)
         try:
             snh_status = TWStatus.objects.get(fid__exact=tw_status["id"])
         except ObjectDoesNotExist:
