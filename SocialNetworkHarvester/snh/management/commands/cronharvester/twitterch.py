@@ -169,7 +169,8 @@ def user_from_search(harvester, twuser):
                             fid=twuser["id"],
                             screen_name=twuser["screen_name"],
                             )
-        snh_user.save()   
+        snh_user.save()
+        logger.info(u"New user created in user_from_search! %s", user)
 
     return snh_user
 
@@ -178,13 +179,17 @@ def status_from_search(harvester, tw_status):
     snh_status = None
     try:
         try:
-            user = TWUser.objects.get(Q(fid__exact=tw_status["from_user_id"])|Q(screen_name__exact=tw_status["from_user"]))
+            user = TWUser.objects.get(fid__exact=tw_status["from_user_id"])
         except ObjectDoesNotExist:
-            user = TWUser(
-                            fid=tw_status["from_user_id"],
-                            screen_name=tw_status["from_user"],
-                         )
+            try:
+                user = TWUser.objects.get(screen_name__exact=tw_status["from_user"])
+            except ObjectDoesNotExist:
+                user = TWUser(
+                                fid=tw_status["from_user_id"],
+                                screen_name=tw_status["from_user"],
+                             )
             user.save()
+            logger.info(u"New user created in status_from_search! %s", user)
         try:
             snh_status = TWStatus.objects.get(fid__exact=tw_status["id"])
         except ObjectDoesNotExist:
