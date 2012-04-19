@@ -8,13 +8,21 @@
                 "sPaginationType": "full_numbers",
                 "sDom": '<"clear">lfrtip',
 		        "bServerSide": true, 
-		        "sAjaxSource": "{% url snh.views.get_tw_list current_id %}",
+		        "sAjaxSource": "{% url snh.views.get_tw_list harvester_id %}",
+                "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
+                    $('td:eq(1)', nRow).html( '<a href="/tw_user_detail/'+{{harvester_id}}+'/'+aData[1]+'">'+aData[1]+'</a>' );
+                },
             });
 		$('#search_table').dataTable(
             {
                 "iDisplayLength": 100, 
                 "sPaginationType": "full_numbers",
                 "sDom": '<"clear">lfrtip',
+		        "bServerSide": true, 
+		        "sAjaxSource": "{% url snh.views.get_twsearch_list harvester_id %}",
+                "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
+                    $('td:eq(0)', nRow).html( '<a href="/tw_search_detail/'+{{harvester_id}}+'/'+aData[0]+'">'+aData[0]+'</a>' );
+                },
             });
 	} );
 </script>
@@ -22,16 +30,16 @@
 {% block submenu %}
 <table class="tableheader">
     <tr>
-        <td {% if current_id == "0" %}class="submenu-selection"{% endif %}><a href="/tw/0">All harvesters</a></td>
+        <td {% if harvester_id == "0" %}class="submenu-selection"{% endif %}><a href="/tw/0">All harvesters</a></td>
         {% for h in all_harvesters %}
-        <td  {% ifequal current_id h.pmk_id|slugify %}class="submenu-selection"{% endifequal %}><a href="/tw/{{ h.pmk_id }}">{{ h }}</a></td>
+        <td  {% ifequal harvester_id h.pmk_id|slugify %}class="submenu-selection"{% endifequal %}><a href="/tw/{{ h.pmk_id }}">{{ h }}</a></td>
         {% endfor %}
     </tr>
 </table>
 {% endblock %}
 
 {% block content %}
-<h3>Twitter harvest - List of users</h3>
+<h3>List of users</h3>
 <table id="user_table" class="pretty" width="100%">
     <thead>
     <tr>
@@ -45,8 +53,8 @@
     </tr>
     </thead>
     <tbody>
-{% for twuser in user_list %}
-    <tr onclick="document.location.href='/twitter_detail/{{ twuser.screen_name }}/'">
+    {% for twuser in user_list %}
+    <tr onclick="document.location.href='/'">
         <td>{{ twuser.name }}</td>
         <td>{{ twuser.screen_name }}</td>
         <td>{{ twuser.description }}</td>
@@ -55,10 +63,10 @@
         <td class="center">{{ twuser.statuses_count|default_if_none:"0" }}</td>
         <td class="center">{{ twuser.listed_count|default_if_none:"0" }}</td>
     </tr>
-{% endfor %}
+    {% endfor %}
     </tbody>
 </table>
-<h3>Twitter harvest - List of search tag</h3>
+<h3>List of search tag</h3>
 <table id="search_table" class="pretty" width="100%">
     <thead>
     <tr>
@@ -66,11 +74,11 @@
     </tr>
     </thead>
     <tbody>
-{% for search in searches %}
+    {% for search in searches %}
     <tr onclick="document.location.href='/twitter_search_detail/{{ search.pmk_id }}/'">
         <td>{{ search.term }}</td>
     </tr>
-{% endfor %}
+    {% endfor %}
     </tbody>
 </table>
 {% endblock %}

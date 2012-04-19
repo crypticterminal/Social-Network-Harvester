@@ -45,47 +45,67 @@ def index(request):
 # TWITTER
 #
 @login_required(login_url=u'/login/')
-def tw(request, current_id):
+def tw(request, harvester_id):
     twitter_harvesters = TwitterHarvester.objects.all()
 
     return  render_to_response(u'snh/twitter.html',{
                                                     u'tw_selected':True,
                                                     u'all_harvesters':twitter_harvesters,
-                                                    u'current_id':current_id,
+                                                    u'harvester_id':harvester_id,
                                                   })
 
 @login_required(login_url=u'/login/')
-def get_tw_list(request, current_id):
-    #prepare the params
-    #initial querySet
-    try:
-        logger.info("#")
-        querySet = None
+def tw_user_detail(request, harvester_id, screen_name):
+    twitter_harvesters = TwitterHarvester.objects.all()
+    user = get_list_or_404(TWUser, screen_name=screen_name)[0]
+    return  render_to_response(u'snh/twitter_detail.html',{
+                                                    u'tw_selected':True,
+                                                    u'all_harvesters':twitter_harvesters,
+                                                    u'harvester_id':harvester_id,
+                                                    u'user':user,
+                                                  })
+#
+# TWITTER AJAX
+#
+@login_required(login_url=u'/login/')
+def get_tw_list(request, harvester_id):
+    querySet = None
+
+    if harvester_id == "0":
         querySet = TWUser.objects.all()
+    else:
+        harvester = TwitterHarvester.objects.get(pmk_id__exact=harvester_id)
+        querySet = harvester.twusers_to_harvest.all()
 
-        #if current_id == "0":
-        #    querySet = TWUser.objects.all()
-        #else:
-        #    harvester = TwitterHarvester.objects.get(pmk_id__exact=current_id)
-        #    querySet = harvester.twusers_to_harvest.all()
-        #columnIndexNameMap is required for correct sorting behavior
-        columnIndexNameMap = {
-                                0 : u'name',
-                                1 : u'screen_name',
-                                2 : u'description',
-                                3 : u'followers_count',
-                                4 : u'friends_count',
-                                5 : u'statuses_count',
-                                6 : u'listed_count',
-                                }
+    #columnIndexNameMap is required for correct sorting behavior
+    columnIndexNameMap = {
+                            0 : u'name',
+                            1 : u'screen_name',
+                            2 : u'description',
+                            3 : u'followers_count',
+                            4 : u'friends_count',
+                            5 : u'statuses_count',
+                            6 : u'listed_count',
+                            }
+    #call to generic function from utils
+    return get_datatables_records(request, querySet, columnIndexNameMap)
 
-        #path to template used to generate json (optional)
-        #jsonTemplatePath = 'snh/users.txt'
-        #call to generic function from utils
-        return get_datatables_records(request, querySet, columnIndexNameMap)
-    except e:
-        logger.execption("except: %s", e)
-    return None
+@login_required(login_url=u'/login/')
+def get_twsearch_list(request, harvester_id):
+    querySet = None
+
+    if harvester_id == "0":
+        querySet = TWSearch.objects.all()
+    else:
+        harvester = TwitterHarvester.objects.get(pmk_id__exact=harvester_id)
+        querySet = harvester.twsearch_to_harvest.all()
+
+    #columnIndexNameMap is required for correct sorting behavior
+    columnIndexNameMap = {
+                            0 : u'term',
+                            }
+    #call to generic function from utils
+    return get_datatables_records(request, querySet, columnIndexNameMap)
 
 #
 # FACEBOOK TOKEN
