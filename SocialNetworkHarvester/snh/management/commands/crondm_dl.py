@@ -32,7 +32,7 @@ class Command(BaseCommand):
                         vid.video_file_path = filepath
                         vid.save()
                     except subprocess.CalledProcessError:
-                        logger.exception(u"cannot download video %s!!", vid.fid)
+                        logger.exception(u"cannot download video %s for user %s" % (vid.fid, vid.user))
 
         except:
             msg = u"Highest exception for the dailymotion video downloader cron. Not good."
