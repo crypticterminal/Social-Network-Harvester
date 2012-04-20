@@ -8,7 +8,7 @@ import urllib
 from twython.twython import TwythonError, TwythonAPILimit, TwythonAuthError, TwythonRateLimitError
 
 from django.db.models import Q
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned:
 
 from snh.models.twittermodel import *
 
@@ -132,16 +132,6 @@ def get_latest_statuses(harvester, user):
 
     return latest_statuses
 
-def update_user(statuses, user):
-        try:
-            if statuses:
-                user.update_from_twitter(statuses[0].user)
-            else:
-                raise Exception("Cannot update user (%s) without a status!" % unicode(user))
-        except:
-            msg = u"Cannot update user info for %s:(%d)" % (unicode(user), user.fid if user.fid else 0)
-            logger.exception(msg)    
-
 def update_user_status(status, user):
     try:
         try:
@@ -156,40 +146,23 @@ def update_user_status(status, user):
         msg = u"Cannot update status %s for %s:(%d)" % (unicode(status), unicode(user), user.fid if user.fid else 0)
         logger.exception(msg) 
 
-def update_user_statuses(statuses, user):
-    for status in statuses:
-        update_user_status(status, user)
-
-def user_from_search(harvester, twuser):
-    snh_user = None
-    try:
-        snh_user = TWUser.objects.get(Q(fid__exact=twuser["id"])|Q(screen_name__exact=twuser["screen_name"]))
-    except ObjectDoesNotExist:
-        snh_user = TWUser(
-                            fid=twuser["id"],
-                            screen_name=twuser["screen_name"],
-                            )
-        snh_user.save()
-        logger.info(u"New user created in user_from_search! %s", user)
-
-    return snh_user
-
 def status_from_search(harvester, tw_status):
     user = None
     snh_status = None
     try:
         try:
             user = TWUser.objects.get(fid__exact=tw_status["from_user_id"])
+        except MultipleObjectsReturned:
+            user = TWUser.objects.filter(fid__exact=tw_status["from_user_id"])[0]
+            logger.warning(u"Duplicated user in DB! %s, %s", (user, user.fid))
         except ObjectDoesNotExist:
-            try:
-                user = TWUser.objects.get(screen_name__exact=tw_status["from_user"])
-            except ObjectDoesNotExist:
-                user = TWUser(
-                                fid=tw_status["from_user_id"],
-                                screen_name=tw_status["from_user"],
-                             )
-                user.save()
-                logger.info(u"New user created in status_from_search! %s", user)
+            user = TWUser(
+                            fid=tw_status["from_user_id"],
+                            screen_name=tw_status["from_user"],
+                         )
+            user.save()
+            logger.info(u"New user created in status_from_search! %s", user)
+
         try:
             snh_status = TWStatus.objects.get(fid__exact=tw_status["id"])
         except ObjectDoesNotExist:
@@ -200,7 +173,7 @@ def status_from_search(harvester, tw_status):
             snh_status.save()
         snh_status.update_from_rawtwitter(tw_status, user)
     except:
-        msg = u"Cannot update status %s for user %s)" % (unicode(tw_status), unicode(user))
+        msg = u"Cannot update status %s for user %s:%s)" % (unicode(tw_status), unicode(tw_status["from_user"]),unicode(tw_status["from_user_id"]))
         logger.exception(msg) 
 
     return snh_status
