@@ -127,8 +127,7 @@ def update_all_comment_helper(harvester, snhvideo, comment_list):
         update_comment(harvester, snhvideo, comment)
     
     get_next_comment_uri = comment_list.GetNextLink().href if comment_list.GetNextLink() else None
-    if get_next_comment_uri:
-        print "NOT NONE!!!!", get_next_comment_uri
+
     return get_next_comment_uri
 
 def update_all_comment(harvester,snhvideo):
@@ -164,7 +163,7 @@ def update_all_videos(harvester):
                         out_of_window = True
                         break
                 if not out_of_window:
-                    get_vid_url = video_list.GetNextLink().href
+                    get_vid_url = video_list.GetNextLink().href if video_list.GetNextLink() else None
         else:
             logger.info(u"Skipping user update: %s(%s) because user has triggered the error flag." % (unicode(snhuser), snhuser.fid if snhuser.fid else "0"))
 
