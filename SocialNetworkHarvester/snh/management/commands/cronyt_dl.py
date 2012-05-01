@@ -24,8 +24,8 @@ class Command(BaseCommand):
             for vid in videos:
                 userfid = vid.user.fid
                 if vid.video_file_path is None:
-                    logger.info("will extract: %s" % vid.swf_url)
                     try:
+                        logger.info("will extract: %s" % vid.swf_url)
                         filename = subprocess.check_output(["youtube-dl","-oyoutube_%s_%s" % (userfid, "%(id)s.%(ext)s"), "--get-filename", "%s" % vid.swf_url])
                         filepath = os.path.join(MEDIA_ROOT,filename.strip("\n"))
                         output = subprocess.check_output(["youtube-dl","-o%s" % filepath, "%s" % vid.swf_url])

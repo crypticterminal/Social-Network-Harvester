@@ -115,7 +115,7 @@ MEDIA_URL = ''
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/home/media/media.lawrence.com/static/"
-STATIC_ROOT = ''#os.path.join(PROJECT_PATH, "public/")
+STATIC_ROOT = os.path.join(PROJECT_PATH, "public/")
 
 # URL prefix for static files.
 # Example: "http://media.lawrence.com/static/"
@@ -124,14 +124,14 @@ STATIC_URL = '/static/'
 # URL prefix for admin static files -- CSS, JavaScript and images.
 # Make sure to use a trailing slash.
 # Examples: "http://foo.com/static/admin/", "/static/admin/".
-ADMIN_MEDIA_PREFIX = '/static/admin/'
+ADMIN_MEDIA_PREFIX = STATIC_URL + "grappelli/"
 
 # Additional locations of static files
 STATICFILES_DIRS = (
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    os.path.join(PROJECT_PATH, "public/static/"),
+    os.path.join(PROJECT_PATH, "static/"),
 )
 
 # List of finder classes that know how to find static files in
@@ -171,6 +171,8 @@ TEMPLATE_DIRS = (
     os.path.join(PROJECT_PATH, "templates/"),
 )
 
+GRAPPELLI_ADMIN_TITLE = "<a href='/admin'>SNH Admin</a> | <a href='/'>Consultation</a>"
+
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -180,11 +182,24 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'fandjango',
     'snh',
+    'grappelli.dashboard',
+    'grappelli',
     # Uncomment the next line to enable the admin:
     'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
 )
+
+TEMPLATE_CONTEXT_PROCESSORS = (
+    "django.contrib.auth.context_processors.auth",
+    "django.core.context_processors.request",
+    "django.core.context_processors.i18n",
+    'django.contrib.messages.context_processors.messages',
+)
+
+GRAPPELLI_INDEX_DASHBOARD = {
+    'django.contrib.admin.site': 'snh.dashboard.CustomIndexDashboard',
+}
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to

@@ -11,6 +11,7 @@ urlpatterns = patterns('snh.views',
     (r'^get_tw_list/(?P<harvester_id>\d+)/$', 'get_tw_list'),
     (r'^get_twsearch_list/(?P<harvester_id>\d+)/$', 'get_twsearch_list'),
     (r'^tw_user_detail/(?P<harvester_id>\d+)/(?P<screen_name>\w+)/$', 'tw_user_detail'),
+    (r'^get_tw_statussearch_list/(?P<screen_name>\w+)/$', 'get_tw_statussearch_list'),
 
     #(r'^$', 'index'),
     #(r'^reset_fb_token$', 'reset_fb_token'),

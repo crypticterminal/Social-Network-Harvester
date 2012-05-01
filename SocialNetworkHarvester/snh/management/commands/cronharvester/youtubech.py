@@ -5,9 +5,9 @@ import resource
 import time
 import urllib
 
-from django.db.models import Q
 from django.core.exceptions import ObjectDoesNotExist
 from snh.models.youtubemodel import *
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 
 import snhlogger
 logger = snhlogger.init_logger(__name__, "youtube.log")
@@ -31,6 +31,17 @@ def get_timedelta(dm_time):
     ts = datetime.strptime(dm_time,'%Y-%m-%dT%H:%M:%S+0000')
     return (datetime.utcnow() - ts).days
 
+def get_existing_user(param):
+    user = None
+    try:
+        user = YTUser.objects.get(**param)
+    except MultipleObjectsReturned:
+        user = YTUser.objects.filter(**param)[0]
+        logger.warning(u"Duplicated user in DB! %s, %s" % (user, user.fid))
+    except ObjectDoesNotExist:
+        pass
+    return user
+
 def update_user(harvester, userid):
     snh_user = None
 
@@ -39,27 +50,30 @@ def update_user(harvester, userid):
         ytuser = harvester.api_call("GetYouTubeUserEntry",{"username":uniuserid})
         split_uri = ytuser.id.text.split("/")
         fid = split_uri[len(split_uri)-1]
-        try:
-            snh_user = YTUser.objects.get(Q(fid__exact=fid)|Q(username__exact=userid))
-        except ObjectDoesNotExist:
+
+        snh_user = get_existing_user({"fid__exact":fid})
+        if not snh_user:
+            snh_user = get_existing_user({"username__exact":userid})
+        if not snh_user:
             snh_user = YTUser(
-                                fid=fid,
-                                )
+                            fid=fid,
+                            username=userid,
+                         )
             snh_user.save()
+            logger.info(u"New user created in status_from_search! %s", snh_user)
+
         snh_user.update_from_youtube(ytuser)
     except gdata.service.RequestError, e:
         msg = u"RequestError on user %s. Trying to update anyway" % (userid)
         logger.info(msg)
         if e[0]["status"] == 403 or e[0]["status"] == 400:
-            try:
-                snh_user = YTUser.objects.get(username__exact=userid)
-            except ObjectDoesNotExist:
+            snh_user = get_existing_user({"username__exact":userid})
+            if not snh_user:
                 snh_user = YTUser(
-                                    username=userid,
-                                    )
+                                username=userid,
+                             )
                 snh_user.save()
-            msg = u"SUCCESS! %s" % (userid)
-            logger.info(msg) 
+                logger.info(u"New user created in status_from_search! %s", snh_user)
         else:
             msg = u"RequestError on user %s!!! Force update failed!!!" % (userid)
             logger.exception(msg)

@@ -6,10 +6,7 @@ import datetime
 import urllib
 
 from twython.twython import TwythonError, TwythonAPILimit, TwythonAuthError, TwythonRateLimitError
-
-from django.db.models import Q
-from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned:
-
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from snh.models.twittermodel import *
 
 import snhlogger
@@ -146,16 +143,25 @@ def update_user_status(status, user):
         msg = u"Cannot update status %s for %s:(%d)" % (unicode(status), unicode(user), user.fid if user.fid else 0)
         logger.exception(msg) 
 
+def get_existing_user(param):
+    user = None
+    try:
+        user = TWUser.objects.get(**param)
+    except MultipleObjectsReturned:
+        user = TWUser.objects.filter(**param)[0]
+        logger.warning(u"Duplicated user in DB! %s, %s" % (user, user.fid))
+    except ObjectDoesNotExist:
+        pass
+    return user
+
 def status_from_search(harvester, tw_status):
     user = None
     snh_status = None
     try:
-        try:
-            user = TWUser.objects.get(fid__exact=tw_status["from_user_id"])
-        except MultipleObjectsReturned:
-            user = TWUser.objects.filter(fid__exact=tw_status["from_user_id"])[0]
-            logger.warning(u"Duplicated user in DB! %s, %s", (user, user.fid))
-        except ObjectDoesNotExist:
+        user = get_existing_user({"fid__exact":tw_status["from_user_id"]})
+        if not user:
+            user = get_existing_user({"screen_name__exact":tw_status["from_user"]})
+        if not user:
             user = TWUser(
                             fid=tw_status["from_user_id"],
                             screen_name=tw_status["from_user"],

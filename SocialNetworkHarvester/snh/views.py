@@ -107,6 +107,28 @@ def get_twsearch_list(request, harvester_id):
     #call to generic function from utils
     return get_datatables_records(request, querySet, columnIndexNameMap)
 
+@login_required(login_url=u'/login/')
+def get_tw_statussearch_list(request, screen_name):
+    querySet = None
+    #columnIndexNameMap is required for correct sorting behavior
+    columnIndexNameMap = {
+                            0 : u'created_at',
+                            1 : u'fid',
+                            2 : u'user__screen_name',
+                            3 : u'text',
+                            4 : u'retweet_count',
+                            5 : u'retweeted',
+                            6 : u'source',
+                            }
+    try:
+        search = TWSearch.objects.get(term__exact="@%s" % screen_name)
+        querySet = search.status_list.all().values(*columnIndexNameMap.values())
+    except ObjectDoesNotExist:
+        pass
+
+    #call to generic function from utils
+    return get_datatables_records(request, querySet, columnIndexNameMap)
+
 #
 # FACEBOOK TOKEN
 #

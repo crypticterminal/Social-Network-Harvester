@@ -7,7 +7,7 @@ import time
 import twitter as pytw
 from twython import Twython
 
-from django.db.models import Q
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from snh.models.common import *
 
 def gie(d, k):
@@ -140,6 +140,10 @@ class TWSearch(models.Model):
     def __unicode__(self):
         return self.term
 
+    def related_label(self):
+        return u"%s (%s)" % (self.term, self.pmk_id)
+
+
     pmk_id =  models.AutoField(primary_key=True)
     term = models.TextField(null=True)
     status_list = models.ManyToManyField('TWStatus', related_name='twsearch.status_list')
@@ -153,11 +157,14 @@ class TWUser(models.Model):
     def __unicode__(self):
         return self.screen_name
 
+    def related_label(self):
+        return u"%s (%s)" % (self.screen_name, self.pmk_id)
+
     pmk_id =  models.AutoField(primary_key=True)
 
-    fid = models.BigIntegerField(null=True)
+    fid = models.BigIntegerField(null=True, unique=True)
     name = models.CharField(max_length=255, null=True)
-    screen_name = models.CharField(max_length=255, null=True)
+    screen_name = models.CharField(max_length=255, null=True, unique=True)
     lang = models.CharField(max_length=255, null=True)
     description = models.TextField(null=True)
     url = models.ForeignKey('URL', related_name="twuser.url", null=True)
@@ -355,7 +362,7 @@ class TWStatus(models.Model):
 
     user = models.ForeignKey('TWUser')
 
-    fid = models.BigIntegerField(null=True)
+    fid = models.BigIntegerField(null=True, unique=True)
     created_at = models.DateTimeField(null=True)
     favorited = models.BooleanField()
     retweet_count = models.IntegerField(null=True)
@@ -370,6 +377,16 @@ class TWStatus(models.Model):
 
     model_update_date = models.DateTimeField(null=True)
     error_on_update = models.BooleanField()
+
+    def get_existing_user(self, param):
+        user = None
+        try:
+            user = TWUser.objects.get(**param)
+        except MultipleObjectsReturned:
+            user = TWUser.objects.filter(**param)[0]
+        except ObjectDoesNotExist:
+            pass
+        return user
 
     def update_from_rawtwitter(self, twitter_model, user, twython=False):
         model_changed = False
@@ -454,7 +471,14 @@ class TWStatus(models.Model):
                 for tw_mention in tw_prop_val:
                     usermention = None
                     try:
-                        usermention = TWUser.objects.get(Q(fid__exact=tw_mention["id"])|Q(screen_name__exact=tw_mention["screen_name"]))
+                        usermention = self.get_existing_user({"fid__exact":tw_mention["id"]})
+                        if not usermention:
+                            usermention = self.get_existing_user({"screen_name__exact":tw_mention["screen_name"]})
+                        if not usermention:
+                            usermention = TWUser(
+                                            fid=tw_mention["id"],
+                                            screen_name=tw_mention["screen_name"],
+                                         )
                         usermention.update_from_rawtwitter(tw_mention,twython)
                         usermention.save()
                     except:
@@ -556,20 +580,21 @@ class TWStatus(models.Model):
             for tw_mention in tw_prop_val:
                 usermention = None
                 try:
-                    usermention = TWUser.objects.filter(screen_name=tw_mention.screen_name)[0]
+
+                    usermention = self.get_existing_user({"fid__exact":tw_mention.id})
+                    if not usermention:
+                        usermention = self.get_existing_user({"screen_name__exact":tw_mention.screen_name})
+                    if not usermention:
+                        usermention = TWUser(
+                                        fid=tw_mention.screen_name.id,
+                                        screen_name=tw_mention.screen_name,
+                                     )
                 except:
                     pass
 
-                if usermention is None:
-                    usermention = TWUser(screen_name=tw_mention.screen_name)
-                    usermention.save()
+                if usermention and usermention not in self.user_mentions.all():
                     self.user_mentions.add(usermention)
                     model_changed = True
-                else:
-                    
-                    if usermention not in self.user_mentions.all():
-                        self.user_mentions.add(usermention)
-                        model_changed = True    
 
         if model_changed:
             self.model_update_date = datetime.utcnow()

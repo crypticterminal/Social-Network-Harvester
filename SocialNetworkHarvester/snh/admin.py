@@ -17,25 +17,54 @@ from snh.models.youtubemodel import YoutubeHarvester
 from snh.models.youtubemodel import YTUser
 #############
 class TwitterHarvesterAdmin(admin.ModelAdmin):
-    fields = [
-                u'harvester_name', 
-                u'is_active', 
-                u'twusers_to_harvest',
-                u'twsearch_to_harvest',
-                u'consumer_key',
-                u'consumer_secret',
-                u'access_token_key',
-                u'access_token_secret',
-                u'max_retry_on_fail',
-                u'harvest_window_from',
-                u'harvest_window_to',
+    #fields = [
+    #            u'harvester_name', 
+    #            u'is_active', 
+    #            u'twusers_to_harvest',
+    #            u'twsearch_to_harvest',
+    #            u'consumer_key',
+    #            u'consumer_secret',
+    #            u'access_token_key',
+    #            u'access_token_secret',
+    #            u'max_retry_on_fail',
+    #            u'harvest_window_from',
+    #            u'harvest_window_to',#
 
-            ]
-    formfield_overrides = {
+    #        ]
+
+    fieldsets = (
+        ('', {
+            'fields': (
+                            u'harvester_name', 
+                            u'is_active', 
+                            u'consumer_key',
+                            u'consumer_secret',
+                            u'access_token_key',
+                            u'access_token_secret',
+                            u'max_retry_on_fail',
+                            u'harvest_window_from',
+                            u'harvest_window_to',
+                        ),
+        }),
+        ('Users to harvest', {
+            'classes': ('collapse open',),
+            'fields' : ('twusers_to_harvest',),
+        }),
+        ('Searches to harvest', {
+            'classes': ('collapse open',),
+            'fields' : ('twsearch_to_harvest',),
+        }),
+    )
+    #formfield_overrides = {
         #models.CharField: {'widget': TextInput(attrs={'size':'20'})},
-        models.ManyToManyField: {'widget': FilteredSelectMultiple("Item",False)},
+        #models.ManyToManyField: {'widget': FilteredSelectMultiple("Item",False)},
+    #}
+    # define the raw_id_fields
+    raw_id_fields = ('twusers_to_harvest','twsearch_to_harvest',)
+    # define the related_lookup_fields
+    related_lookup_fields = {
+        'm2m': ['twusers_to_harvest','twsearch_to_harvest',],
     }
-
 
 class TWUserAdmin(admin.ModelAdmin):
     fields = [

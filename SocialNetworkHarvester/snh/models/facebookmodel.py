@@ -5,6 +5,7 @@ import time
 
 from django.db import models
 from snh.models.common import *
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 
 import snhlogger
 logger = snhlogger.init_logger(__name__, "facebook.log")
@@ -73,9 +74,9 @@ class FBUser(models.Model):
    
     pmk_id =  models.AutoField(primary_key=True)
 
-    fid = models.CharField(max_length=255, null=True)
+    fid = models.CharField(max_length=255, null=True, unique=True)
     name = models.CharField(max_length=255, null=True)
-    username = models.CharField(max_length=255, null=True)
+    username = models.CharField(max_length=255, null=True, unique=True)
     website = models.ForeignKey('URL', related_name="fbuser.website", null=True)
     link = models.ForeignKey('URL', related_name="fbuser.link", null=True)
 
@@ -225,7 +226,7 @@ class FBPost(models.Model):
     pmk_id =  models.AutoField(primary_key=True)
     user = models.ForeignKey('FBUser')
 
-    fid = models.CharField(max_length=255, null=True)
+    fid = models.CharField(max_length=255, null=True, unique=True)
     ffrom = models.ForeignKey('FBUser', related_name='fbpost.from', null=True)
     #to = models.ManyToManyField('FBUser', related_name='fbpost.to', null=True)
     message = models.TextField(null=True)
@@ -254,6 +255,16 @@ class FBPost(models.Model):
     updated_time = models.DateTimeField(null=True)
     error_on_update = models.BooleanField()
 
+    def get_existing_user(self, param):
+        user = None
+        try:
+            user = FBUser.objects.get(**param)
+        except MultipleObjectsReturned:
+            user = FBUser.objects.filter(**param)[0]
+        except ObjectDoesNotExist:
+            pass
+        return user
+
     def update_url_fk(self, self_prop, face_prop, facebook_model):
         model_changed = False
         if face_prop in facebook_model:
@@ -279,12 +290,11 @@ class FBPost(models.Model):
             prop_val = facebook_model[face_prop]
             if prop_val and (self_prop is None or self_prop.fid != prop_val["id"]):
                 user = None
-                try:
-                    user = FBUser.objects.filter(fid=prop_val["id"])[0]
-                except:
-                    pass
-                if user is None:
-                    user = FBUser(fid=prop_val["id"])
+                user = self.get_existing_user({"fid__exact":prop_val["id"]})
+                if not user:
+                    user = FBUser(
+                                    fid=prop_val["id"],
+                                 )
                     user.update_from_facebook(prop_val)
                     user.save()
 
@@ -301,17 +311,16 @@ class FBPost(models.Model):
         for fbuser in likes:
             if self.likes_from.filter(fid__exact=fbuser["id"]).count() == 0:
                 user_like = None
-                try:
-                    user_like = FBUser.objects.get(fid__exact=fbuser["id"])
-                except:
-                    pass
-                if user_like is None:
-                    user_like = FBUser(fid=fbuser["id"])
+                user_like = self.get_existing_user({"fid__exact":fbuser["id"]})
+                if not user_like:
+                    user_like = FBUser(
+                                    fid=fbuser["id"],
+                                 )
                     user_like.update_from_facebook(fbuser)
                     user_like.save()
-
-                self.likes_from.add(user_like)
-                model_changed = True
+                if user_like not in self.likes_from.all():
+                    self.likes_from.add(user_like)
+                    model_changed = True
 
         if model_changed:
             self.model_update_date = datetime.utcnow()
@@ -438,7 +447,7 @@ class FBComment(models.Model):
 
     pmk_id =  models.AutoField(primary_key=True)
 
-    fid = models.CharField(max_length=255, null=True)
+    fid = models.CharField(max_length=255, null=True, unique=True)
     ffrom = models.ForeignKey('FBUser', related_name="fbcomment.ffrom", null=True)
     message = models.TextField(null=True)
     created_time = models.DateTimeField(null=True)
@@ -450,18 +459,27 @@ class FBComment(models.Model):
 
     error_on_update = models.BooleanField()
 
+    def get_existing_user(self, param):
+        user = None
+        try:
+            user = FBUser.objects.get(**param)
+        except MultipleObjectsReturned:
+            user = FBUser.objects.filter(**param)[0]
+        except ObjectDoesNotExist:
+            pass
+        return user
+
     def update_user_fk(self, self_prop, face_prop, facebook_model):
         model_changed = False
         if face_prop in facebook_model:
             prop_val = facebook_model[face_prop]
             if prop_val and (self_prop is None or self_prop.fid != prop_val["id"]):
                 user = None
-                try:
-                    user = FBUser.objects.filter(fid=prop_val["id"])[0]
-                except:
-                    pass
-                if user is None:
-                    user = FBUser(fid=prop_val["id"])
+                user = self.get_existing_user({"fid__exact":prop_val["id"]})
+                if not user:
+                    user = FBUser(
+                                    fid=prop_val["id"],
+                                 )
                     user.update_from_facebook(prop_val)
                     user.save()
 

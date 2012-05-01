@@ -13,12 +13,19 @@
             });
 		$('#search_table').dataTable(
             {
-                "iDisplayLength": 100, 
+                "iDisplayLength": 50, 
                 "sPaginationType": "full_numbers",
                 "sDom": '<"clear">lfrtip',
+		        "bServerSide": true, 
+		        "sAjaxSource": "{% url snh.views.get_tw_statussearch_list user.screen_name  %}",
                 "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
-                    $('td:eq(0)', nRow).html( '<a href="/tw_search_detail/'+aData[0]+'">'+aData[0]+'</a>' );
+                    $('td:eq(1)', nRow).html( '<a href="/">'+aData[1]+'</a>' );
                 },
+                "aoColumnDefs": [ 
+                    { 
+                        "bSearchable": false, "aTargets": [ 0 ] 
+                    }
+                ],
             });
 	} );
 </script>
@@ -57,7 +64,7 @@
     <tbody>
     <tr>
         <td>{{ user.name }}</td>
-        <td><a href="/tw_user_detail/{{ user.screen_name }}">{{ user.screen_name }}</a></td>
+        <td><a href="/tw_user_detail/{{ harvester_id }}/{{ user.screen_name }}">{{ user.screen_name }}</a></td>
         <td>{{ user.description }}</td>
         <td>{{ user.followers_count }}</td>
         <td>{{ user.friends_count }}</td>
@@ -78,6 +85,7 @@
     <thead>
     <tr class="head">
         <th>Created at</th>
+        <th>ID</th>
         <th>text</th>
         <th>Retweet count</th>
         <th>Retweeted</th>
@@ -86,17 +94,7 @@
         </tr>
     </thead>
     <tbody>
-{% for status in statuses %}
-    <tr onclick="document.location.href='/twitter_status/{{ status.fid }}/'" >
-        <td id="date">{{ status.created_at.ctime }}</td>
-        <td >{{ status.text|urlize }}</td>
-        <td class="center">{{ status.retweet_count }}</td>
-        <td class="center">{{ status.retweeted }}</td>
-        <td>{{ status.source|safe }}</td>
-        <td>{{ status.truncated }}</td>
-    </tr>
-{% endfor %}
-    <tbody>
+    </tbody>
 </table>
 
 <h3>Search results for @{{ user.screen_name }} </h3>
@@ -104,27 +102,16 @@
     <thead>
     <tr class="head">
         <th>Created at</th>
+        <th>ID</th>
         <th>From</th>
         <th>text</th>
         <th>Retweet count</th>
         <th>Retweeted</th>
         <th>source</th>
-        <th>truncated</th>
         </tr>
     </thead>
     <tbody>
-{% for status in searches %}
-    <tr onclick="document.location.href='/twitter_status/{{ status.fid }}/'" >
-        <td id="date">{{ status.created_at.ctime }}</td>
-        <td >{{ status.user.screen_name }}</td>
-        <td >{{ status.text|urlize }}</td>
-        <td class="center">{{ status.retweet_count }}</td>
-        <td class="center">{{ status.retweeted }}</td>
-        <td>{{ status.source|safe }}</td>
-        <td>{{ status.truncated }}</td>
-    </tr>
-{% endfor %}
-    <tbody>
+    </tbody>
 </table>
 
 {% endblock %}

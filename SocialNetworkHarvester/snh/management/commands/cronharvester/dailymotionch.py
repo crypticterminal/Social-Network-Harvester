@@ -4,8 +4,7 @@ from datetime import timedelta
 import resource
 import time
 
-from django.db.models import Q
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from snh.models.dailymotionmodel import *
 
 import snhlogger
@@ -177,19 +176,35 @@ def update_user(harvester, userid):
     dmuser = result["result"]
     snh_user = None
     try:
-        try:
-            snh_user = DMUser.objects.get(Q(fid__exact=userid)|Q(username__exact=userid))
-        except ObjectDoesNotExist:
+
+        snh_user = get_existing_user({"fid__exact":userid})
+        if not snh_user:
+            snh_user = get_existing_user({"username__exact":userid})
+        if not snh_user:
             snh_user = DMUser(
-                                fid=dmuser["id"],
-                                )
+                            fid=userid,
+                            username=userid,
+                         )
             snh_user.save()
+            logger.info(u"New user created in status_from_search! %s", snh_user)
+
         snh_user.update_from_dailymotion(dmuser)
     except:
         msg = u"Cannot update user %s" % (dmuser)
         logger.exception(msg) 
 
     return snh_user
+
+def get_existing_user(param):
+    user = None
+    try:
+        user = DMUser.objects.get(**param)
+    except MultipleObjectsReturned:
+        user = DMUser.objects.filter(**param)[0]
+        logger.warning(u"Duplicated user in DB! %s, %s" % (user, user.fid))
+    except ObjectDoesNotExist:
+        pass
+    return user
 
 def update_users(harvester):
 
