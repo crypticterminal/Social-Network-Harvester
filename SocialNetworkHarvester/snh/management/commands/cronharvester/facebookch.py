@@ -373,8 +373,9 @@ class ThreadStatus(threading.Thread):
             try:
                 fid = self.queue.get()
 
-                user = FBUser.objects.get(fid__exact=fid)
+                user = FBUser.objects.filter(fid__exact=fid)[0]
                 results = FBResult.objects.filter(fid__startswith=fid).filter(ftype__exact="FBPost")
+                logger.info(u"ThreadStatus. Beginning user %s." % user)
                 for elem in results:
                     self.update_user_status(eval(elem.result),user)
 

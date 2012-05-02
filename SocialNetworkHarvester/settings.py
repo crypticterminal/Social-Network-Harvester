@@ -77,8 +77,6 @@ FACEBOOK_APPLICATION_INITIAL_PERMISSIONS = [
 
 #FACEBOOK_APPLICATION_INITIAL_PERMISSIONS = ['read_stream', 'publish_stream','friends_online_presence','friends_status','read_friendlists']
 
-LOGIN_REDIRECT_URL = "/"
-
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
@@ -200,6 +198,8 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 GRAPPELLI_INDEX_DASHBOARD = {
     'django.contrib.admin.site': 'snh.dashboard.CustomIndexDashboard',
 }
+
+LOGIN_REDIRECT_URL = "/"
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
