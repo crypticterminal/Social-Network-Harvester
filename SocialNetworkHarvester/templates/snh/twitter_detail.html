@@ -2,24 +2,35 @@
 {% block extrahead %}
 <script type="text/javascript" charset="utf-8">
 	$(document).ready(function() {
-		$('#status_table').dataTable(
+		var oTable1 = $('#status_table').dataTable(
             {
-                "iDisplayLength": 50, 
+                "iDisplayLength": 25, 
                 "sPaginationType": "full_numbers",
                 "sDom": '<"clear">lfrtip',
+                "bAutoWidth": false,
+		        "bServerSide": true, 
+		        "sAjaxSource": "{% url snh.views.get_tw_status_list user.screen_name  %}",
                 "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
-                    $('td:eq(1)', nRow).html( '<a href="/tw_user_detail/'+aData[1]+'">'+aData[1]+'</a>' );
+                    $('td:eq(1)', nRow).html( '<a href="/tw_status_detail/{{ harvester_id }}/'+aData[1]+'">'+aData[1]+'</a>' );
                 },
+                "aoColumnDefs": [ 
+                    { 
+                        "bSearchable": false, "aTargets": [ 0 ] 
+                    }
+                ],
+
             });
-		$('#search_table').dataTable(
+		var oTable2 = $('#search_table').dataTable(
             {
-                "iDisplayLength": 50, 
+                "iDisplayLength": 25, 
                 "sPaginationType": "full_numbers",
                 "sDom": '<"clear">lfrtip',
+                "bAutoWidth": false,
 		        "bServerSide": true, 
 		        "sAjaxSource": "{% url snh.views.get_tw_statussearch_list user.screen_name  %}",
                 "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
-                    $('td:eq(1)', nRow).html( '<a href="/">'+aData[1]+'</a>' );
+                    $('td:eq(1)', nRow).html( '<a href="/tw_status_detail/{{ harvester_id }}/'+aData[1]+'">'+aData[1]+'</a>' );
+                    $('td:eq(2)', nRow).html( '<a href="/tw_user_detail/{{ harvester_id }}/'+aData[2]+'">'+aData[2]+'</a>' );
                 },
                 "aoColumnDefs": [ 
                     { 
@@ -27,6 +38,15 @@
                     }
                 ],
             });
+
+          $(window).bind('load', function () {
+            oTable1.fnAdjustColumnSizing();
+            oTable2.fnAdjustColumnSizing();
+          } );
+          $(window).bind('resize', function () {
+            oTable1.fnAdjustColumnSizing();
+            oTable2.fnAdjustColumnSizing();
+          } );
 	} );
 </script>
 {% endblock %}
@@ -83,14 +103,13 @@
 <h3>Statuses</h3>
 <table id="status_table" class="pretty">
     <thead>
-    <tr class="head">
-        <th>Created at</th>
-        <th>ID</th>
-        <th>text</th>
-        <th>Retweet count</th>
-        <th>Retweeted</th>
-        <th>source</th>
-        <th>truncated</th>
+        <tr>
+            <th>Created at</th>
+            <th>ID</th>
+            <th>text</th>
+            <th>Retweet count</th>
+            <th>Retweeted</th>
+            <th>source</th>
         </tr>
     </thead>
     <tbody>
@@ -100,14 +119,12 @@
 <h3>Search results for @{{ user.screen_name }} </h3>
 <table id="search_table" class="pretty">
     <thead>
-    <tr class="head">
-        <th>Created at</th>
-        <th>ID</th>
-        <th>From</th>
-        <th>text</th>
-        <th>Retweet count</th>
-        <th>Retweeted</th>
-        <th>source</th>
+        <tr>
+            <th>Created at</th>
+            <th>ID</th>
+            <th>From</th>
+            <th>text</th>
+            <th>source</th>
         </tr>
     </thead>
     <tbody>

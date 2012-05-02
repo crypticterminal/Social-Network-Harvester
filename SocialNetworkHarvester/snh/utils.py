@@ -7,7 +7,6 @@ from django.utils import simplejson
 import snhlogger
 logger = snhlogger.init_logger(__name__, "view.log")
 
-
 def get_datatables_records(request, querySet, columnIndexNameMap, jsonTemplatePath = None, *args):
     """
     Usage: 
@@ -26,10 +25,6 @@ def get_datatables_records(request, querySet, columnIndexNameMap, jsonTemplatePa
     keys.sort()
     colitems = [columnIndexNameMap[key] for key in keys]
     sColumns = ",".join(map(unicode,colitems))
-    logger.info("###")
-    logger.info(colitems)
-    logger.info(sColumns)
-    logger.info("---")
     
     # Ordering data
     iSortingCols =  int(request.GET.get('iSortingCols',0))
@@ -58,7 +53,6 @@ def get_datatables_records(request, querySet, columnIndexNameMap, jsonTemplatePa
         first = True
         for searchableColumn in searchableColumns:
             kwargz = {searchableColumn+"__icontains" : customSearch}
-            logger.info(kwargz)
             outputQ = outputQ | Q(**kwargz) if outputQ else Q(**kwargz)  
         querySet = querySet.filter(outputQ)
 
@@ -81,19 +75,15 @@ def get_datatables_records(request, querySet, columnIndexNameMap, jsonTemplatePa
     else:
         aaData = []
         a = querySet.values(*columnIndexNameMap.values())
-        logger.info("!!")
         for row in a:
             rowkeys = row.keys()
             rowvalues = row.values()
-            logger.info(rowkeys)
             rowlist = []
             for col in range(0,len(colitems)):
                 for idx, val in enumerate(rowkeys):
                     if val == colitems[col]:
-                        logger.info("add %s", val)
                         rowlist.append(unicode(rowvalues[idx]))
             aaData.append(rowlist)
-        logger.info("!!!!")
         response_dict = {}
         response_dict.update({'aaData':aaData})
         response_dict.update({'sEcho': sEcho, 'iTotalRecords': iTotalRecords, 'iTotalDisplayRecords':iTotalDisplayRecords, 'sColumns':sColumns})

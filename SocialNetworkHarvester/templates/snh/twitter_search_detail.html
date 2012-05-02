@@ -1,49 +1,60 @@
 {% extends "snh/snh_base.html" %}
-{% block scripts %}
+{% block extrahead %}
 <script type="text/javascript" charset="utf-8">
-	$(document).ready(
-        function() {
-		            $('#post_table').dataTable({
-                                    "iDisplayLength": 100,
-                                    "sPaginationType": "full_numbers",
-                                    "sDom": 'pT<"clear">lfrtip',
-                                    "aaSorting": [[ 0, "desc" ]],
-                                    "oTableTools": {
-                                                "sSwfPath" : "/static/swf/copy_cvs_xls_pdf.swf"
-                                    }
-                                });
-	                } 
-    );
+	$(document).ready(function() {
+		var oTable2 = $('#search_table').dataTable(
+            {
+                "iDisplayLength": 25, 
+                "sPaginationType": "full_numbers",
+                "sDom": '<"clear">lfrtip',
+                "bAutoWidth": false,
+		        "bServerSide": true, 
+		        "sAjaxSource": "{% url snh.views.get_tw_searchdetail_list search.pmk_id  %}",
+                "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
+                    $('td:eq(1)', nRow).html( '<a href="/tw_status_detail/{{ harvester_id }}/'+aData[1]+'">'+aData[1]+'</a>' );
+                    $('td:eq(2)', nRow).html( '<a href="/tw_user_detail/{{ harvester_id }}/'+aData[2]+'">'+aData[2]+'</a>' );
+                },
+                "aoColumnDefs": [ 
+                    { 
+                        "bSearchable": false, "aTargets": [ 0 ] 
+                    }
+                ],
+            });
+
+          $(window).bind('load', function () {
+            oTable2.fnAdjustColumnSizing();
+          } );
+          $(window).bind('resize', function () {
+            oTable2.fnAdjustColumnSizing();
+          } );
+	} );
 </script>
+{% endblock %}
+{% block submenu %}
+<table class="tableheader">
+    <tr>
+        <td {% if harvester_id == "0" %}class="submenu-selection"{% endif %}><a href="/tw/0">All harvesters</a></td>
+        {% for h in all_harvesters %}
+        <td  {% ifequal harvester_id h.pmk_id|slugify %}class="submenu-selection"{% endifequal %}><a href="/tw/{{ h.pmk_id }}">{{ h }}</a></td>
+        {% endfor %}
+    </tr>
+</table>
 {% endblock %}
 
 {% block content %}
-<h1>Twitter statuses for : {{search.term }} </h1>
-<h1>Total: {{ len }} </h1>
-<table id="post_table" class="pretty">
+<h3>Search results for {{ search.term }} </h3>
+<table id="search_table" class="pretty">
     <thead>
-    <tr class="head">
-        <th>Created at</th>
-        <th>from</th>
-        <th>text</th>
-        <th>Retweet count</th>
-        <th>Retweeted</th>
-        <th>source</th>
-        <th>truncated</th>
+        <tr>
+            <th>Created at</th>
+            <th>ID</th>
+            <th>From</th>
+            <th>text</th>
+            <th>source</th>
         </tr>
     </thead>
     <tbody>
-{% for status in statuses %}
-    <tr onclick="document.location.href='/twitter_status/{{ status.fid }}/'" >
-        <td id="date">{{ status.created_at.ctime }}</td>
-        <td >{{ status.user.screen_name }}</td>
-        <td >{{ status.text|urlize }}</td>
-        <td class="center">{{ status.retweet_count }}</td>
-        <td class="center">{{ status.retweeted }}</td>
-        <td>{{ status.source|safe }}</td>
-        <td>{{ status.truncated }}</td>
-    </tr>
-{% endfor %}
-    <tbody>
+    </tbody>
 </table>
+
 {% endblock %}

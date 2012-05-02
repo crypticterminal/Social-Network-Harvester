@@ -1,9 +1,19 @@
 {% extends "snh/snh_base.html" %}
-{% block scripts %}
+{% block extrahead %}
+{% endblock %}
+{% block submenu %}
+<table class="tableheader">
+    <tr>
+        <td {% if harvester_id == "0" %}class="submenu-selection"{% endif %}><a href="/tw/0">All harvesters</a></td>
+        {% for h in all_harvesters %}
+        <td  {% ifequal harvester_id h.pmk_id|slugify %}class="submenu-selection"{% endifequal %}><a href="/tw/{{ h.pmk_id }}">{{ h }}</a></td>
+        {% endfor %}
+    </tr>
+</table>
 {% endblock %}
 
 {% block content %}
-<h1>Twitter: {{ twuser.name|default_if_none:twuser.screen_name }} </h1>
+<h3>{{ twuser.name|default_if_none:twuser.screen_name }} </h3>
 
 <table id="user_table" class="pretty">
     <thead>
@@ -24,9 +34,9 @@
     </tr>
     </thead>
     <tbody>
-    <tr onclick="document.location.href='/twitter_detail/{{ twuser.screen_name }}/'">
+    <tr>
     <td>{{ twuser.name }}</td>
-    <td>{{ twuser.screen_name }}</td>
+    <td><a href="/tw_user_detail/{{ harvester_id }}/{{ twuser.screen_name }}/">{{ twuser.screen_name }}</a></td>
     <td>{{ twuser.description }}</td>
     <td>{{ twuser.followers_count }}</td>
     <td>{{ twuser.friends_count }}</td>
@@ -43,12 +53,12 @@
 
 
 </table>
-<h1>Status detail</h1>
+<h3>Status detail</h3>
 <table id="post_table" class="pretty" width="100%" border="0" cellspacing="2" cellpadding="0">
     <thead>
     <tr class="head">
-        <th>ID</th>
         <th>Created at</th>
+        <th>ID</th>
         <th>Text</th>
         <th>Retweet count</th>
         <th>Retweeted</th>
@@ -61,9 +71,9 @@
     </tr>
     </thead>
     <tbody>
-    <tr onclick="document.location.href='/twitter_status/{{ status.fid }}/'" >
-        <td>{{ status.fid }}</td>
+    <tr>
         <td id="date">{{ status.created_at.ctime }}</td>
+        <td><a href="/tw_status_detail/{{ harvester_id }}/{{ status.fid }}/">{{ status.fid }}</a></td>
         <td>{{ status.text|urlize }}</td>
         <td>{{ status.retweet_count }}</td>
         <td>{{ status.retweeted }}</td>

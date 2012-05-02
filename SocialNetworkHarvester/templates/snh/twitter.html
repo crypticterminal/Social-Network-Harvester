@@ -7,6 +7,7 @@
                 "iDisplayLength": 50, 
                 "sPaginationType": "full_numbers",
                 "sDom": '<"clear">lfrtip',
+                "bAutoWidth": false,
 		        "bServerSide": true, 
 		        "sAjaxSource": "{% url snh.views.get_tw_list harvester_id %}",
                 "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
@@ -15,14 +16,19 @@
             });
 		$('#search_table').dataTable(
             {
-                "iDisplayLength": 100, 
+                "iDisplayLength": 50, 
                 "sPaginationType": "full_numbers",
                 "sDom": '<"clear">lfrtip',
+                "bAutoWidth": false,
 		        "bServerSide": true, 
 		        "sAjaxSource": "{% url snh.views.get_twsearch_list harvester_id %}",
                 "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
-                    $('td:eq(0)', nRow).html( '<a href="/tw_search_detail/'+{{harvester_id}}+'/'+aData[0]+'">'+aData[0]+'</a>' );
+                    $('td:eq(0)', nRow).html( '<a href="/tw_search_detail/'+{{harvester_id}}+'/'+aData[0]+'">'+aData[1]+'</a>' );
                 },
+		        "aoColumns": [ 
+			        /* Version */  { "bVisible":    false },
+			        /* Version */  { "bVisible":    true },
+		        ]
             });
 	} );
 </script>
@@ -70,15 +76,11 @@
 <table id="search_table" class="pretty" width="100%">
     <thead>
     <tr>
+        <th>ID</th>
         <th>Term</th>
     </tr>
     </thead>
     <tbody>
-    {% for search in searches %}
-    <tr onclick="document.location.href='/twitter_search_detail/{{ search.pmk_id }}/'">
-        <td>{{ search.term }}</td>
-    </tr>
-    {% endfor %}
     </tbody>
 </table>
 {% endblock %}

@@ -64,6 +64,32 @@ def tw_user_detail(request, harvester_id, screen_name):
                                                     u'harvester_id':harvester_id,
                                                     u'user':user,
                                                   })
+@login_required(login_url=u'/login/')
+def tw_search_detail(request, harvester_id, search_id):
+    twitter_harvesters = TwitterHarvester.objects.all()
+    search = get_list_or_404(TWSearch, pmk_id=search_id)[0]
+    return  render_to_response(u'snh/twitter_search_detail.html',{
+                                                    u'tw_selected':True,
+                                                    u'all_harvesters':twitter_harvesters,
+                                                    u'harvester_id':harvester_id,
+                                                    u'search':search,
+                                                  })
+@login_required(login_url=u'/login/')
+def tw_status_detail(request, harvester_id, status_id):
+    twitter_harvesters = TwitterHarvester.objects.all()
+    status = get_object_or_404(TWStatus, fid=status_id)
+    return render_to_response(u'snh/twitter_status.html', {
+                                                            u'tw_selected':True,
+                                                            u'all_harvesters':twitter_harvesters,
+                                                            u'harvester_id':harvester_id,
+                                                            u'twuser': status.user, 
+                                                            u'status':status, 
+                                                            u'mentions':status.user_mentions.all(),
+                                                            u'urls':status.text_urls.all(),
+                                                            u'tags':status.hash_tags.all(),
+                                                           })
+
+
 #
 # TWITTER AJAX
 #
@@ -102,8 +128,30 @@ def get_twsearch_list(request, harvester_id):
 
     #columnIndexNameMap is required for correct sorting behavior
     columnIndexNameMap = {
-                            0 : u'term',
+                            0 : u'pmk_id',
+                            1 : u'term',
                             }
+    #call to generic function from utils
+    return get_datatables_records(request, querySet, columnIndexNameMap)
+
+@login_required(login_url=u'/login/')
+def get_tw_status_list(request, screen_name):
+    querySet = None
+    #columnIndexNameMap is required for correct sorting behavior
+    columnIndexNameMap = {
+                            0 : u'created_at',
+                            1 : u'fid',
+                            2 : u'text',
+                            3 : u'retweet_count',
+                            4 : u'retweeted',
+                            5 : u'source',
+                            }
+    try:
+        user = get_list_or_404(TWUser, screen_name=screen_name)[0]
+        querySet = TWStatus.objects.filter(user=user)#.values(*columnIndexNameMap.values())
+    except ObjectDoesNotExist:
+        pass
+
     #call to generic function from utils
     return get_datatables_records(request, querySet, columnIndexNameMap)
 
@@ -116,13 +164,37 @@ def get_tw_statussearch_list(request, screen_name):
                             1 : u'fid',
                             2 : u'user__screen_name',
                             3 : u'text',
-                            4 : u'retweet_count',
-                            5 : u'retweeted',
-                            6 : u'source',
+                            #4 : u'retweet_count',
+                            #5 : u'retweeted',
+                            #6 : u'source',
+                            4 : u'source',
                             }
     try:
         search = TWSearch.objects.get(term__exact="@%s" % screen_name)
-        querySet = search.status_list.all().values(*columnIndexNameMap.values())
+        querySet = search.status_list.all()#.values(*columnIndexNameMap.values())
+    except ObjectDoesNotExist:
+        pass
+
+    #call to generic function from utils
+    return get_datatables_records(request, querySet, columnIndexNameMap)
+
+@login_required(login_url=u'/login/')
+def get_tw_searchdetail_list(request, search_id):
+    querySet = None
+    #columnIndexNameMap is required for correct sorting behavior
+    columnIndexNameMap = {
+                            0 : u'created_at',
+                            1 : u'fid',
+                            2 : u'user__screen_name',
+                            3 : u'text',
+                            #4 : u'retweet_count',
+                            #5 : u'retweeted',
+                            #6 : u'source',
+                            4 : u'source',
+                            }
+    try:
+        search = TWSearch.objects.get(pmk_id=search_id)
+        querySet = search.status_list.all()#.values(*columnIndexNameMap.values())
     except ObjectDoesNotExist:
         pass
 
