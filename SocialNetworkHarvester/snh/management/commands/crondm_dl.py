@@ -31,6 +31,8 @@ class Command(BaseCommand):
                         output = subprocess.check_output(["youtube-dl","-o%s" % filepath, "%s" % vid.url])
                         vid.video_file_path = filepath
                         vid.save()
+                    except TypeError:
+                        logger.exception("TypeError! %s" % vid if vid else "None")
                     except subprocess.CalledProcessError:
                         logger.exception(u"cannot download video %s for user %s" % (vid.fid, vid.user))
 
