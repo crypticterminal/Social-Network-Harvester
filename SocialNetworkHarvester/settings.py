@@ -169,7 +169,7 @@ TEMPLATE_DIRS = (
     os.path.join(PROJECT_PATH, "templates/"),
 )
 
-GRAPPELLI_ADMIN_TITLE = "<a href='/admin'>SNH Admin</a> | <a href='/'>Consultation</a>"
+GRAPPELLI_ADMIN_TITLE = "<a href='/admin'>SNH Admin</a> | <a href='/'>Consultation</a> | <a href='/test_fb_token'>Test Facebook token</a>"
 
 INSTALLED_APPS = (
     'django.contrib.auth',

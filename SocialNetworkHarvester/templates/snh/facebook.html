@@ -1,29 +1,35 @@
 {% extends "snh/snh_base.html" %}
-{% block scripts %}
+{% block extrahead %}
 <script type="text/javascript" charset="utf-8">
 	$(document).ready(function() {
 		$('#user_table').dataTable(
             {
-                "iDisplayLength": 100, 
+                "iDisplayLength": 50, 
                 "sPaginationType": "full_numbers",
-                "sDom": 'T<"clear">lfrtip',
-                "oTableTools": {
-                            "sSwfPath" : "/static/swf/copy_cvs_xls_pdf.swf"
-                }
+                "sDom": '<"clear">lfrtip',
+                "bAutoWidth": false,
+		        "bServerSide": true, 
+		        "sAjaxSource": "{% url snh.views.get_fb_list harvester_id %}",
+                "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
+                    $('td:eq(1)', nRow).html( '<a href="/fb_user_detail/'+{{harvester_id}}+'/'+aData[2]+'">'+aData[1]+'</a>' );
+                },
             });
 	} );
 </script>
 {% endblock %}
+{% block submenu %}
+<table class="tableheader">
+    <tr>
+        <td {% if harvester_id == "0" %}class="submenu-selection"{% endif %}><a href="/fb/0">All harvesters</a></td>
+        {% for h in all_harvesters %}
+        <td  {% ifequal harvester_id h.pmk_id|slugify %}class="submenu-selection"{% endifequal %}><a href="/fb/{{ h.pmk_id }}">{{ h }}</a></td>
+        {% endfor %}
+    </tr>
+</table>
+{% endblock %}
 
 {% block content %}
-
-<ul>
-<li><a href="/facebook/0">All users</a></li>
-{% for harv in harvesters %}
-<li><a href="/facebook/{{ harv.pmk_id }}">{{ harv.harvester_name }}</a></li>
-{% endfor %}
-</ul>
-<h1>Facebook harvest - List of users</h1>
+<h3>List of users</h3>
 <table id="user_table" class="pretty" width="100%">
     <thead>
     <tr>
@@ -36,24 +42,9 @@
         <th>phone</th>
         <th>checkins</th>
         <th>talking_about_count</th>
-        <th>error_triggered</th>
     </tr>
     </thead>
     <tbody>
-{% for fbuser in user_list %}
-    <tr onclick="document.location.href='/facebook_detail/{{ fbuser.fid }}/'">
-        <td>{{ fbuser.fid|default_if_none:"0" }}</td>
-        <td>{{ fbuser.name|default_if_none:"" }}</td>
-        <td>{{ fbuser.username|default_if_none:"" }}</td>
-        <td>{{ fbuser.category|default_if_none:"" }}</td>
-        <td>{{ fbuser.likes|default_if_none:"0" }}</td>
-        <td>{{ fbuser.about|default_if_none:"" }}</td>
-        <td>{{ fbuser.phone|default_if_none:"" }}</td>
-        <td>{{ fbuser.checkins|default_if_none:"0" }}</td>
-        <td>{{ fbuser.talking_about_count|default_if_none:"0" }}</td>
-        <td>{{ fbuser.error_triggered }}</td>
-    </tr>
-{% endfor %}
     </tbody>
 </table>
 {% endblock %}

@@ -3,20 +3,31 @@
 from django.conf.urls.defaults import patterns, include, url
 
 urlpatterns = patterns('snh.views',
-    (r'^request_fb_token$', 'request_fb_token'),
-    (r'^test_fb_token$', 'test_fb_token'),
 
+    #ROOT
     (r'^$', 'index'),
+
+    #TWITTER
     (r'^tw/(?P<harvester_id>\d+)$', 'tw'),
     (r'^tw_user_detail/(?P<harvester_id>\d+)/(?P<screen_name>\w+)/$', 'tw_user_detail'),
     (r'^tw_search_detail/(?P<harvester_id>\d+)/(?P<search_id>\d+)/$', 'tw_search_detail'),
     (r'^tw_status_detail/(?P<harvester_id>\d+)/(?P<status_id>\d+)/$', 'tw_status_detail'),
-    
+    #TWITTER AJAX
     (r'^get_tw_list/(?P<harvester_id>\d+)/$', 'get_tw_list'),
     (r'^get_twsearch_list/(?P<harvester_id>\d+)/$', 'get_twsearch_list'),
     (r'^get_tw_status_list/(?P<screen_name>\w+)/$', 'get_tw_status_list'),
     (r'^get_tw_statussearch_list/(?P<screen_name>\w+)/$', 'get_tw_statussearch_list'),
     (r'^get_tw_searchdetail_list/(?P<search_id>\d+)/$', 'get_tw_searchdetail_list'),
+
+    #FACEBOOK
+    (r'^request_fb_token$', 'request_fb_token'),
+    (r'^test_fb_token$', 'test_fb_token'),
+    (r'^fb/(?P<harvester_id>\d+)$', 'fb'),
+    (r'^fb_user_detail/(?P<harvester_id>\d+)/(?P<username>[\w\.]+)/$', 'fb_user_detail'),
+    #FACEBOOK AJAX
+    (r'^get_fb_list/(?P<harvester_id>\d+)/$', 'get_fb_list'),
+    (r'^get_fw_post_list/(?P<username>[\w\.]+)/$', 'get_fb_post_list'),
+
 
     #(r'^$', 'index'),
     #(r'^reset_fb_token$', 'reset_fb_token'),
