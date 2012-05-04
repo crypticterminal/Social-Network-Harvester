@@ -184,7 +184,8 @@ def generic_batch_processor(harvester, bman_list):
                             if not manage_error_from_batch(harvester, bman_obj, fbobj):
                                 if unicode(fbobj).startswith("GraphMethodException") and "feed_id" in bman_obj:
                                     d = {"method": "GET", "relative_url": u"%s" % bman_obj["feed_id"]}
-                                    bman_obj = {"snh_obj":bman_obj["snh_obj"], 
+                                    bman_obj = {"snh_obj":bman_obj["snh_obj"],
+                                                "feed_id":bman_obj["feed_id"],
                                                 "retry":bman_obj["retry"], 
                                                 "request":d, 
                                                 "callback":update_user_status_from_batch}
