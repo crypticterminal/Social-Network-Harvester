@@ -189,7 +189,7 @@ def generic_batch_processor(harvester, bman_list):
                                                 "retry":bman_obj["retry"], 
                                                 "request":d, 
                                                 "callback":update_user_status_from_batch}
-                                    logger.info("Retrying but with original feed_id %s after %s" % (bman_obj["feed_id"],fobj))
+                                    logger.info("Retrying but with original feed_id %s after %s" % (bman_obj["feed_id"],fbobj))
                                 else:
                                     logger.info("Retrying %s" % fbobj)
                                 next_bman_list.append(bman_obj)
