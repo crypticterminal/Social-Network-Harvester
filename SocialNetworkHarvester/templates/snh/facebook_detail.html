@@ -3,9 +3,11 @@
 <script type="text/javascript" charset="utf-8">
         var postfunc = function( nRow, aData, iDisplayIndex ) {
 
-            function _wordwrap($text){
+            function _wordwrap($text, $size){
+                $size = typeof $size !== 'undefined' ? $size : 10;
                 final = "";
-                splitted = $text.match(/.{10}/g);
+                var re = new RegExp(".{1,"+$size+"}","g");
+                splitted = $text.match(re);
                 for (i in splitted){
                     final += splitted[i] + "&#8203;"
                 }
@@ -17,18 +19,24 @@
             $('td:eq(0)', nRow).html( post_time );
 
             //fb_post_detail
-            $('td:eq(1)', nRow).html( '<a href="/fb_post_detail/{{ harvester_id }}/'+aData[1]+'">'+aData[1]+'</a>' );
+            $('td:eq(1)', nRow).html( '<a href="/fb_post_detail/{{ harvester_id }}/'+aData[1]+'">'+_wordwrap(aData[1])+'</a>' );
+
+            //from
+            ($('td:eq(2)', nRow).html() == "None") ? from = aData[15] : from = aData[2];
+            $('td:eq(2)', nRow).html(  '<a href="/fb_user_detail/{{ harvester_id }}/fid/'+aData[16]+'">'+_wordwrap(from)+'</a>' );
 
             //name
-            ($('td:eq(2)', nRow).html() == "None") ? from = aData[15] : from = aData[2];
-            $('td:eq(2)', nRow).html(  '<a href="/fb_user_detail/{{ harvester_id }}/fid/'+aData[16]+'">'+from+'</a>' );
+            $('td:eq(3)', nRow).html( _wordwrap(aData[3]) );
+
+            //description
+            $('td:eq(4)', nRow).html( _wordwrap(aData[4],120) );
 
             //message
-            ($('td:eq(6)', nRow).html() == "None") ? message = aData[14] : message = aData[6];
-            $('td:eq(6)', nRow).html( message );
+            ($('td:eq(6)', nRow).html() == "None") ? msg = aData[14] : msg = aData[6];
+            $('td:eq(6)', nRow).html( _wordwrap(msg) );
 
             //longlink
-            ($('td:eq(6)', nRow).html() == "None") ? link = "" : link = '<a href="'+aData[7]+'">'+ _wordwrap(aData[7]) +'</a>';
+            ($('td:eq(7)', nRow).html() == "None") ? link = "" : link = '<a href="'+aData[7]+'">'+ _wordwrap(aData[7]) +'</a>';
             $('td:eq(7)', nRow).html( link );
             
             //longlink
@@ -39,7 +47,7 @@
 
         var iDisplayLength = 10 
         var sPaginationType = "full_numbers";
-        var sDom = '<"clear">lfrtip';
+        var sDom = 'p<"clear">lfrtip';
         var aaSorting = [[ 0, "desc" ]];
         var bAutoWidth = false
         var bServerSide = true; 
@@ -201,18 +209,18 @@
     <thead>
         <tr>
             <th>Created / Updated time</th>
-            <th>fid</th>
-            <th>from</th>
-            <th>name</th>
-            <th>description</th>
-            <th>caption</th>
-            <th>message / story</th>
-            <th>link</th>
-            <th>type</th>
-            <th>likes_count</th>
-            <th>shares_count</th>
-            <th>comments_count</th>
-            <th>application</th>
+            <th>Post ID</th>
+            <th>From</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Caption</th>
+            <th>Message / Story</th>
+            <th>Link</th>
+            <th>Type</th>
+            <th>Likes count</th>
+            <th>Shares count</th>
+            <th>Comments count</th>
+            <th>App</th>
         </tr>
     </thead>
     <tbody>
@@ -225,18 +233,18 @@
         <tr>
         <tr>
             <th>Created / Updated time</th>
-            <th>fid</th>
-            <th>to</th>
-            <th>name</th>
-            <th>description</th>
-            <th>caption</th>
-            <th>message / story</th>
-            <th>link</th>
-            <th>type</th>
-            <th>likes_count</th>
-            <th>shares_count</th>
-            <th>comments_count</th>
-            <th>application</th>
+            <th>Post ID</th>
+            <th>To</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Caption</th>
+            <th>Message / Story</th>
+            <th>Link</th>
+            <th>Type</th>
+            <th>Likes count</th>
+            <th>Shares count</th>
+            <th>Comments count</th>
+            <th>App</th>
         </tr>
         </tr>
     </thead>
@@ -249,9 +257,9 @@
     <thead>
         <tr>
             <th>Created time</th>
-            <th>from</th>
-            <th>to</th>
-            <th>post</th>
+            <th>From</th>
+            <th>To</th>
+            <th>Post ID</th>
             <th>Message</th>
             <th>Likes</th>
             <th>User likes</th>
