@@ -372,11 +372,12 @@ class FBPost(models.Model):
                 model_changed = True
 
         for prop in date_to_check:
-            fb_val = facebook_model[prop]
-            date_val = datetime.strptime(fb_val,'%Y-%m-%dT%H:%M:%S+0000')
-            if self.__dict__[prop] != date_val:
-                self.__dict__[prop] = date_val
-                model_changed = True
+            if prop in facebook_model:
+                fb_val = facebook_model[prop]
+                date_val = datetime.strptime(fb_val,'%Y-%m-%dT%H:%M:%S+0000')
+                if self.__dict__[prop] != date_val:
+                    self.__dict__[prop] = date_val
+                    model_changed = True
 
         (changed, self_prop) = self.update_url_fk(self.picture, "picture", facebook_model)
         if changed:

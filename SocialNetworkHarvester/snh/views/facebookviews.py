@@ -64,6 +64,29 @@ def fb_user_detail(request, harvester_id, username):
                                                     u'harvester_id':harvester_id,
                                                     u'user':user,
                                                   })
+@login_required(login_url=u'/login/')
+def fb_userfid_detail(request, harvester_id, userfid):
+    facebook_harvesters = FacebookHarvester.objects.all()
+    user = get_list_or_404(FBUser, fid=userfid)[0]
+    return  render_to_response(u'snh/facebook_detail.html',{
+                                                    u'fb_selected':True,
+                                                    u'all_harvesters':facebook_harvesters,
+                                                    u'harvester_id':harvester_id,
+                                                    u'user':user,
+                                                  })
+
+@login_required(login_url=u'/login/')
+def fb_post_detail(request, harvester_id, post_id):
+    facebook_harvesters = FacebookHarvester.objects.all()
+    post = get_object_or_404(FBPost, fid=post_id)
+    return  render_to_response(u'snh/facebook_post.html',{
+                                                    u'fb_selected':True,
+                                                    u'all_harvesters':facebook_harvesters,
+                                                    u'harvester_id':harvester_id,
+                                                    u'user':post.user,
+                                                    u'post':post,
+                                                  })
+
 #
 # Facebook AJAX
 #
@@ -96,27 +119,89 @@ def get_fb_list(request, harvester_id):
 def get_fb_post_list(request, username):
     querySet = None
     #columnIndexNameMap is required for correct sorting behavior
+
     columnIndexNameMap = {
                             0 : u'created_time',
                             1 : u'fid',
-                            2 : u'name',
-                            3 : u'description',
-                            4 : u'story',
-                            5 : u'message',
-                            6 : u'caption',
+                            2 : u'ffrom__username',
+                            3 : u'name',
+                            4 : u'description',
+                            5 : u'caption',
+                            6 : u'message',
                             7 : u'link__original_url',
                             8 : u'ftype',
                             9 : u'likes_count',
                             10: u'shares_count',
                             11: u'comments_count',
+                            12: u'application_raw',
+                            13: u'updated_time',
+                            14: u'story',
+                            15: u'ffrom__name',
+                            16: u'ffrom__fid',
                             }
     try:
         user = get_list_or_404(FBUser, username=username)[0]
-        querySet = FBPost.objects.filter(ffrom=user)
+        querySet = FBPost.objects.filter(user=user)
     except ObjectDoesNotExist:
         pass
-    logger.info("#%s" % username)
-    logger.info("#%s" % querySet.count())
+    #call to generic function from utils
+    return get_datatables_records(request, querySet, columnIndexNameMap)
+
+@login_required(login_url=u'/login/')
+def get_fb_otherpost_list(request, userfid):
+    querySet = None
+    #columnIndexNameMap is required for correct sorting behavior
+
+    columnIndexNameMap = {
+                            0 : u'created_time',
+                            1 : u'fid',
+                            2 : u'user__username',
+                            3 : u'name',
+                            4 : u'description',
+                            5 : u'caption',
+                            6 : u'message',
+                            7 : u'link__original_url',
+                            8 : u'ftype',
+                            9 : u'likes_count',
+                            10: u'shares_count',
+                            11: u'comments_count',
+                            12: u'application_raw',
+                            13: u'updated_time',
+                            14: u'story',
+                            15: u'user__name',
+                            16: u'user__fid',
+                            }
+    try:
+        user = get_list_or_404(FBUser, fid=userfid)[0]
+        querySet = FBPost.objects.filter(ffrom=user).exclude(user=user).order_by(u"created_time")
+    except ObjectDoesNotExist:
+        pass
+    #call to generic function from utils
+    return get_datatables_records(request, querySet, columnIndexNameMap)
+
+@login_required(login_url=u'/login/')
+def get_fb_comment_list(request, userfid):
+    querySet = None
+    #columnIndexNameMap is required for correct sorting behavior
+
+    columnIndexNameMap = {
+                            0 : u'created_time',
+                            1 : u'ffrom__username',
+                            2 : u'post__ffrom__name',
+                            3 : u'post__fid',
+                            4 : u'message',
+                            5 : u'likes',
+                            6: u'user_likes',
+                            7: u'ftype',
+                            8: u'ffrom__name',
+                            9: u'ffrom__fid',
+                            10: u'post__ffrom__fid',
+                            }
+    try:
+        user = get_list_or_404(FBUser, fid=userfid)[0]
+        querySet = FBComment.objects.filter(ffrom=user)
+    except ObjectDoesNotExist:
+        pass
     #call to generic function from utils
     return get_datatables_records(request, querySet, columnIndexNameMap)
 

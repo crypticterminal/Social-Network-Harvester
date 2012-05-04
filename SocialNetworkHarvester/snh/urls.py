@@ -24,10 +24,13 @@ urlpatterns = patterns('snh.views',
     (r'^test_fb_token$', 'test_fb_token'),
     (r'^fb/(?P<harvester_id>\d+)$', 'fb'),
     (r'^fb_user_detail/(?P<harvester_id>\d+)/(?P<username>[\w\.]+)/$', 'fb_user_detail'),
+    (r'^fb_user_detail/(?P<harvester_id>\d+)/fid/(?P<userfid>[\w\.]+)/$', 'fb_userfid_detail'),
+    (r'^fb_post_detail/(?P<harvester_id>\d+)/(?P<post_id>[\w\.]+)/$', 'fb_post_detail'),
     #FACEBOOK AJAX
     (r'^get_fb_list/(?P<harvester_id>\d+)/$', 'get_fb_list'),
-    (r'^get_fw_post_list/(?P<username>[\w\.]+)/$', 'get_fb_post_list'),
-
+    (r'^get_fb_post_list/(?P<username>[\w\.]+)/$', 'get_fb_post_list'),
+    (r'^get_fb_otherpost_list/(?P<userfid>[\w\.]+)/$', 'get_fb_otherpost_list'),
+    (r'^get_fb_comment_list/(?P<userfid>[\w\.]+)/$', 'get_fb_comment_list'),
 
     #(r'^$', 'index'),
     #(r'^reset_fb_token$', 'reset_fb_token'),

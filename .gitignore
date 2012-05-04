@@ -5,3 +5,4 @@ settings.py
 *.pkl
 upload/
 public/
+log/

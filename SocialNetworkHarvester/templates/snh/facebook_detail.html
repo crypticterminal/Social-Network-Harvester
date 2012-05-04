@@ -1,59 +1,147 @@
 {% extends "snh/snh_base.html" %}
 {% block extrahead %}
 <script type="text/javascript" charset="utf-8">
+        var postfunc = function( nRow, aData, iDisplayIndex ) {
+
+            function _wordwrap($text){
+                final = "";
+                splitted = $text.match(/.{10}/g);
+                for (i in splitted){
+                    final += splitted[i] + "&#8203;"
+                }
+                return final;
+            }
+            
+            //created_time
+            ($('td:eq(0)', nRow).html() == "None") ? post_time = aData[13] : post_time = aData[0];
+            $('td:eq(0)', nRow).html( post_time );
+
+            //fb_post_detail
+            $('td:eq(1)', nRow).html( '<a href="/fb_post_detail/{{ harvester_id }}/'+aData[1]+'">'+aData[1]+'</a>' );
+
+            //name
+            ($('td:eq(2)', nRow).html() == "None") ? from = aData[15] : from = aData[2];
+            $('td:eq(2)', nRow).html(  '<a href="/fb_user_detail/{{ harvester_id }}/fid/'+aData[16]+'">'+from+'</a>' );
+
+            //message
+            ($('td:eq(6)', nRow).html() == "None") ? message = aData[14] : message = aData[6];
+            $('td:eq(6)', nRow).html( message );
+
+            //longlink
+            ($('td:eq(6)', nRow).html() == "None") ? link = "" : link = '<a href="'+aData[7]+'">'+ _wordwrap(aData[7]) +'</a>';
+            $('td:eq(7)', nRow).html( link );
+            
+            //longlink
+            ($('td:eq(12)', nRow).html() == "None") ? app = "" : app = aData[12]
+            $('td:eq(12)', nRow).html( app );
+
+        }
+
+        var iDisplayLength = 10 
+        var sPaginationType = "full_numbers";
+        var sDom = '<"clear">lfrtip';
+        var aaSorting = [[ 0, "desc" ]];
+        var bAutoWidth = false
+        var bServerSide = true; 
+        var aoColumnDefs = [ 
+            { 
+                "bSearchable": false, "aTargets": [ 0, 13 ],
+            }
+        ];
+        var aoColumns = [ 
+            { "bVisible":    true },    //0 : u'created_time/updated_time',
+            { "bVisible":    true },    //1 : u'fid',
+            { "bVisible":    true },    //2 : u'ffrom__username',
+            { "bVisible":    true },    //3 : u'name',
+            { "bVisible":    true },    //4 : u'description',
+            { "bVisible":    true },    //5 : u'caption',
+            { "bVisible":    true },    //6 : u'message/story',
+            { "bVisible":    true },    //7 : u'link__original_url',
+            { "bVisible":    true },    //8 : u'ftype',
+            { "bVisible":    true },    //9 : u'likes_count',
+            { "bVisible":    true },    //10: u'shares_count',
+            { "bVisible":    true },    //11: u'comments_count',
+            { "bVisible":    true },    //12: u'application_raw',
+            { "bVisible":    false },    //13: u'updated_time',
+            { "bVisible":    false },    //14: u'story',
+            { "bVisible":    false },    //15: u'ffrom__name',
+            { "bVisible":    false },    //16: u'ffrom__fid',
+        ];
+
+
 	$(document).ready(function() {
 		var oTable1 = $('#post_table').dataTable(
             {
-                "iDisplayLength": 25, 
-                "sPaginationType": "full_numbers",
-                "sDom": '<"clear">lfrtip',
-                "bAutoWidth": false,
-		        "bServerSide": true, 
+                "iDisplayLength": iDisplayLength, 
+                "sPaginationType": sPaginationType,
+                "sDom": sDom,
+                "aaSorting": aaSorting,
+                "bAutoWidth": bAutoWidth,
+		        "bServerSide": bServerSide, 
 		        "sAjaxSource": "{% url snh.views.get_fb_post_list user.username  %}",
-                "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
-
-                    function _wordwrap($text){
-                        final = "";
-                        splitted = $text.match(/.{10}/g);
-                        for (i in splitted){
-                            final += splitted[i] + "&#8203;"
-                        }
-                        return final;
-                    }
-
-                    ($('td:eq(3)', nRow).html() == "None") ? message = aData[4] : message = aData[5]
-
-                    $('td:eq(3)', nRow).html( '<a href="/fb_post_detail/{{ harvester_id }}/'+aData[1]+'">'+message+'</a>' );
-                    $('td:eq(5)', nRow).html( '<a href="'+aData[7]+'">'+ _wordwrap(aData[7]) +'</a>' );
-                },
-                "aoColumnDefs": [ 
-                    { 
-                        "bSearchable": false, "aTargets": [ 0 ] 
-                    }
-                ],
-		        "aoColumns": [ 
-                                                //aData[n],td:eq(p) desc
-			        { "bVisible":    true },    //0,0   Created time
-			        { "bVisible":    false },   //1     fid
-			        { "bVisible":    true },    //2,1   name
-			        { "bVisible":    true },    //3,2   description
-			        { "bVisible":    false },   //4     story
-			        { "bVisible":    true },    //5,3   message
-			        { "bVisible":    true },    //6,4   caption
-			        { "bVisible":    true },    //7,5   link
-			        { "bVisible":    true },    //8,6   type
-			        { "bVisible":    true },    //9,7   likes
-			        { "bVisible":    true },    //10,8  shares
-			        { "bVisible":    true },    //11,9  comments
-		        ]
+                "fnRowCallback": postfunc,
+                "aoColumnDefs": aoColumnDefs,
+		        "aoColumns": aoColumns,
+            });
+		var oTable2 = $('#other_post_table').dataTable(
+            {
+                "iDisplayLength": iDisplayLength, 
+                "sPaginationType": sPaginationType,
+                "sDom": sDom,
+                "aaSorting": aaSorting,
+                "bAutoWidth": bAutoWidth,
+		        "bServerSide": bServerSide, 
+		        "sAjaxSource": "{% url snh.views.get_fb_otherpost_list user.fid  %}",
+                "fnRowCallback": postfunc,
+                "aoColumnDefs": aoColumnDefs,
+		        "aoColumns": aoColumns,
             });
 
-          $(window).bind('load', function () {
-            oTable1.fnAdjustColumnSizing();
-          } );
-          $(window).bind('resize', function () {
-            oTable1.fnAdjustColumnSizing();
-          } );
+		var oTable3 = $('#comments_table').dataTable(
+            {
+                "iDisplayLength": iDisplayLength, 
+                "sPaginationType": sPaginationType,
+                "sDom": sDom,
+                "aaSorting": aaSorting,
+                "bAutoWidth": bAutoWidth,
+		        "bServerSide": bServerSide, 
+		        "sAjaxSource": "{% url snh.views.get_fb_comment_list user.fid  %}",
+                "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
+                    //0 : u'created_time',
+                    //1 : u'ffrom__username',
+                    //2 : u'post__ffrom__name',
+                    //3 : u'post__fid',
+                    //4 : u'message',
+                    //5 : u'likes',
+                    //6: u'user_likes',
+                    //7: u'ftype',
+                    //8: u'ffrom__name',
+                    //9: u'ffrom__fid',
+                    //10: u'post__ffrom__fid',
+
+                    //from
+                    ($('td:eq(1)', nRow).html() == "None") ? from = aData[8] : from = aData[1];
+                    $('td:eq(1)', nRow).html(  '<a href="/fb_user_detail/{{ harvester_id }}/fid/'+aData[9]+'">'+from+'</a>' );
+                    //to (post_ffrom)
+                    $('td:eq(2)', nRow).html(  '<a href="/fb_user_detail/{{ harvester_id }}/fid/'+aData[10]+'">'+aData[2]+'</a>' );
+                    //post
+                    $('td:eq(3)', nRow).html(  '<a href="/fb_post_detail/{{ harvester_id }}/'+aData[3]+'">'+aData[3]+'</a>' );
+                },
+                "aoColumnDefs": aoColumnDefs,
+		        "aoColumns": [ 
+                    { "bVisible":    true },    //0 : u'created_time/updated_time',
+                    { "bVisible":    true },    //1 : u'ffrom__username',
+                    { "bVisible":    true },    //2 : u'post__ffrom__name',
+                    { "bVisible":    true },    //3 : u'post__fid',
+                    { "bVisible":    true },    //4 : u'message',
+                    { "bVisible":    true },    //5 : u'likes',
+                    { "bVisible":    true },    //6 : u'user_likes',
+                    { "bVisible":    true },    //7 : u'ftype',
+                    { "bVisible":    false },    //8 : u'ffrom__name',
+                    { "bVisible":    false },    //9 : u'ffrom__fid',
+                    { "bVisible":    false },    //10: u'post__ffrom__fid',
+                ],
+            });
 	} );
 </script>
 {% endblock %}
@@ -89,9 +177,9 @@
     </thead>
     <tbody>
     <tr>
-        <td>{{ user.fid|default_if_none:"0" }}</td>
-        <td>{{ user.name|default_if_none:"" }}</td>
-        <td>{{ user.username|default_if_none:"" }}</td>
+        <td><a href="/fb_user_detail/{{ harvester_id }}/fid/{{user.fid}}">{{ user.fid|default_if_none:"0" }}</a></td>
+        <td><a href="/fb_user_detail/{{ harvester_id }}/fid/{{user.fid}}">{{ user.name|default_if_none:"" }}</a></td>
+        <td><a href="/fb_user_detail/{{ harvester_id }}/fid/{{user.fid}}">{{ user.username|default_if_none:"" }}</a></td>
         <td>{{ user.category|default_if_none:"" }}</td>
         <td>{{ user.likes|default_if_none:"0" }}</td>
         <td>{{ user.about|default_if_none:"" }}</td>
@@ -112,18 +200,19 @@
 <table id="post_table" class="pretty">
     <thead>
         <tr>
-            <th>Created time</th>
+            <th>Created / Updated time</th>
             <th>fid</th>
+            <th>from</th>
             <th>name</th>
             <th>description</th>
-            <th>story</th>
-            <th>message</th>
             <th>caption</th>
+            <th>message / story</th>
             <th>link</th>
             <th>type</th>
             <th>likes_count</th>
             <th>shares_count</th>
             <th>comments_count</th>
+            <th>application</th>
         </tr>
     </thead>
     <tbody>
@@ -131,23 +220,24 @@
 </table>
 
 <h3>{{ user.name }} posts on other's wall</h3>
-<table id="other_posts_table" class="pretty">
+<table id="other_post_table" class="pretty">
     <thead>
         <tr>
-            <th>Created time</th>
-            <th>from</th>
+        <tr>
+            <th>Created / Updated time</th>
+            <th>fid</th>
             <th>to</th>
-            <th>story / message</th>
-            <th>story tags / message tags</th>
-            <th>link</th>
             <th>name</th>
-            <th>caption</th>
             <th>description</th>
+            <th>caption</th>
+            <th>message / story</th>
+            <th>link</th>
             <th>type</th>
-            <th>likes count</th>
-            <th>comments count</th>
-            <th>created time</th>
-            <th>updated time</th>
+            <th>likes_count</th>
+            <th>shares_count</th>
+            <th>comments_count</th>
+            <th>application</th>
+        </tr>
         </tr>
     </thead>
     <tbody>
@@ -160,6 +250,8 @@
         <tr>
             <th>Created time</th>
             <th>from</th>
+            <th>to</th>
+            <th>post</th>
             <th>Message</th>
             <th>Likes</th>
             <th>User likes</th>

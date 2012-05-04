@@ -1,26 +1,77 @@
 {% extends "snh/snh_base.html" %}
-{% block scripts %}
+{% block extrahead %}
 <script type="text/javascript" charset="utf-8">
-	$(document).ready(
-        function() {
-		            $('#comment_table').dataTable({
-                                    "iDisplayLength": 100,
-                                    "sPaginationType": "full_numbers",
-                                    "sDom": 'pT<"clear">lfrtip',
-                                    "aaSorting": [[ 0, "desc" ]],
-                                    "oTableTools": {
-                                                "sSwfPath" : "/static/swf/copy_cvs_xls_pdf.swf"
-                                    
-                                    },
-                                });
+	$(document).ready(function() {
+		var oTable1 = $('#comment_table').dataTable(
+            {
+                "iDisplayLength": 25, 
+                "sPaginationType": "full_numbers",
+                "sDom": '<"clear">lfrtip',
+                "bAutoWidth": false,
+		        "bServerSide": true, 
+		        "sAjaxSource": "{% url snh.views.get_fb_post_list user.username  %}",
+                "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
 
-	                } 
-    );
+                    function _wordwrap($text){
+                        final = "";
+                        splitted = $text.match(/.{10}/g);
+                        for (i in splitted){
+                            final += splitted[i] + "&#8203;"
+                        }
+                        return final;
+                    }
+
+                    ($('td:eq(4)', nRow).html() == "None") ? message = aData[5] : message = aData[6]
+
+                    $('td:eq(2)', nRow).html( '<a href="/fb_post_detail/{{ harvester_id }}/'+aData[1]+'">'+aData[3]+'</a>' );
+                    $('td:eq(6)', nRow).html( '<a href="'+aData[8]+'">'+ _wordwrap(aData[8]) +'</a>' );
+                },
+                "aoColumnDefs": [ 
+                    { 
+                        "bSearchable": false, "aTargets": [ 0 ] 
+                    }
+                ],
+		        "aoColumns": [ 
+                                                //aData[n],td:eq(p) desc
+			        { "bVisible":    true },    //0,0   Created time
+			        { "bVisible":    false },   //1     fid
+			        { "bVisible":    true },    //2,1   ffrom
+			        { "bVisible":    true },    //3,2   name
+			        { "bVisible":    true },    //4,3   description
+			        { "bVisible":    false },   //5     story
+			        { "bVisible":    true },    //6,4   message
+			        { "bVisible":    true },    //7,5   caption
+			        { "bVisible":    true },    //8,6   link
+			        { "bVisible":    true },    //9,7   type
+			        { "bVisible":    true },    //10,8   likes
+			        { "bVisible":    true },    //11,9  shares
+			        { "bVisible":    true },    //12,10 comments
+                    
+		        ]
+            });
+
+          $(window).bind('load', function () {
+            oTable1.fnAdjustColumnSizing();
+          } );
+          $(window).bind('resize', function () {
+            oTable1.fnAdjustColumnSizing();
+          } );
+	} );
 </script>
+{% endblock %}
+{% block submenu %}
+<table class="tableheader">
+    <tr>
+        <td {% if harvester_id == "0" %}class="submenu-selection"{% endif %}><a href="/fb/0">All harvesters</a></td>
+        {% for h in all_harvesters %}
+        <td  {% ifequal harvester_id h.pmk_id|slugify %}class="submenu-selection"{% endifequal %}><a href="/fb/{{ h.pmk_id }}">{{ h }}</a></td>
+        {% endfor %}
+    </tr>
+</table>
 {% endblock %}
 
 {% block content %}
-<h1>Facebook: {{ fbuser.name }} </h1>
+<h1>Facebook: {{ user.name }} </h1>
 <table id="user_table" class="pretty">
     <thead>
     <tr>
@@ -40,21 +91,21 @@
     </thead>
     <tbody>
     <tr>
-        <td>{{ fbuser.fid|default_if_none:"0" }}</td>
-        <td>{{ fbuser.name|default_if_none:"" }}</td>
-        <td>{{ fbuser.username|default_if_none:"" }}</td>
-        <td>{{ fbuser.category|default_if_none:"" }}</td>
-        <td>{{ fbuser.likes|default_if_none:"0" }}</td>
-        <td>{{ fbuser.about|default_if_none:"" }}</td>
-        <td>{{ fbuser.phone|default_if_none:"" }}</td>
-        <td>{{ fbuser.checkins|default_if_none:"0" }}</td>
-        <td>{{ fbuser.picture|default_if_none:""|urlize }}</td>
-        <td>{{ fbuser.website|default_if_none:"0"|urlize }}</td>
-        <td>{{ fbuser.talking_about_count|default_if_none:"0" }}</td>
-        <td>{{ fbuser.error_triggered }}</td>
+        <td>{{ user.fid|default_if_none:"0" }}</td>
+        <td>{{ user.name|default_if_none:"" }}</td>
+        <td>{{ user.username|default_if_none:"" }}</td>
+        <td>{{ user.category|default_if_none:"" }}</td>
+        <td>{{ user.likes|default_if_none:"0" }}</td>
+        <td>{{ user.about|default_if_none:"" }}</td>
+        <td>{{ user.phone|default_if_none:"" }}</td>
+        <td>{{ user.checkins|default_if_none:"0" }}</td>
+        <td>{{ user.picture|default_if_none:""|urlize }}</td>
+        <td>{{ user.website|default_if_none:"0"|urlize }}</td>
+        <td>{{ user.talking_about_count|default_if_none:"0" }}</td>
+        <td>{{ user.error_triggered }}</td>
     </tr>
     <tr>
-        <td colspan="12"><strong>Bio:</strong> {{ fbuser.bio|default_if_none:""}}</td>
+        <td colspan="12"><strong>Bio:</strong> {{ user.bio|default_if_none:""}}</td>
     </tr>
     </tbody>
 </table>
@@ -81,10 +132,10 @@
         </tr>
     </thead>
     <tbody>
-        <tr onclick="document.location.href='/facebook_post/{{ post.fid }}/'">
+        <tr>
             <td>{{ post.created_time.ctime }}</td>
-            <td><a href="/facebook_detail/{{ post.ffrom.fid }}/">{{ post.ffrom.name|default_if_none:post.ffrom.username }} / ({{ post.ffrom.fid }})</a></td>
-            <td>{{ post.story|default_if_none:""|urlize }}{{ post.message|default_if_none:""|urlize }} </td>
+            <td><a href="/fb_user_detail/{{ harvester_id }}/fid/{{ post.ffrom.fid }}/">{{ post.ffrom.name|default_if_none:post.ffrom.username }} / ({{ post.ffrom.fid }})</a></td>
+            <td>{{ post.story|default_if_none:""|safe }}{{ post.message|default_if_none:""|safe }} </td>
             <td>{{ post.story_tags|default_if_none:"" }}{{ post.message_tags|default_if_none:"" }} </td>
             <td>{{ post.link|urlize }}</td>
             <td>{{ post.name|default_if_none:"" }}</td>
@@ -118,17 +169,7 @@
         </tr>
     </thead>
     <tbody>
-        {% for comment in comments %}
-        <tr>
-            <td id="date">{{ comment.created_time.ctime }}</td>
-            <td><a href="/facebook_detail/{{ comment.ffrom.fid }}/">{{ comment.ffrom.name }} / ({{ comment.ffrom.fid }})</a></td>
-            <td>{{ comment.message|urlize }}</td>
-            <td>{{ comment.likes }}</td>
-            <td>{{ comment.user_likes }}</td>
-            <td>{{ comment.ftype }}</td>
-        </tr>
-        {% endfor %}
-    <tbody>
+    </tbody>
 </table>
 
 
