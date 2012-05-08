@@ -172,6 +172,7 @@ def generic_batch_processor(harvester, bman_list):
     global_retry = 0
     waiter = 0
     start = time.time()
+    reallyneedsleep = false
 
     while bman_list:
         usage = resource.getrusage(resource.RUSAGE_SELF)
@@ -198,11 +199,12 @@ def generic_batch_processor(harvester, bman_list):
                     if (time.time() - start) < 1.5:
                         logger.info(u"too fast. will wait 1.5 sec")
                         time.sleep(1)
-
                     start = time.time()
+                    reallyneedsleep = False      
+
                     pyb = [bman[j]["request"] for j in range(0, len(bman))]
                     batch_result = harvester.api_call("batch",{"requests":pyb})
-                                
+
                     for fbobj in batch_result:
                         bman_obj = bman[obj_pos]
                         if type(fbobj) == dict:
@@ -211,8 +213,9 @@ def generic_batch_processor(harvester, bman_list):
                                 next_bman_list += next
                         else:
                             needretry, needsleep = manage_error_from_batch(harvester, bman_obj, fbobj)
-                            if needsleep:
-                                waiter += 2
+                            if not reallyneedsleep and needsleep:
+                                reallyneedsleep = True
+                                waiter += 1
                                 if waiter > 30:
                                     waiter = 30
                                 
