@@ -86,6 +86,7 @@ html[xmlns] .dataTables_wrapper {
 /*
  * Table styles
  */
+
 table.pretty {
 	width: 100%;
 	clear: both;   
@@ -126,6 +127,10 @@ table.pretty tbody tr.odd:hover td{
 table.pretty tbody tr.even:hover td{ 
 	background: #ECFFB3;
     cursor: pointer;
+}
+
+table.pretty td.dataTables_empty {
+    background: #ff9191;
 }
 
 /* Footer cells */	

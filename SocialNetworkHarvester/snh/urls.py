@@ -34,6 +34,11 @@ urlpatterns = patterns('snh.views',
     (r'^get_fb_postcomment_list/(?P<postfid>[\w\.]+)/$', 'get_fb_postcomment_list'),
     (r'^get_fb_likes_list/(?P<postfid>[\w\.]+)/$', 'get_fb_likes_list'),
 
+    #DAILYMOTION
+    (r'^dm/(?P<harvester_id>\d+)$', 'dm'),
+    #DAILYMOTION AJAX
+    (r'^get_dm_list/(?P<harvester_id>\d+)/$', 'get_dm_list'),
+
     #(r'^$', 'index'),
     #(r'^reset_fb_token$', 'reset_fb_token'),
     #(r'^request_fb_token$', 'request_fb_token'),
