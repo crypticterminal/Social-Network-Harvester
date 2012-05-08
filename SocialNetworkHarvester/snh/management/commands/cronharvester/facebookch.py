@@ -167,7 +167,7 @@ def manage_error_from_batch(harvester, bman, fbobj):
 def generic_batch_processor(harvester, bman_list):
 
     total_retry = 0
-    step_size = 40 #Over 20, unknown error will happen...
+    step_size = 30 #Over 20, unknown error will happen...
     next_bman_list = []
     global_retry = 0
     waiter = 0
@@ -195,7 +195,7 @@ def generic_batch_processor(harvester, bman_list):
                         sleeper(waiter)
                         waiter -= 1
 
-                    if (time.time() - start) < 1.0:
+                    if (time.time() - start) < 1.5:
                         logger.info(u"too fast. will wait 1sec")
                         time.sleep(1)
 
@@ -212,7 +212,9 @@ def generic_batch_processor(harvester, bman_list):
                         else:
                             needretry, needsleep = manage_error_from_batch(harvester, bman_obj, fbobj)
                             if needsleep:
-                                waiter += 30
+                                waiter += 2
+                                if waiter > 30:
+                                    waiter = 30
                                 
                             if not needretry:
                                 logger.info("Retrying %s" % fbobj)
