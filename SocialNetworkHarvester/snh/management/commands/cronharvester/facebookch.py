@@ -29,7 +29,7 @@ def run_facebook_harvester():
 def sleeper(retry_count):
     retry_delay = 1
     wait_delay = retry_count*retry_delay
-    wait_delay = 5 if wait_delay > 5 else wait_delay
+    wait_delay = 60 if wait_delay > 60 else wait_delay
     time.sleep(wait_delay)
 
 def manage_exception(retry_count, harvester, related_object):
@@ -122,6 +122,7 @@ def build_json_user_batch(user_batch):
 def manage_error_from_batch(harvester, bman, fbobj):
 
     need_a_break = False
+    need_to_sleep = False
     error = None
     if fbobj:
         error = unicode(fbobj).split(":")[1].strip()
@@ -140,13 +141,16 @@ def manage_error_from_batch(harvester, bman, fbobj):
             logger.error(msg)
         elif unicode(error).startswith("(#613)"):
             msg = u"Exception for the harvester %s. Retry:%s. Calls to stream have exceeded the rate of 600 calls per 600 seconds.." % (harvester, bman["retry"])
-            logger.error(msg)            
-            sleeper(bman["retry"])
-
+            logger.error(msg)
+            need_to_sleep = True       
         elif unicode(error).startswith("GraphMethodException"):
             msg = u"GraphMethodException for %s. Error:%s" %(unicode(snh_obj), fanobj)
             logger.error(msg)
             need_a_break = True 
+        elif unicode(error).startswith("Error: An unexpected error has occurred"):
+            msg = u"Error: An unexpected error has occurred: %s. Error:%s" %(unicode(snh_obj), fanobj)
+            logger.error(msg)
+            need_to_sleep = True
         elif unicode(error).startswith("Unknown path components:"):
             msg = u"Unknown path components for %s. Error:%s" %(unicode(snh_obj), fanobj)
             logger.error(msg)
@@ -158,7 +162,7 @@ def manage_error_from_batch(harvester, bman, fbobj):
         logger.error(msg)
         need_a_break = True                   
     
-    return need_a_break
+    return need_a_break, need_to_sleep
 
 def generic_batch_processor(harvester, bman_list):
 
@@ -166,10 +170,10 @@ def generic_batch_processor(harvester, bman_list):
     step_size = 40 #Over 20, unknown error will happen...
     next_bman_list = []
     global_retry = 0
+    waiter = 0
+    start = time.time()
 
     while bman_list:
-        waiter = 0
-        sleepretry = 0
         usage = resource.getrusage(resource.RUSAGE_SELF)
         logger.info(u"New batch. Size:%d for %s Mem:%s MB" % (len(bman_list), harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
         split_bman = [bman_list[i:i+step_size] for i  in range(0, len(bman_list), step_size)]
@@ -187,10 +191,15 @@ def generic_batch_processor(harvester, bman_list):
                     obj_pos = 0
 
                     if waiter > 0:
-                        logger.info("waiting. %d/30, retry:%d" % (waiter,sleepretry))
-                        sleeper(sleepretry)
+                        logger.info("waiting #%d" % waiter)
+                        sleeper(waiter)
                         waiter -= 1
 
+                    if (time.time() - start) < 1.0:
+                        logger.info(u"too fast. will wait 1sec")
+                        time.sleep(1)
+
+                    start = time.time()
                     pyb = [bman[j]["request"] for j in range(0, len(bman))]
                     batch_result = harvester.api_call("batch",{"requests":pyb})
                                 
@@ -201,14 +210,13 @@ def generic_batch_processor(harvester, bman_list):
                             if next:
                                 next_bman_list += next
                         else:
-                            if not manage_error_from_batch(harvester, bman_obj, fbobj):
+                            needretry, needsleep = manage_error_from_batch(harvester, bman_obj, fbobj)
+                            if needsleep:
+                                waiter += 30
+                                
+                            if not needretry:
                                 logger.info("Retrying %s" % fbobj)
                                 next_bman_list.append(bman_obj)
-                                if fbobj:
-                                    error = unicode(fbobj).split(":")[1].strip()
-                                    if unicode(error).startswith("(#613)"):
-                                        waiter += 1
-                                        sleepretry += 1
                             else:
                                 logger.error("Critical! User will not be retried: %s" % fbobj)
                         obj_pos += 1
