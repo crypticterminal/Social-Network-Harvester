@@ -43,6 +43,10 @@
             ($('td:eq(12)', nRow).html() == "None") ? app = "" : app = aData[12]
             $('td:eq(12)', nRow).html( app );
 
+            for (i in aData){
+                aData[i] = aData[i] == "None" ? "" : "dd"//aData[i];
+            }
+            //$('td:eq('+0+')', nRow).html("kkk");
         }
 
         var iDisplayLength = 10 
@@ -115,18 +119,6 @@
 		        "bServerSide": bServerSide, 
 		        "sAjaxSource": "{% url snh.views.get_fb_comment_list user.fid  %}",
                 "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
-                    //0 : u'created_time',
-                    //1 : u'ffrom__username',
-                    //2 : u'post__ffrom__name',
-                    //3 : u'post__fid',
-                    //4 : u'message',
-                    //5 : u'likes',
-                    //6: u'user_likes',
-                    //7: u'ftype',
-                    //8: u'ffrom__name',
-                    //9: u'ffrom__fid',
-                    //10: u'post__ffrom__fid',
-
                     //from
                     ($('td:eq(1)', nRow).html() == "None") ? from = aData[8] : from = aData[1];
                     $('td:eq(1)', nRow).html(  '<a href="/fb_user_detail/{{ harvester_id }}/fid/'+aData[9]+'">'+from+'</a>' );
@@ -135,7 +127,6 @@
                     //post
                     $('td:eq(3)', nRow).html(  '<a href="/fb_post_detail/{{ harvester_id }}/'+aData[3]+'">'+aData[3]+'</a>' );
                 },
-                "aoColumnDefs": aoColumnDefs,
 		        "aoColumns": [ 
                     { "bVisible":    true },    //0 : u'created_time/updated_time',
                     { "bVisible":    true },    //1 : u'ffrom__username',
@@ -143,12 +134,18 @@
                     { "bVisible":    true },    //3 : u'post__fid',
                     { "bVisible":    true },    //4 : u'message',
                     { "bVisible":    true },    //5 : u'likes',
-                    { "bVisible":    true },    //6 : u'user_likes',
-                    { "bVisible":    true },    //7 : u'ftype',
+                    { "bVisible":    false },    //6 : u'user_likes',
+                    { "bVisible":    false },    //7 : u'ftype',
                     { "bVisible":    false },    //8 : u'ffrom__name',
                     { "bVisible":    false },    //9 : u'ffrom__fid',
                     { "bVisible":    false },    //10: u'post__ffrom__fid',
                 ],
+                "aoColumnDefs": [ 
+                    { 
+                        "bSearchable": false, "aTargets": [ 0 ],
+                    }
+                ],
+
             });
 	} );
 </script>
@@ -263,7 +260,6 @@
             <th>Message</th>
             <th>Likes</th>
             <th>User likes</th>
-            <th>Type</th>
         </tr>
     </thead>
     <tbody>

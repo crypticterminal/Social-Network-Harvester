@@ -205,6 +205,47 @@ def get_fb_comment_list(request, userfid):
     #call to generic function from utils
     return get_datatables_records(request, querySet, columnIndexNameMap)
 
+@login_required(login_url=u'/login/')
+def get_fb_postcomment_list(request, postfid):
+    querySet = None
+    #columnIndexNameMap is required for correct sorting behavior
+
+    columnIndexNameMap = {
+                            0 : u'created_time',
+                            1 : u'ffrom__username',
+                            2 : u'message',
+                            3 : u'likes',
+                            4: u'user_likes',
+                            5: u'ftype',
+                            6: u'ffrom__name',
+                            7: u'ffrom__fid',
+                            8: u'post__fid',
+                            }
+    try:
+        post = get_list_or_404(FBPost, fid=postfid)[0]
+        querySet = FBComment.objects.filter(post=post)
+    except ObjectDoesNotExist:
+        pass
+    #call to generic function from utils
+    return get_datatables_records(request, querySet, columnIndexNameMap)
+
+@login_required(login_url=u'/login/')
+def get_fb_likes_list(request, postfid):
+    querySet = None
+    #columnIndexNameMap is required for correct sorting behavior
+
+    columnIndexNameMap = {
+                            0 : u'fid',
+                            1 : u'name',
+                            }
+    try:
+        post = get_list_or_404(FBPost, fid=postfid)[0]
+        querySet = post.likes_from.all()
+    except ObjectDoesNotExist:
+        pass
+    #call to generic function from utils
+    return get_datatables_records(request, querySet, columnIndexNameMap)
+
 #
 # OLD VIEWS
 #

@@ -2,52 +2,73 @@
 {% block extrahead %}
 <script type="text/javascript" charset="utf-8">
 	$(document).ready(function() {
-		var oTable1 = $('#comment_table').dataTable(
+        var iDisplayLength = 10 
+        var sPaginationType = "full_numbers";
+        var sDom = 'p<"clear">lfrtip';
+        var aaSorting = [[ 0, "desc" ]];
+        var bAutoWidth = false
+        var bServerSide = true; 
+
+		var oTable1 = $('#comments_table').dataTable(
             {
-                "iDisplayLength": 25, 
-                "sPaginationType": "full_numbers",
-                "sDom": '<"clear">lfrtip',
-                "bAutoWidth": false,
-		        "bServerSide": true, 
-		        "sAjaxSource": "{% url snh.views.get_fb_post_list user.username  %}",
+                "iDisplayLength": iDisplayLength, 
+                "sPaginationType": sPaginationType,
+                "sDom": sDom,
+                "aaSorting": aaSorting,
+                "bAutoWidth": bAutoWidth,
+		        "bServerSide": bServerSide, 
+		        "sAjaxSource": "{% url snh.views.get_fb_postcomment_list post.fid  %}",
                 "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
-
-                    function _wordwrap($text){
-                        final = "";
-                        splitted = $text.match(/.{10}/g);
-                        for (i in splitted){
-                            final += splitted[i] + "&#8203;"
-                        }
-                        return final;
-                    }
-
-                    ($('td:eq(4)', nRow).html() == "None") ? message = aData[5] : message = aData[6]
-
-                    $('td:eq(2)', nRow).html( '<a href="/fb_post_detail/{{ harvester_id }}/'+aData[1]+'">'+aData[3]+'</a>' );
-                    $('td:eq(6)', nRow).html( '<a href="'+aData[8]+'">'+ _wordwrap(aData[8]) +'</a>' );
+                    //from
+                    ($('td:eq(1)', nRow).html() == "None") ? from = aData[8] : from = aData[1];
+                    $('td:eq(1)', nRow).html(  '<a href="/fb_user_detail/{{ harvester_id }}/fid/'+aData[9]+'">'+from+'</a>' );
+                    //to (post_ffrom)
+                    $('td:eq(2)', nRow).html(  '<a href="/fb_user_detail/{{ harvester_id }}/fid/'+aData[7]+'">'+aData[2]+'</a>' );
                 },
+		        "aoColumns": [ 
+                    { "bVisible":    true },    //0 : u'created_time/updated_time',
+                    { "bVisible":    true },    //1 : u'ffrom__username',
+                    { "bVisible":    true },    //2 : u'message',
+                    { "bVisible":    true },    //3 : u'likes',
+                    { "bVisible":    false },    //4 : u'user_likes',
+                    { "bVisible":    false },    //5 : u'ftype',
+                    { "bVisible":    false },   //6 : u'ffrom__name',
+                    { "bVisible":    false },   //7 : u'ffrom__fid',
+                    { "bVisible":    false },    //8 : u'post__fid',
+                ],
                 "aoColumnDefs": [ 
                     { 
-                        "bSearchable": false, "aTargets": [ 0 ] 
+                        "bSearchable": false, "aTargets": [ 0 ],
                     }
                 ],
+
+            });
+
+		var oTable2 = $('#likes_table').dataTable(
+            {
+                "iDisplayLength": iDisplayLength, 
+                "sPaginationType": sPaginationType,
+                "sDom": sDom,
+                "aaSorting": aaSorting,
+                "bAutoWidth": bAutoWidth,
+		        "bServerSide": bServerSide, 
+		        "sAjaxSource": "{% url snh.views.get_fb_likes_list post.fid  %}",
+                "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
+                    //fid
+                    $('td:eq(0)', nRow).html(  '<a href="/fb_user_detail/{{ harvester_id }}/fid/'+aData[0]+'">'+aData[0]+'</a>' );
+                    //user
+                    $('td:eq(1)', nRow).html(  '<a href="/fb_user_detail/{{ harvester_id }}/fid/'+aData[0]+'">'+aData[1]+'</a>' );
+                },
 		        "aoColumns": [ 
-                                                //aData[n],td:eq(p) desc
-			        { "bVisible":    true },    //0,0   Created time
-			        { "bVisible":    false },   //1     fid
-			        { "bVisible":    true },    //2,1   ffrom
-			        { "bVisible":    true },    //3,2   name
-			        { "bVisible":    true },    //4,3   description
-			        { "bVisible":    false },   //5     story
-			        { "bVisible":    true },    //6,4   message
-			        { "bVisible":    true },    //7,5   caption
-			        { "bVisible":    true },    //8,6   link
-			        { "bVisible":    true },    //9,7   type
-			        { "bVisible":    true },    //10,8   likes
-			        { "bVisible":    true },    //11,9  shares
-			        { "bVisible":    true },    //12,10 comments
-                    
-		        ]
+                    { "bVisible":    true },    //0 : u'fid',
+                    { "bVisible":    true },    //1 : u'username',
+                ],
+                //"aoColumnDefs": [ 
+                //    { 
+                //        "bSearchable": false, "aTargets": [ 0 ],
+                //    }
+                //],
+
             });
 
           $(window).bind('load', function () {
@@ -71,7 +92,7 @@
 {% endblock %}
 
 {% block content %}
-<h1>Facebook: {{ user.name }} </h1>
+<h3>Facebook: {{ user.name }} </h3>
 <table id="user_table" class="pretty">
     <thead>
     <tr>
@@ -91,9 +112,9 @@
     </thead>
     <tbody>
     <tr>
-        <td>{{ user.fid|default_if_none:"0" }}</td>
-        <td>{{ user.name|default_if_none:"" }}</td>
-        <td>{{ user.username|default_if_none:"" }}</td>
+        <td><a href="/fb_user_detail/{{ harvester_id }}/fid/{{ user.fid }}">{{ user.fid|default_if_none:"0" }}</a></td>
+        <td><a href="/fb_user_detail/{{ harvester_id }}/fid/{{ user.fid }}">{{ user.name|default_if_none:"" }}</a></td>
+        <td><a href="/fb_user_detail/{{ harvester_id }}/fid/{{ user.fid }}">{{ user.username|default_if_none:"" }}</a></td>
         <td>{{ user.category|default_if_none:"" }}</td>
         <td>{{ user.likes|default_if_none:"0" }}</td>
         <td>{{ user.about|default_if_none:"" }}</td>
@@ -110,7 +131,7 @@
     </tbody>
 </table>
 
-<h1>Post detail</h1>
+<h3>Post detail</h3>
 <table id="post_table" class="pretty">
     <thead>
         <tr>
@@ -156,21 +177,32 @@
     <tbody>
 </table>
 
-<h1>Comments</h1>
-<table id="comment_table" class="pretty">
+<h3>Comments</h3>
+<table id="comments_table" class="pretty">
     <thead>
         <tr>
             <th>Created time</th>
-            <th>from</th>
+            <th>From</th>
             <th>Message</th>
             <th>Likes</th>
             <th>User likes</th>
-            <th>Type</th>
+            <th>type</th>
         </tr>
     </thead>
     <tbody>
     </tbody>
 </table>
 
+<h3>Likes</h3>
+<table id="likes_table" class="pretty">
+    <thead>
+        <tr>
+            <th>User ID</th>
+            <th>Name</th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
 
 {% endblock %}

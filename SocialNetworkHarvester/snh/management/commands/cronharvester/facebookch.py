@@ -29,7 +29,7 @@ def run_facebook_harvester():
 def sleeper(retry_count):
     retry_delay = 1
     wait_delay = retry_count*retry_delay
-    wait_delay = 10 if wait_delay > 10 else wait_delay
+    wait_delay = 5 if wait_delay > 5 else wait_delay
     time.sleep(wait_delay)
 
 def manage_exception(retry_count, harvester, related_object):
@@ -51,6 +51,12 @@ def manage_facebook_exception(retry_count, harvester, related_object, fex):
                                                                                                                 retry_count)
         logger.exception(msg)
         need_a_break = True
+    elif unicode(fex).startswith("(#613)"):
+        msg = u"Exception for the harvester %s for the object %s. Retry:%d. Calls to stream have exceeded the rate of 600 calls per 600 seconds.." % (harvester, 
+                                                                                                                unicode(related_object), 
+                                                                                                                retry_count)
+        sleeper(retry_count)
+            
     elif unicode(fex).startswith("Unknown path components:"):
         msg = u"Exception for the harvester %s for the object %s. Retry:%d. Unknown path components." % (harvester, 
                                                                                                                 unicode(related_object), 
@@ -132,6 +138,11 @@ def manage_error_from_batch(harvester, bman, fbobj):
             need_a_break = True
             msg = u"The object does not exists. snh_user:%s" % (unicode(snh_obj))
             logger.error(msg)
+        elif unicode(error).startswith("(#613)"):
+            msg = u"Exception for the harvester %s. Retry:%s. Calls to stream have exceeded the rate of 600 calls per 600 seconds.." % (harvester, bman["retry"])
+            logger.error(msg)            
+            sleeper(bman["retry"])
+
         elif unicode(error).startswith("GraphMethodException"):
             msg = u"GraphMethodException for %s. Error:%s" %(unicode(snh_obj), fanobj)
             logger.error(msg)
@@ -152,11 +163,13 @@ def manage_error_from_batch(harvester, bman, fbobj):
 def generic_batch_processor(harvester, bman_list):
 
     total_retry = 0
-    step_size = 20 #Over 20, unknown error will happen...
+    step_size = 40 #Over 20, unknown error will happen...
     next_bman_list = []
     global_retry = 0
 
     while bman_list:
+        waiter = 0
+        sleepretry = 0
         usage = resource.getrusage(resource.RUSAGE_SELF)
         logger.info(u"New batch. Size:%d for %s Mem:%s MB" % (len(bman_list), harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
         split_bman = [bman_list[i:i+step_size] for i  in range(0, len(bman_list), step_size)]
@@ -172,8 +185,15 @@ def generic_batch_processor(harvester, bman_list):
                     usage = resource.getrusage(resource.RUSAGE_SELF)
                     logger.info(u"New bman(%d/%d) len:%s InQueue:%d retry:%d total_retry:%d Mem:%s KB" % (bman_count, bman_total, len(bman), len(next_bman_list), retry, total_retry, getattr(usage, "ru_maxrss")/(1024.0)))
                     obj_pos = 0
+
+                    if waiter > 0:
+                        logger.info("waiting. %d/30, retry:%d" % (waiter,sleepretry))
+                        sleeper(sleepretry)
+                        waiter -= 1
+
                     pyb = [bman[j]["request"] for j in range(0, len(bman))]
                     batch_result = harvester.api_call("batch",{"requests":pyb})
+                                
                     for fbobj in batch_result:
                         bman_obj = bman[obj_pos]
                         if type(fbobj) == dict:
@@ -182,17 +202,13 @@ def generic_batch_processor(harvester, bman_list):
                                 next_bman_list += next
                         else:
                             if not manage_error_from_batch(harvester, bman_obj, fbobj):
-                                if unicode(fbobj).startswith("GraphMethodException") and "feed_id" in bman_obj:
-                                    d = {"method": "GET", "relative_url": u"%s" % bman_obj["feed_id"]}
-                                    bman_obj = {"snh_obj":bman_obj["snh_obj"],
-                                                "feed_id":bman_obj["feed_id"],
-                                                "retry":bman_obj["retry"], 
-                                                "request":d, 
-                                                "callback":update_user_status_from_batch}
-                                    logger.info("Retrying but with original feed_id %s after %s" % (bman_obj["feed_id"],fbobj))
-                                else:
-                                    logger.info("Retrying %s" % fbobj)
+                                logger.info("Retrying %s" % fbobj)
                                 next_bman_list.append(bman_obj)
+                                if fbobj:
+                                    error = unicode(fbobj).split(":")[1].strip()
+                                    if unicode(error).startswith("(#613)"):
+                                        waiter += 1
+                                        sleepretry += 1
                             else:
                                 logger.error("Critical! User will not be retried: %s" % fbobj)
                         obj_pos += 1
@@ -247,9 +263,6 @@ def update_user_batch(harvester):
 
 def update_user_status_from_batch(harvester, snhuser, status):
 
-    usage = resource.getrusage(resource.RUSAGE_SELF)
-    logger.debug(u"Updating status %s for %s Mem:%s MB" % (status["id"], harvester, unicode(getattr(usage, "ru_maxrss")/(1024.0))))
-
     res = FBResult()
     res.harvester = harvester
     res.result = status
@@ -268,8 +281,11 @@ def update_user_feed_from_batch(harvester, snhuser, fbfeed_page):
         logger.debug(u"Updating %d feeds: %s Mem:%s MB" % (feed_count, harvester, unicode(getattr(usage, "ru_maxrss")/(1024.0))))
 
         for feed in fbfeed_page["data"]:
-            feed_time = datetime.strptime(feed["created_time"],'%Y-%m-%dT%H:%M:%S+0000')
-
+            if feed["created_time"]:
+                feed_time = datetime.strptime(feed["created_time"],'%Y-%m-%dT%H:%M:%S+0000')
+            else:
+                feed_time = datetime.strptime(feed["updated_time"],'%Y-%m-%dT%H:%M:%S+0000')
+            
             if feed_time > harvester.harvest_window_from and \
                     feed_time < harvester.harvest_window_to:
                 lc_param = ""
@@ -280,25 +296,15 @@ def update_user_feed_from_batch(harvester, snhuser, fbfeed_page):
                         break
                 except ObjectDoesNotExist:
                     pass
-                
-                if (snhuser.fid != feed["from"]["id"]):
-                    res = FBResult()
-                    res.harvester = harvester
-                    res.result = feed
-                    res.ftype = "FBPost"
-                    res.fid = feed["id"]
-                    res.parent = snhuser.fid
-                    res.save()
-                else:
-                    request_ref_id = feed["id"].split("_").pop()
-                    d = {"method": "GET", "relative_url": u"%s" % unicode(request_ref_id)}
-                    next_bman.append({"snh_obj":snhuser,"feed_id":feed["id"], "retry":0, "request":d, "callback":update_user_status_from_batch})
 
-                d = {"method": "GET", "relative_url": u"%s/comments?limit=240%s" % (unicode(feed["id"]), lc_param)}
+                d = {"method": "GET", "relative_url": u"%s" % unicode(feed["id"])}
+                next_bman.append({"snh_obj":snhuser, "retry":0, "request":d, "callback":update_user_status_from_batch})
+
+                d = {"method": "GET", "relative_url": u"%s/comments?limit=270%s" % (unicode(feed["id"]), lc_param)}
                 next_bman.append({"snh_obj":str(feed["id"]),"retry":0,"request":d, "callback":update_user_comments_from_batch})
 
                 if harvester.update_likes:
-                    d = {"method": "GET", "relative_url": u"%s/likes?limit=240%s" % (unicode(feed["id"]), lc_param)}
+                    d = {"method": "GET", "relative_url": u"%s/likes?limit=270%s" % (unicode(feed["id"]), lc_param)}
                     next_bman.append({"snh_obj":str(feed["id"]),"retry":0,"request":d, "callback":update_likes_from_batch})
 
             if feed_time < harvester.harvest_window_from:
@@ -308,7 +314,7 @@ def update_user_feed_from_batch(harvester, snhuser, fbfeed_page):
         paging, new_page = get_feed_paging(fbfeed_page)
 
         if not too_old and new_page:
-            d = {"method": "GET", "relative_url": u"%s/feed?limit=240&%s=%s" % (unicode(snhuser.fid), paging[0], paging[1])}
+            d = {"method": "GET", "relative_url": u"%s/feed?limit=270&%s=%s" % (unicode(snhuser.fid), paging[0], paging[1])}
             next_bman.append({"snh_obj":snhuser, "retry":0, "request":d, "callback":update_user_feed_from_batch})
 
     return next_bman
@@ -321,7 +327,7 @@ def update_user_statuses_batch(harvester):
     for snhuser in all_users:
         if not snhuser.error_triggered:
             uid = snhuser.fid if snhuser.fid else snhuser.username
-            d = {"method": "GET", "relative_url": u"%s/feed?limit=240" % unicode(uid)}
+            d = {"method": "GET", "relative_url": u"%s/feed?limit=270" % unicode(uid)}
             batch_man.append({"snh_obj":snhuser,"retry":0,"request":d,"callback":update_user_feed_from_batch})
         else:
             logger.info(u"Skipping status update: %s(%s) because user has triggered the error flag." % (unicode(snhuser), snhuser.fid if snhuser.fid else "0"))
@@ -365,7 +371,7 @@ def update_user_comments_from_batch(harvester, statusid, fbcomments_page):
         paging, new_page = get_comment_paging(fbcomments_page)
 
         if new_page:
-            d = {"method": "GET", "relative_url": u"%s/comments?limit=240&%s" % (statusid, paging)}
+            d = {"method": "GET", "relative_url": u"%s/comments?limit=270&%s" % (statusid, paging)}
             next_bman.append({"snh_obj":statusid,"retry":0,"request":d,"callback":update_user_comments_from_batch})
         
     return next_bman
@@ -389,7 +395,7 @@ def update_likes_from_batch(harvester, statusid, fblikes_page):
         paging, new_page = get_comment_paging(fblikes_page)
         
         if new_page:
-            d = {"method": "GET", "relative_url": u"%s/likes?limit=240&%s" % (statusid, paging)}
+            d = {"method": "GET", "relative_url": u"%s/likes?limit=270&%s" % (statusid, paging)}
             next_bman.append({"snh_obj":statusid,"retry":0,"request":d,"callback":update_likes_from_batch})
 
     return next_bman
@@ -410,7 +416,7 @@ class ThreadStatus(threading.Thread):
 
                 user = FBUser.objects.filter(fid__exact=fid)[0]
                 results = FBResult.objects.filter(parent__exact=user.fid).filter(ftype__exact="FBPost")
-                logger.info(u"ThreadStatus. Beginning user %s." % user)
+                logger.info(u"ThreadStatus. Beginning user %s. %s" % (user, user.fid))
                 for elem in results:
                     self.update_user_status(eval(elem.result),user)
                     statuscount += 1
@@ -459,7 +465,7 @@ class ThreadComment(threading.Thread):
                 fid = self.queue.get()
                 if fid:
                     post = FBPost.objects.get(fid__exact=fid)
-                    results = FBResult.objects.filter(parent__contains=post.fid).filter(ftype__exact="FBComment")
+                    results = FBResult.objects.filter(parent__exact=post.fid).filter(ftype__exact="FBComment")
                     for elem in results:
                         self.update_comment_status(eval(elem.result), post)
                         commentcount += 1
@@ -514,9 +520,9 @@ def compute_new_comment(harvester):
     global queue
     queue = Queue.Queue()
 
-    all_posts = FBPost.objects.values("fid")
-    for post in all_posts:
-        queue.put(post["fid"])
+    all_comments =  FBResult.objects.filter(ftype__exact="FBComment").values("parent")
+    for comment in all_comments:
+        queue.put(comment["parent"])
 
     for i in range(4):
         t = ThreadComment(queue)

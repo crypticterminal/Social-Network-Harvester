@@ -31,6 +31,8 @@ urlpatterns = patterns('snh.views',
     (r'^get_fb_post_list/(?P<username>[\w\.]+)/$', 'get_fb_post_list'),
     (r'^get_fb_otherpost_list/(?P<userfid>[\w\.]+)/$', 'get_fb_otherpost_list'),
     (r'^get_fb_comment_list/(?P<userfid>[\w\.]+)/$', 'get_fb_comment_list'),
+    (r'^get_fb_postcomment_list/(?P<postfid>[\w\.]+)/$', 'get_fb_postcomment_list'),
+    (r'^get_fb_likes_list/(?P<postfid>[\w\.]+)/$', 'get_fb_likes_list'),
 
     #(r'^$', 'index'),
     #(r'^reset_fb_token$', 'reset_fb_token'),

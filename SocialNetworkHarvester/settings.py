@@ -45,7 +45,7 @@ FACEBOOK_APPLICATION_INITIAL_PERMISSIONS = [
                                             'user_likes','friends_likes',
                                             'user_location','friends_location',
                                             'user_notes','friends_notes',
-                                            'user_photo_video_tags','friends_photo_video_tags',
+                                            #'user_photo_video_tags','friends_photo_video_tags',
                                             'user_photos','friends_photos',
                                             'user_questions','friends_questions',
                                             'user_relationships','friends_relationships',
@@ -66,13 +66,13 @@ FACEBOOK_APPLICATION_INITIAL_PERMISSIONS = [
                                             'create_event',
                                             'manage_friendlists',
                                             'manage_notifications',
-                                            'offline_access',
+                                            #'offline_access',
                                             'user_online_presence',
                                             'friends_online_presence',
                                             'publish_checkins',
                                             'publish_stream',
                                             'rsvp_event',
-                                            'publish_actions',
+                                            #'publish_actions',
                                             ]
 
 #FACEBOOK_APPLICATION_INITIAL_PERMISSIONS = ['read_stream', 'publish_stream','friends_online_presence','friends_status','read_friendlists']
