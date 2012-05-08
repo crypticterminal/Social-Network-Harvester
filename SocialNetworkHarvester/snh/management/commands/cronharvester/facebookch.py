@@ -196,7 +196,7 @@ def generic_batch_processor(harvester, bman_list):
                         waiter -= 1
 
                     if (time.time() - start) < 1.5:
-                        logger.info(u"too fast. will wait 1sec")
+                        logger.info(u"too fast. will wait 1.5 sec")
                         time.sleep(1)
 
                     start = time.time()
@@ -310,11 +310,11 @@ def update_user_feed_from_batch(harvester, snhuser, fbfeed_page):
                 d = {"method": "GET", "relative_url": u"%s" % unicode(feed["id"])}
                 next_bman.append({"snh_obj":snhuser, "retry":0, "request":d, "callback":update_user_status_from_batch})
 
-                d = {"method": "GET", "relative_url": u"%s/comments?limit=270%s" % (unicode(feed["id"]), lc_param)}
+                d = {"method": "GET", "relative_url": u"%s/comments?limit=240%s" % (unicode(feed["id"]), lc_param)}
                 next_bman.append({"snh_obj":str(feed["id"]),"retry":0,"request":d, "callback":update_user_comments_from_batch})
 
                 if harvester.update_likes:
-                    d = {"method": "GET", "relative_url": u"%s/likes?limit=270%s" % (unicode(feed["id"]), lc_param)}
+                    d = {"method": "GET", "relative_url": u"%s/likes?limit=240%s" % (unicode(feed["id"]), lc_param)}
                     next_bman.append({"snh_obj":str(feed["id"]),"retry":0,"request":d, "callback":update_likes_from_batch})
 
             if feed_time < harvester.harvest_window_from:
@@ -324,7 +324,7 @@ def update_user_feed_from_batch(harvester, snhuser, fbfeed_page):
         paging, new_page = get_feed_paging(fbfeed_page)
 
         if not too_old and new_page:
-            d = {"method": "GET", "relative_url": u"%s/feed?limit=270&%s=%s" % (unicode(snhuser.fid), paging[0], paging[1])}
+            d = {"method": "GET", "relative_url": u"%s/feed?limit=240&%s=%s" % (unicode(snhuser.fid), paging[0], paging[1])}
             next_bman.append({"snh_obj":snhuser, "retry":0, "request":d, "callback":update_user_feed_from_batch})
 
     return next_bman
@@ -337,7 +337,7 @@ def update_user_statuses_batch(harvester):
     for snhuser in all_users:
         if not snhuser.error_triggered:
             uid = snhuser.fid if snhuser.fid else snhuser.username
-            d = {"method": "GET", "relative_url": u"%s/feed?limit=270" % unicode(uid)}
+            d = {"method": "GET", "relative_url": u"%s/feed?limit=240" % unicode(uid)}
             batch_man.append({"snh_obj":snhuser,"retry":0,"request":d,"callback":update_user_feed_from_batch})
         else:
             logger.info(u"Skipping status update: %s(%s) because user has triggered the error flag." % (unicode(snhuser), snhuser.fid if snhuser.fid else "0"))
@@ -381,7 +381,7 @@ def update_user_comments_from_batch(harvester, statusid, fbcomments_page):
         paging, new_page = get_comment_paging(fbcomments_page)
 
         if new_page:
-            d = {"method": "GET", "relative_url": u"%s/comments?limit=270&%s" % (statusid, paging)}
+            d = {"method": "GET", "relative_url": u"%s/comments?limit=240&%s" % (statusid, paging)}
             next_bman.append({"snh_obj":statusid,"retry":0,"request":d,"callback":update_user_comments_from_batch})
         
     return next_bman
@@ -405,7 +405,7 @@ def update_likes_from_batch(harvester, statusid, fblikes_page):
         paging, new_page = get_comment_paging(fblikes_page)
         
         if new_page:
-            d = {"method": "GET", "relative_url": u"%s/likes?limit=270&%s" % (statusid, paging)}
+            d = {"method": "GET", "relative_url": u"%s/likes?limit=240&%s" % (statusid, paging)}
             next_bman.append({"snh_obj":statusid,"retry":0,"request":d,"callback":update_likes_from_batch})
 
     return next_bman
