@@ -20,10 +20,10 @@
 		        "sAjaxSource": "{% url snh.views.get_fb_postcomment_list post.fid  %}",
                 "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
                     //from
-                    ($('td:eq(1)', nRow).html() == "None") ? from = aData[8] : from = aData[1];
-                    $('td:eq(1)', nRow).html(  '<a href="/fb_user_detail/{{ harvester_id }}/fid/'+aData[9]+'">'+from+'</a>' );
+                    ($('td:eq(1)', nRow).html() == "None") ? from = aData[6] : from = aData[1];
+                    $('td:eq(1)', nRow).html(  '<a href="/fb_user_detail/{{ harvester_id }}/fid/'+aData[7]+'">'+from+'</a>' );
                     //to (post_ffrom)
-                    $('td:eq(2)', nRow).html(  '<a href="/fb_user_detail/{{ harvester_id }}/fid/'+aData[7]+'">'+aData[2]+'</a>' );
+                    //$('td:eq(2)', nRow).html(  '<a href="/fb_user_detail/{{ harvester_id }}/fid/'+aData[7]+'">'+aData[2]+'</a>' );
                 },
 		        "aoColumns": [ 
                     { "bVisible":    true },    //0 : u'created_time/updated_time',

@@ -120,6 +120,107 @@ def get_dm_video_list(request, userfid):
     #call to generic function from utils
     return get_datatables_records(request, querySet, columnIndexNameMap)
 
+@login_required(login_url=u'/login/')
+def get_dm_comment_list(request, userfid):
+    querySet = None
+    #columnIndexNameMap is required for correct sorting behavior
+    columnIndexNameMap = {
+                            0 : u'created_time',
+                            1 : u'user__screenname',
+                            2 : u'video__user__screenname',
+                            3 : u'video__fid',
+                            4 : u'message',
+                            5 : u'language',
+                            8: u'user__fid',
+                            9: u'video__user__fid',
+                            }
+    try:
+        user = get_list_or_404(FBUser, fid=userfid)[0]
+        querySet = DMComment.objects.filter(user=user)
+    except ObjectDoesNotExist:
+        pass
+    #call to generic function from utils
+    return get_datatables_records(request, querySet, columnIndexNameMap)
+
+
+@login_required(login_url=u'/login/')
+def get_dm_fans_list(request, userfid):
+    querySet = None
+    #columnIndexNameMap is required for correct sorting behavior
+
+    columnIndexNameMap = {
+                            0 : u'fid',
+                            1 : u'username',
+                            2 : u'screenname',
+                            3 : u'gender',
+                            4 : u'description',
+                            5 : u'language',
+                            6 : u'status',
+                            7 : u'ftype',
+                            8 : u'url__original_url',
+                            9 : u'views_total',
+                            10 : u'videos_total',
+                            }
+    try:
+        user = get_list_or_404(DMUser, fid=userfid)[0]
+        querySet = user.fans.all()
+    except ObjectDoesNotExist:
+        pass
+    #call to generic function from utils
+    return get_datatables_records(request, querySet, columnIndexNameMap)
+
+@login_required(login_url=u'/login/')
+def get_dm_friends_list(request, userfid):
+    querySet = None
+    #columnIndexNameMap is required for correct sorting behavior
+
+    columnIndexNameMap = {
+                            0 : u'fid',
+                            1 : u'username',
+                            2 : u'screenname',
+                            3 : u'gender',
+                            4 : u'description',
+                            5 : u'language',
+                            6 : u'status',
+                            7 : u'ftype',
+                            8 : u'url__original_url',
+                            9 : u'views_total',
+                            10 : u'videos_total',
+                            }
+    try:
+        user = get_list_or_404(DMUser, fid=userfid)[0]
+        querySet = user.friends.all()
+    except ObjectDoesNotExist:
+        pass
+    #call to generic function from utils
+    return get_datatables_records(request, querySet, columnIndexNameMap)
+
+@login_required(login_url=u'/login/')
+def get_dm_following_list(request, userfid):
+    querySet = None
+    #columnIndexNameMap is required for correct sorting behavior
+
+    columnIndexNameMap = {
+                            0 : u'fid',
+                            1 : u'username',
+                            2 : u'screenname',
+                            3 : u'gender',
+                            4 : u'description',
+                            5 : u'language',
+                            6 : u'status',
+                            7 : u'ftype',
+                            8 : u'url__original_url',
+                            9 : u'views_total',
+                            10 : u'videos_total',
+                            }
+    try:
+        user = get_list_or_404(DMUser, fid=userfid)[0]
+        querySet = user.following.all()
+    except ObjectDoesNotExist:
+        pass
+    #call to generic function from utils
+    return get_datatables_records(request, querySet, columnIndexNameMap)
+
 ### OLD VIEWS
 
 ##

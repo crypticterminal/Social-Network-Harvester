@@ -41,6 +41,10 @@ urlpatterns = patterns('snh.views',
     #DAILYMOTION AJAX
     (r'^get_dm_list/(?P<harvester_id>\d+)/$', 'get_dm_list'),
     (r'^get_dm_video_list/(?P<userfid>[\w\.]+)/$', 'get_dm_video_list'),
+    (r'^get_dm_fans_list/(?P<userfid>[\w\.]+)/$', 'get_dm_fans_list'),
+    (r'^get_dm_friends_list/(?P<userfid>[\w\.]+)/$', 'get_dm_friends_list'),
+    (r'^get_dm_following_list/(?P<userfid>[\w\.]+)/$', 'get_dm_following_list'),
+    (r'^get_dm_comment_list/(?P<userfid>[\w\.]+)/$', 'get_dm_comment_list'),
 
     #(r'^$', 'index'),
     #(r'^reset_fb_token$', 'reset_fb_token'),
