@@ -35,12 +35,11 @@
 
 		var oTable3 = $('#comments_table').dataTable(
             {
-                "iDisplayLength": iDisplayLength, 
-                "sPaginationType": sPaginationType,
-                "sDom": sDom,
-                "aaSorting": aaSorting,
-                "bAutoWidth": bAutoWidth,
-		        "bServerSide": bServerSide, 
+                "iDisplayLength": 10, 
+                "sPaginationType": "full_numbers",
+                "sDom": '<"clear">lfrtip',
+                "bAutoWidth": false,
+		        "bServerSide": true, 
 		        "sAjaxSource": "{% url snh.views.get_dm_comment_list user.fid  %}",
                 "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
                     //from

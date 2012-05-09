@@ -131,11 +131,11 @@ def get_dm_comment_list(request, userfid):
                             3 : u'video__fid',
                             4 : u'message',
                             5 : u'language',
-                            8: u'user__fid',
-                            9: u'video__user__fid',
+                            6: u'user__fid',
+                            7: u'video__user__fid',
                             }
     try:
-        user = get_list_or_404(FBUser, fid=userfid)[0]
+        user = get_list_or_404(DMUser, fid=userfid)[0]
         querySet = DMComment.objects.filter(user=user)
     except ObjectDoesNotExist:
         pass
