@@ -17,6 +17,8 @@ from snh.models.dailymotionmodel import *
 
 from snh.utils import get_datatables_records
 
+from settings import PROJECT_PATH
+
 import snhlogger
 logger = snhlogger.init_logger(__name__, "view.log")
 
@@ -30,6 +32,32 @@ def dm(request, harvester_id):
                                                     u'dm_selected':True,
                                                     u'all_harvesters':dailymotion_harvesters,
                                                     u'harvester_id':harvester_id,
+                                                  })
+
+@login_required(login_url=u'/login/')
+def dm_user_detail(request, harvester_id, userfid):
+    dailymotion_harvesters = DailyMotionHarvester.objects.all()
+    user = get_list_or_404(DMUser, fid=userfid)[0]
+    return  render_to_response(u'snh/dailymotion_detail.html',{
+                                                    u'dm_selected':True,
+                                                    u'all_harvesters':dailymotion_harvesters,
+                                                    u'harvester_id':harvester_id,
+                                                    u'user':user,
+                                                  })
+@login_required(login_url=u'/login/')
+def dm_video_detail(request, harvester_id, videoid):
+    dailymotion_harvesters = DailyMotionHarvester.objects.all()
+    video = get_object_or_404(DMVideo, fid=videoid)
+    video_url = ""    
+    if video.video_file_path:
+        video_url = video.video_file_path.split(PROJECT_PATH)[1]
+    return  render_to_response(u'snh/dailymotion_video.html',{
+                                                    u'dm_selected':True,
+                                                    u'all_harvesters':dailymotion_harvesters,
+                                                    u'harvester_id':harvester_id,
+                                                    u'user':video.user,
+                                                    u'video':video,
+                                                    u'video_url':video_url,
                                                   })
 
 #
@@ -56,7 +84,39 @@ def get_dm_list(request, harvester_id):
                             6 : u'status',
                             7 : u'ftype',
                             8 : u'url__original_url',
+                            9 : u'views_total',
+                            10 : u'videos_total',
+
+
                             }
+    #call to generic function from utils
+    return get_datatables_records(request, querySet, columnIndexNameMap)
+
+@login_required(login_url=u'/login/')
+def get_dm_video_list(request, userfid):
+    querySet = None
+    #columnIndexNameMap is required for correct sorting behavior
+
+    columnIndexNameMap = {
+                            0 : u'created_time',
+                            1 : u'fid',
+                            2 : u'title',
+                            3 : u'description',
+                            4 : u'language',
+                            5 : u'country',
+                            6 : u'duration',
+                            7 : u'allow_comments',
+                            8 : u'rating',
+                            9 : u'ratings_total',
+                            10: u'views_total',
+                            11: u'comments_total',
+                            12: u'bookmarks_total',
+                            }
+    try:
+        user = get_list_or_404(DMUser, fid=userfid)[0]
+        querySet = DMVideo.objects.filter(user=user)
+    except ObjectDoesNotExist:
+        pass
     #call to generic function from utils
     return get_datatables_records(request, querySet, columnIndexNameMap)
 

@@ -38,7 +38,9 @@ def get_comment_paging(page):
         new_page = True
     return ["__after_id",__after_id], new_page
 
-def update_user(harvester, userid):
+def update_user(harvester, userid=None, username=None):
+
+    reqid = userid if userid else username
     result = harvester.api_call("GET",
                                 str(
                                     "/user/%(username)s?fields="
@@ -169,21 +171,21 @@ def update_user(harvester, userid):
                                     "videostar.3d"
                                     "" %
                                     {
-                                        "username":userid,
+                                        "username":reqid,
                                     })
                                 )
 
     dmuser = result["result"]
     snh_user = None
     try:
-
-        snh_user = get_existing_user({"fid__exact":userid})
-        if not snh_user:
-            snh_user = get_existing_user({"username__exact":userid})
+        if userid:
+            snh_user = get_existing_user({"fid__exact":userid})
+        elif username:
+            snh_user = get_existing_user({"username__exact":username})
         if not snh_user:
             snh_user = DMUser(
-                            fid=userid,
-                            username=userid,
+                            fid=dmuser["id"],
+                            username=dmuser["username"],
                          )
             snh_user.save()
             logger.info(u"New user created in status_from_search! %s", snh_user)
@@ -214,7 +216,7 @@ def update_users(harvester):
 
     for snhuser in all_users:
         if not snhuser.error_triggered:
-            update_user(harvester, snhuser.username)
+            update_user(harvester,username=snhuser.username)
         else:
             logger.info(u"Skipping user update: %s(%s) because user has triggered the error flag." % (unicode(snhuser), snhuser.fid if snhuser.fid else "0"))
 

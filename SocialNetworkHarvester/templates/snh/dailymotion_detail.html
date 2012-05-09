@@ -1,0 +1,96 @@
+{% extends "snh/snh_base.html" %}
+{% block extrahead %}
+<script type="text/javascript" charset="utf-8">
+	$(document).ready(function() {
+        var aoColumnDefs = [ 
+            { 
+                "bSearchable": false, "aTargets": [ 0 ],
+            }
+        ];
+
+		$('#video_table').dataTable(
+            {
+                "iDisplayLength": 50, 
+                "sPaginationType": "full_numbers",
+                "sDom": '<"clear">lfrtip',
+                "bAutoWidth": false,
+		        "bServerSide": true, 
+		        "sAjaxSource": "{% url snh.views.get_dm_video_list user.fid  %}",
+                "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
+                    $('td:eq(1)', nRow).html( '<a href="/dm_video_detail/'+{{harvester_id}}+'/'+aData[1]+'">'+aData[1]+'</a>' );
+                },
+                "aoColumnDefs":aoColumnDefs,
+            });
+	} );
+</script>
+{% endblock %}
+{% block submenu %}
+<table class="tableheader">
+    <tr>
+        <td {% if harvester_id == "0" %}class="submenu-selection"{% endif %}><a href="/dm/0">All harvesters</a></td>
+        {% for h in all_harvesters %}
+        <td  {% ifequal harvester_id h.pmk_id|slugify %}class="submenu-selection"{% endifequal %}><a href="/dm/{{ h.pmk_id }}">{{ h }}</a></td>
+        {% endfor %}
+    </tr>
+</table>
+{% endblock %}
+
+{% block content %}
+<h3>{{ user.name }} </h3>
+<table id="user_table" class="pretty">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>username</th>
+        <th>screenname</th>
+        <th>gender</th>
+        <th>description</th>
+        <th>language</th>
+        <th>status</th>
+        <th>type</th>
+        <th>url</th>
+        <th>views total</th>
+        <th>videos total</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td><a href="/dm_user_detail/{{ harvester_id }}/fid/{{user.fid}}">{{ user.fid|default_if_none:"0" }}</a></td>
+        <td><a href="/dm_user_detail/{{ harvester_id }}/fid/{{user.fid}}">{{ user.username|default_if_none:"" }}</a></td>
+        <td><a href="/dm_user_detail/{{ harvester_id }}/fid/{{user.fid}}">{{ user.screenname|default_if_none:"" }}</a></td>
+        <td>{{ user.gender|default_if_none:"" }}</td>
+        <td>{{ user.description|default_if_none:"0" }}</td>
+        <td>{{ user.language|default_if_none:"" }}</td>
+        <td>{{ user.status|default_if_none:"" }}</td>
+        <td>{{ user.type|default_if_none:"0" }}</td>
+        <td>{{ user.url.original_url|default_if_none:""|urlize }}</td>
+        <td>{{ user.views_total|default_if_none:"0" }}</td>
+        <td>{{ user.videos_total|default_if_none:"0" }}</td>
+    </tr>
+    </tbody>
+</table>
+
+<h3>{{ user.screenname }}'s video</h3>
+<table id="video_table" class="pretty">
+    <thead>
+        <tr>
+            <th>Created / Updated time</th>
+            <th>Video ID</th>
+            <th>title</th>
+            <th>description</th>
+            <th>language</th>
+            <th>country</th>
+            <th>duration</th>
+            <th>allow comments</th>
+            <th>rating</th>
+            <th>ratings_total</th>
+            <th>views total</th>
+            <th>comments total</th>
+            <th>bookmarks total</th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+
+{% endblock %}

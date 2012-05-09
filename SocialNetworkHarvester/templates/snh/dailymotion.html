@@ -2,6 +2,17 @@
 {% block extrahead %}
 <script type="text/javascript" charset="utf-8">
 	$(document).ready(function() {
+        function _wordwrap($text, $size){
+            $size = typeof $size !== 'undefined' ? $size : 10;
+            final = "";
+            var re = new RegExp(".{1,"+$size+"}","g");
+            splitted = $text.match(re);
+            for (i in splitted){
+                final += splitted[i] + "&#8203;"
+            }
+            return final;
+        }
+
 		$('#user_table').dataTable(
             {
                 "iDisplayLength": 50, 
@@ -11,7 +22,15 @@
 		        "bServerSide": true, 
 		        "sAjaxSource": "{% url snh.views.get_dm_list harvester_id %}",
                 "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
+                    $('td:eq(0)', nRow).html( '<a href="/dm_user_detail/'+{{harvester_id}}+'/fid/'+aData[0]+'">'+aData[0]+'</a>' );
                     $('td:eq(1)', nRow).html( '<a href="/dm_user_detail/'+{{harvester_id}}+'/fid/'+aData[0]+'">'+aData[1]+'</a>' );
+                    $('td:eq(2)', nRow).html( '<a href="/dm_user_detail/'+{{harvester_id}}+'/fid/'+aData[0]+'">'+aData[2]+'</a>' );
+
+                    //description
+                    $('td:eq(4)', nRow).html( _wordwrap(aData[4],50) );
+                    //url
+                    $('td:eq(8)', nRow).html( '<a href="'+aData[8]+'">'+_wordwrap(aData[8],30)+'</a>' );
+
                 },
             });
 	} );
@@ -42,6 +61,8 @@
         <th>status</th>
         <th>type</th>
         <th>url</th>
+        <th>views total</th>
+        <th>videos total</th>
     </tr>
     </thead>
     <tbody>

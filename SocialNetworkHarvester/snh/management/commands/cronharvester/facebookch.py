@@ -214,7 +214,7 @@ def generic_batch_processor(harvester, bman_list):
                             needretry, needsleep = manage_error_from_batch(harvester, bman_obj, fbobj)
                             if not reallyneedsleep and needsleep:
                                 reallyneedsleep = True
-                                waiter += 1
+                                waiter += 2
                                 if waiter > 30:
                                     waiter = 30
                                 
