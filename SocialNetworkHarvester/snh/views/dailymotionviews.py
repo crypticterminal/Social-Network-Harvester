@@ -142,6 +142,28 @@ def get_dm_comment_list(request, userfid):
     #call to generic function from utils
     return get_datatables_records(request, querySet, columnIndexNameMap)
 
+@login_required(login_url=u'/login/')
+def get_dm_videocomment_list(request, videofid):
+    querySet = None
+    #columnIndexNameMap is required for correct sorting behavior
+    columnIndexNameMap = {
+                            0 : u'created_time',
+                            1 : u'user__screenname',
+                            2 : u'video__user__screenname',
+                            3 : u'video__fid',
+                            4 : u'message',
+                            5 : u'language',
+                            6: u'user__fid',
+                            7: u'video__user__fid',
+                            }
+    try:
+        video = get_list_or_404(DMVideo, fid=videofid)[0]
+        querySet = DMComment.objects.filter(video=video)
+    except ObjectDoesNotExist:
+        pass
+    #call to generic function from utils
+    return get_datatables_records(request, querySet, columnIndexNameMap)
+
 
 @login_required(login_url=u'/login/')
 def get_dm_fans_list(request, userfid):

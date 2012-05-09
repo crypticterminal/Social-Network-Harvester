@@ -44,11 +44,11 @@
                 "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
                     //from
                     ($('td:eq(1)', nRow).html() == "None") ? from = aData[8] : from = aData[1];
-                    $('td:eq(1)', nRow).html(  '<a href="/dm_user_detail/{{ harvester_id }}/fid/'+aData[9]+'">'+from+'</a>' );
+                    $('td:eq(1)', nRow).html(  '<a href="/dm_user_detail/{{ harvester_id }}/fid/'+aData[6]+'">'+from+'</a>' );
                     //to (post_ffrom)
-                    $('td:eq(2)', nRow).html(  '<a href="/dm_user_detail/{{ harvester_id }}/fid/'+aData[10]+'">'+aData[2]+'</a>' );
+                    $('td:eq(2)', nRow).html(  '<a href="/dm_user_detail/{{ harvester_id }}/fid/'+aData[7]+'">'+aData[2]+'</a>' );
                     //post
-                    $('td:eq(3)', nRow).html(  '<a href="/dm_post_detail/{{ harvester_id }}/'+aData[3]+'">'+aData[3]+'</a>' );
+                    $('td:eq(3)', nRow).html(  '<a href="/dm_video_detail/{{ harvester_id }}/'+aData[3]+'">'+aData[3]+'</a>' );
                 },
 		        "aoColumns": [ 
                     { "bVisible":    true },//0 : u'created_time',
@@ -218,7 +218,6 @@
     <tbody>
     </tbody>
 </table>
-
 
 <h3>Fans</h3>
 <table id="fans_table" class="pretty" width="100%">
