@@ -6,9 +6,10 @@ import time
 from django.db import models
 from snh.models.common import *
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+from django.db import IntegrityError
 
 import snhlogger
-logger = snhlogger.init_logger(__name__, "facebook.log")
+logger = snhlogger.init_logger(__name__, "facebook_model.log")
 
 class FacebookHarvester(AbstractHaverster):
 
@@ -260,8 +261,10 @@ class FBPost(models.Model):
         try:
             user = FBUser.objects.get(**param)
         except MultipleObjectsReturned:
+            logger.debug(u">>>>MULTIPLE USER")
             user = FBUser.objects.filter(**param)[0]
         except ObjectDoesNotExist:
+            logger.debug(u">>>>DOES NOT EXISTS")
             pass
         return user
 
@@ -292,12 +295,18 @@ class FBPost(models.Model):
                 user = None
                 user = self.get_existing_user({"fid__exact":prop_val["id"]})
                 if not user:
-                    user = FBUser(
-                                    fid=prop_val["id"],
-                                 )
-                    user.update_from_facebook(prop_val)
-                    user.save()
-
+                    logger.debug(u">>>>DOES NOT EXISTS: %s" % prop_val["id"])
+                    try:
+                        user = FBUser()
+                        user.update_from_facebook(prop_val)
+                    except IntegrityError:
+                        logger.debug(u">>>>DUPLICATED USER!!: %s" % prop_val["id"])
+                        user = self.get_existing_user({"fid__exact":prop_val["id"]})
+                        if user:
+                            user.update_from_facebook(prop_val)
+                        else:
+                            logger.debug(u">>>>CRITICAL CANT UPDATED DUPLICATED USER %s" % prop_val["id"])
+                        
                 self_prop = user
                 #print self_prop, user.name, prop_val
                 model_changed = True
