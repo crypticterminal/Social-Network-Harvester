@@ -3,3 +3,4 @@ from rootviews import *
 from twitterviews import *
 from facebookviews import *
 from dailymotionviews import *
+from youtubeviews import *

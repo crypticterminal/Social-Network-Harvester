@@ -190,14 +190,13 @@ def generic_batch_processor(harvester, bman_list):
                     logger.info(u"New bman(%d/%d) len:%s InQueue:%d retry:%d total_retry:%d Mem:%s KB" % (bman_count, bman_total, len(bman), len(next_bman_list), retry, total_retry, getattr(usage, "ru_maxrss")/(1024.0)))
                     obj_pos = 0
 
-                    if waiter > 0:
-                        logger.info("waiting #%d" % waiter)
-                        sleeper(waiter)
-                        waiter -= 1
+                    if reallyneedsleep:
+                        logger.info("waiting for 10 minutes")
+                        time.sleep(10*60)
 
-                    if (time.time() - start) < 1.5:
-                        logger.info(u"too fast. will wait 1.5 sec")
-                        time.sleep(1)
+                    if (time.time() - start) < 1.3:
+                        logger.info(u"too fast. will wait 1.3 sec")
+                        time.sleep(1.3)
                     start = time.time()
                     reallyneedsleep = False      
 
@@ -214,10 +213,7 @@ def generic_batch_processor(harvester, bman_list):
                             needretry, needsleep = manage_error_from_batch(harvester, bman_obj, fbobj)
                             if not reallyneedsleep and needsleep:
                                 reallyneedsleep = True
-                                waiter += 2
-                                if waiter > 30:
-                                    waiter = 30
-                                
+
                             if not needretry:
                                 logger.info("Retrying %s" % fbobj)
                                 next_bman_list.append(bman_obj)
@@ -479,7 +475,8 @@ class ThreadComment(threading.Thread):
                     post = FBPost.objects.get(fid__exact=fid)
                     results = FBResult.objects.filter(parent__exact=post.fid).filter(ftype__exact="FBComment")
                     for elem in results:
-                        self.update_comment_status(eval(elem.result), post)
+                        fbcomment = self.update_comment_status(eval(elem.result), post)
+                        logger.debug(u"ThreadComment %s in progress. Current comment %s" % (self, fbcomment.fid if fbcomment else fbcomment))
                         commentcount += 1
                     logger.debug(u"ThreadComment %s in progress. Current comment count %d" % (self, commentcount))
                     
@@ -502,6 +499,7 @@ class ThreadComment(threading.Thread):
         logger.info(u"ThreadComment %s. End." % self)
 
     def update_comment_status(self, comment, post):
+        fbcomment = None
         try:
             try:
                 fbcomment = FBComment.objects.get(fid__exact=comment["id"])
@@ -512,7 +510,7 @@ class ThreadComment(threading.Thread):
         except:
             msg = u"Cannot update comment %s for %s" % (unicode(comment), post.fid if post.fid else "0")
             logger.exception(msg) 
-
+        return fbcomment
 
 def compute_new_post(harvester):
     global queue
