@@ -421,16 +421,10 @@ class ThreadStatus(threading.Thread):
         while True: 
             try:
                 fid = self.queue.get()
-
-                user = FBUser.objects.filter(fid__exact=fid)[0]
-                results = FBResult.objects.filter(parent__exact=user.fid).filter(ftype__exact="FBPost")
-                logger.info(u"ThreadStatus. Beginning user %s. %s" % (user, user.fid))
-                for elem in results:
-                    self.update_user_status(eval(elem.result),user)
-                    statuscount += 1
-                logger.debug(u"ThreadStatus %s in progress. Current status count %d" % (self, statuscount))
-
-
+                fbpost = FBResult.objects.filter(fid__exact=fid)[0]
+                user = FBUser.objects.filter(fid__exact=fbpost.parent)[0]
+                rez = eval(fbpost.result)
+                snh_status = self.update_user_status(rez,user)
                 #signals to queue job is done
             except Queue.Empty:
                 logger.info(u"ThreadStatus %s. Queue is empty." % self)
@@ -444,6 +438,7 @@ class ThreadStatus(threading.Thread):
         logger.info(u"ThreadStatus %s. End." % self)
 
     def update_user_status(self, fbstatus, user):
+        snh_status = None
         try:
             try:
                 snh_status = FBPost.objects.get(fid__exact=fbstatus["id"])
@@ -451,35 +446,29 @@ class ThreadStatus(threading.Thread):
                 snh_status = FBPost(user=user)
                 snh_status.save()
             snh_status.update_from_facebook(fbstatus,user)
-            likes_list = FBResult.objects.filter(fid__startswith=fbstatus["id"]).filter(ftype__exact="FBPost.likes")
-            for likes in likes_list:
-                snh_status.update_likes_from_facebook(eval(likes.result))
+            #likes_list = FBResult.objects.filter(fid__startswith=fbstatus["id"]).filter(ftype__exact="FBPost.likes")
+            #for likes in likes_list:
+            #    snh_status.update_likes_from_facebook(eval(likes.result))
         except:
             msg = u"Cannot update status %s for %s" % (unicode(fbstatus), user.fid if user.fid else "0")
             logger.exception(msg) 
+        return snh_status
 
 class ThreadComment(threading.Thread):
-    def __init__(self, queue):
+    def __init__(self, commentqueue):
         threading.Thread.__init__(self)
-        self.queue = queue
+        self.queue = commentqueue
 
     def run(self):
-        count = 0
-        commentcount = 0
         logger.info(u"ThreadComment %s. Start." % self)
         while True: 
 
             try:
                 fid = self.queue.get()
                 if fid:
-                    post = FBPost.objects.get(fid__exact=fid)
-                    results = FBResult.objects.filter(parent__exact=post.fid).filter(ftype__exact="FBComment")
-                    for elem in results:
-                        fbcomment = self.update_comment_status(eval(elem.result), post)
-                        logger.debug(u"ThreadComment %s in progress. Current comment %s" % (self, fbcomment.fid if fbcomment else fbcomment))
-                        commentcount += 1
-                    logger.debug(u"ThreadComment %s in progress. Current comment count %d" % (self, commentcount))
-                    
+                    fbcomment = FBResult.objects.filter(fid__exact=fid)[0]
+                    post = FBPost.objects.get(fid__exact=fbcomment.parent)
+                    self.update_comment_status(eval(fbcomment.result), post)
                 else:
                     logger.error(u"ThreadComment %s. fid is none! %s." % (self, fid))
                 #signals to queue job is done
@@ -491,10 +480,6 @@ class ThreadComment(threading.Thread):
                 logger.exception(msg)                 
             finally:
                 self.queue.task_done()
-                count += 1
-                if count == 1000:
-                    count = 0
-                    logger.info("ThreadComment %s. Element to go: %d" % (self,queue.qsize()))
                 
         logger.info(u"ThreadComment %s. End." % self)
 
@@ -515,9 +500,9 @@ class ThreadComment(threading.Thread):
 def compute_new_post(harvester):
     global queue
     queue = Queue.Queue()
-    all_users = harvester.fbusers_to_harvest.values("fid")
-    for user in all_users:
-        queue.put(user["fid"])
+    all_posts = FBResult.objects.filter(ftype__exact="FBPost").values("fid")
+    for post in all_posts:
+        queue.put(post["fid"])
 
     for i in range(4):
         t = ThreadStatus(queue)
@@ -527,30 +512,30 @@ def compute_new_post(harvester):
     queue.join()
 
 def compute_new_comment(harvester):
-    global queue
-    queue = Queue.Queue()
+    global commentqueue
+    commentqueue = Queue.Queue()
 
-    all_comments =  FBResult.objects.filter(ftype__exact="FBComment").values("parent")
+    all_comments = FBResult.objects.filter(ftype__exact="FBComment").values("fid")
     for comment in all_comments:
-        queue.put(comment["parent"])
+        commentqueue.put(comment["fid"])
 
     for i in range(4):
-        t = ThreadComment(queue)
+        t = ThreadComment(commentqueue)
         t.setDaemon(True)
         t.start()
       
-    queue.join()
+    commentqueue.join()
 
 def run_harvester_v3(harvester):
     harvester.start_new_harvest()
     try:
-        update_user_batch(harvester)
-        update_user_statuses_batch(harvester)
+        #update_user_batch(harvester)
+        #update_user_statuses_batch(harvester)
         start = time.time()
         logger.info(u"Starting results computation")
         compute_new_post(harvester) 
         compute_new_comment(harvester)
-        FBResult.objects.filter(harvester=harvester).delete()
+        #FBResult.objects.filter(harvester=harvester).delete()
         logger.info(u"Results computation complete in %ss" % (time.time() - start))
 
     except:
