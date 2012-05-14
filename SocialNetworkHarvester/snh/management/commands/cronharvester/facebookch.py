@@ -511,7 +511,7 @@ def compute_new_post(harvester):
     for post in all_posts:
         queue.put(post["fid"])
 
-    for i in range(4):
+    for i in range(3):
         t = ThreadStatus(queue)
         t.setDaemon(True)
         t.start()
@@ -526,7 +526,7 @@ def compute_new_comment(harvester):
     for comment in all_comments:
         commentqueue.put(comment["fid"])
 
-    for i in range(4):
+    for i in range(3):
         t = ThreadComment(commentqueue)
         t.setDaemon(True)
         t.start()
@@ -536,13 +536,13 @@ def compute_new_comment(harvester):
 def run_harvester_v3(harvester):
     harvester.start_new_harvest()
     try:
-        #update_user_batch(harvester)
-        #update_user_statuses_batch(harvester)
+        update_user_batch(harvester)
+        update_user_statuses_batch(harvester)
         start = time.time()
         logger.info(u"Starting results computation")
         compute_new_post(harvester) 
         compute_new_comment(harvester)
-        #FBResult.objects.filter(harvester=harvester).delete()
+        FBResult.objects.filter(harvester=harvester).delete()
         logger.info(u"Results computation complete in %ss" % (time.time() - start))
 
     except:
