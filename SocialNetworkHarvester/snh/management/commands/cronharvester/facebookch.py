@@ -172,6 +172,7 @@ def generic_batch_processor(harvester, bman_list):
     global_retry = 0
     waiter = 0
     start = time.time()
+    reallyneedsleep = False
 
     while bman_list:
         usage = resource.getrusage(resource.RUSAGE_SELF)
