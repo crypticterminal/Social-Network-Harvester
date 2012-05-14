@@ -449,6 +449,13 @@ class ThreadStatus(threading.Thread):
             #likes_list = FBResult.objects.filter(fid__startswith=fbstatus["id"]).filter(ftype__exact="FBPost.likes")
             #for likes in likes_list:
             #    snh_status.update_likes_from_facebook(eval(likes.result))
+        except IntegrityError:
+            try:
+                snh_status = FBPost.objects.get(fid__exact=fbstatus["id"])
+                snh_status.update_from_facebook(fbstatus, user)
+            except ObjectDoesNotExist:
+                msg = u"ERROR! Post already exist but not found %s for %s" % (unicode(fbstatus), user.fid if user.fid else "0")
+                logger.exception(msg) 
         except:
             msg = u"Cannot update status %s for %s" % (unicode(fbstatus), user.fid if user.fid else "0")
             logger.exception(msg) 

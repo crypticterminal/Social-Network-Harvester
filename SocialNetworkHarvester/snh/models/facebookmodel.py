@@ -295,12 +295,10 @@ class FBPost(models.Model):
                 user = None
                 user = self.get_existing_user({"fid__exact":prop_val["id"]})
                 if not user:
-                    logger.debug(u">>>>DOES NOT EXISTS: %s" % prop_val["id"])
                     try:
                         user = FBUser()
                         user.update_from_facebook(prop_val)
                     except IntegrityError:
-                        logger.debug(u">>>>DUPLICATED USER!!: %s" % prop_val["id"])
                         user = self.get_existing_user({"fid__exact":prop_val["id"]})
                         if user:
                             user.update_from_facebook(prop_val)
@@ -322,9 +320,15 @@ class FBPost(models.Model):
                 user_like = None
                 user_like = self.get_existing_user({"fid__exact":fbuser["id"]})
                 if not user_like:
-                    user_like = FBUser(
-                                    fid=fbuser["id"],
-                                 )
+                    try:
+                        user_like = FBUser(fid=fbuser["id"])
+                        user_like.save()
+                    except IntegrityError:
+                        user_like = self.get_existing_user({"fid__exact":fbuser["id"]})
+                        if user_like:
+                            user_like.update_from_facebook(fbuser)
+                        else:
+                            logger.debug(u">>>>CRITICAL CANT UPDATED DUPLICATED USER %s" % fbuser["id"])
                     user_like.update_from_facebook(fbuser)
                     user_like.save()
                 if user_like not in self.likes_from.all():
@@ -486,12 +490,17 @@ class FBComment(models.Model):
             if prop_val and (self_prop is None or self_prop.fid != prop_val["id"]):
                 user = None
                 user = self.get_existing_user({"fid__exact":prop_val["id"]})
+
                 if not user:
-                    user = FBUser(
-                                    fid=prop_val["id"],
-                                 )
-                    user.update_from_facebook(prop_val)
-                    user.save()
+                    try:
+                        user = FBUser()
+                        user.update_from_facebook(prop_val)
+                    except IntegrityError:
+                        user = self.get_existing_user({"fid__exact":prop_val["id"]})
+                        if user:
+                            user.update_from_facebook(prop_val)
+                        else:
+                            logger.debug(u">>>>CRITICAL CANT UPDATED DUPLICATED USER %s" % prop_val["id"])
 
                 self_prop = user
                 model_changed = True
@@ -523,6 +532,7 @@ class FBComment(models.Model):
         
         for prop in date_to_check:
             fb_val = facebook_model[prop]
+            logger.debug("PROP:%s DATE: %s" % (prop, fb_val))
             date_val = datetime.strptime(fb_val,'%Y-%m-%dT%H:%M:%S+0000')
             if self.__dict__[prop] != date_val:
                 self.__dict__[prop] = date_val
