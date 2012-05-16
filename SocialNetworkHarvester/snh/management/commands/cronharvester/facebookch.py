@@ -195,9 +195,9 @@ def generic_batch_processor(harvester, bman_list):
                         logger.info("waiting for 10 minutes")
                         time.sleep(10*60)
 
-                    if (time.time() - start) < 1.3:
-                        logger.info(u"too fast. will wait 1.3 sec")
-                        time.sleep(1.3)
+                    if (time.time() - start) < 2:
+                        logger.info(u"too fast. will wait 2 sec")
+                        time.sleep(2)
                     start = time.time()
                     reallyneedsleep = False      
 

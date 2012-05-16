@@ -45,21 +45,24 @@ def yt_user_detail(request, harvester_id, userfid):
                                                     u'user':user,
                                                   })
 
-#@login_required(login_url=u'/login/')
-#def dm_video_detail(request, harvester_id, videoid):
-#    dailymotion_harvesters = DailyMotionHarvester.objects.all()
-#    video = get_object_or_404(DMVideo, fid=videoid)
-#    video_url = ""    
-#    if video.video_file_path:
-#        video_url = video.video_file_path.split(PROJECT_PATH)[1]
-#    return  render_to_response(u'snh/dailymotion_video.html',{
-#                                                    u'dm_selected':True,
-#                                                    u'all_harvesters':dailymotion_harvesters,
-#                                                    u'harvester_id':harvester_id,
-#                                                    u'user':video.user,
-#                                                    u'video':video,
-#                                                    u'video_url':video_url,
-#                                                  })
+@login_required(login_url=u'/login/')
+def yt_video_detail(request, harvester_id, videoid):
+    youtube_harvesters = YoutubeHarvester.objects.all()
+    video = get_object_or_404(YTVideo, fid=videoid)
+    video_url = ""
+    logger.debug(video.video_file_path)
+    logger.debug(PROJECT_PATH)
+    logger.debug(video.video_file_path.split(PROJECT_PATH))
+    if video.video_file_path:
+        video_url = video.video_file_path.split(PROJECT_PATH)[1]
+    return  render_to_response(u'snh/youtube_video.html',{
+                                                    u'yt_selected':True,
+                                                    u'all_harvesters':youtube_harvesters,
+                                                    u'harvester_id':harvester_id,
+                                                    u'user':video.user,
+                                                    u'video':video,
+                                                    u'video_url':video_url,
+                                                  })
 
 #
 # Youtube AJAX
@@ -139,52 +142,24 @@ def get_yt_comment_list(request, userfid):
     #call to generic function from utils
     return get_datatables_records(request, querySet, columnIndexNameMap)
 
-#@login_required(login_url=u'/login/')
-#def get_dm_videocomment_list(request, videofid):
-#    querySet = None
-#    #columnIndexNameMap is required for correct sorting behavior
-#    columnIndexNameMap = {
-#                            0 : u'created_time',
-#                            1 : u'user__screenname',
-#                            2 : u'video__user__screenname',
-#                            3 : u'video__fid',
-#                            4 : u'message',
-#                            5 : u'language',
-#                            6: u'user__fid',
-#                            7: u'video__user__fid',
-#                            }
-#    try:
-#        video = get_list_or_404(DMVideo, fid=videofid)[0]
-#        querySet = DMComment.objects.filter(video=video)
-#    except ObjectDoesNotExist:
-#        pass
-#    #call to generic function from utils
-#    return get_datatables_records(request, querySet, columnIndexNameMap)
-
-
-#@login_required(login_url=u'/login/')
-#def get_dm_fans_list(request, userfid):
-#    querySet = None
-#    #columnIndexNameMap is required for correct sorting behavior#
-
-#    columnIndexNameMap = {
-#                            0 : u'fid',
-#                            1 : u'username',
-#                            2 : u'screenname',
-#                            3 : u'gender',
-#                            4 : u'description',
-#                            5 : u'language',
-#                            6 : u'status',
-#                            7 : u'ftype',
-#                            8 : u'url__original_url',
-#                            9 : u'views_total',
-#                            10 : u'videos_total',
-#                            }
-#    try:
-#        user = get_list_or_404(DMUser, fid=userfid)[0]
-#        querySet = user.fans.all()
-#    except ObjectDoesNotExist:
-#        pass
-#    #call to generic function from utils
-#    return get_datatables_records(request, querySet, columnIndexNameMap)
+@login_required(login_url=u'/login/')
+def get_yt_videocomment_list(request, videofid):
+    querySet = None
+    #columnIndexNameMap is required for correct sorting behavior
+    columnIndexNameMap = {
+                            0 : u'published',
+                            1 : u'user__username',
+                            2 : u'video__user__username',
+                            3 : u'video__fid',
+                            4 : u'message',
+                            5 : u'user__fid',
+                            6 : u'video__user__fid',
+                            }    
+    try:
+        video = get_list_or_404(YTVideo, fid=videofid)[0]
+        querySet = YTComment.objects.filter(video=video)
+    except ObjectDoesNotExist:
+        pass
+    #call to generic function from utils
+    return get_datatables_records(request, querySet, columnIndexNameMap)
 

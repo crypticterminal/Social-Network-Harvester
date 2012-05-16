@@ -50,10 +50,13 @@ urlpatterns = patterns('snh.views',
     #YOUTUBE
     (r'^yt/(?P<harvester_id>\d+)$', 'yt'),
     (r'^yt_user_detail/(?P<harvester_id>\d+)/fid/(?P<userfid>.*)/$', 'yt_user_detail'),
+    (r'^yt_video_detail/(?P<harvester_id>\d+)/(?P<videoid>.*)/$', 'yt_video_detail'),
     #YOUTUBE AJAX
     (r'^get_yt_list/(?P<harvester_id>\d+)/$', 'get_yt_list'),
     (r'^get_yt_video_list/(?P<userfid>.*)/$', 'get_yt_video_list'),
     (r'^get_yt_comment_list/(?P<userfid>.*)/$', 'get_yt_comment_list'),
+    (r'^get_yt_videocomment_list/(?P<videofid>.*)/$', 'get_yt_videocomment_list'),
+
 
     #(r'^$', 'index'),
     #(r'^reset_fb_token$', 'reset_fb_token'),
