@@ -3,11 +3,54 @@ from django.template.loader import render_to_string
 from django.http import HttpResponse
 from django.utils.cache import add_never_cache_headers
 from django.utils import simplejson
+import csv, codecs, cStringIO
 
 import snhlogger
 logger = snhlogger.init_logger(__name__, "view.log")
 
-def get_datatables_records(request, querySet, columnIndexNameMap, jsonTemplatePath = None, *args):
+class UnicodeWriter:
+    """
+    A CSV writer which will write rows to CSV file "f",
+    which is encoded in the given encoding.
+    """
+
+    def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
+        # Redirect output to a queue
+        self.queue = cStringIO.StringIO()
+        self.writer = csv.writer(self.queue, dialect=dialect, **kwds)
+        self.stream = f
+        self.encoder = codecs.getincrementalencoder(encoding)()
+
+    def writerow(self, row):
+        self.writer.writerow([s.encode("utf-8") for s in row])
+        # Fetch UTF-8 output from the queue ...
+        data = self.queue.getvalue()
+        data = data.decode("utf-8")
+        # ... and reencode it into the target encoding
+        data = self.encoder.encode(data)
+        # write to the target stream
+        self.stream.write(data)
+        # empty queue
+        self.queue.truncate(0)
+
+    def writerows(self, rows):
+        for row in rows:
+            self.writerow(row)
+
+def generate_csv_response(d):
+    # Create the HttpResponse object with the appropriate CSV header.
+    response = HttpResponse(mimetype='text/csv')
+    response['Content-Disposition'] = 'attachment; filename=output.csv'
+
+    uw = UnicodeWriter(response)
+    cols = d["sColumns"].split(",")
+    uw.writerow(cols)
+    for line in d["aaData"]:
+        uw.writerow(line)
+
+    return response
+
+def get_datatables_records(request, querySet, columnIndexNameMap, call_type='web', jsonTemplatePath = None, *args):
     """
     Usage: 
         querySet: query set to draw data from.
@@ -92,4 +135,8 @@ def get_datatables_records(request, querySet, columnIndexNameMap, jsonTemplatePa
 
     #prevent from caching datatables result
     add_never_cache_headers(response)
+    
+    if call_type == "csv":
+        response = generate_csv_response(response_dict)
+
     return response

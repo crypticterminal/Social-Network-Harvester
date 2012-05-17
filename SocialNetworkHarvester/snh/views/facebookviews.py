@@ -9,6 +9,8 @@ from django.template.defaultfilters import stringfilter
 
 from fandjango.decorators import facebook_authorization_required
 from fandjango.models import User as FanUser
+import datetime as dt
+from django.utils import simplejson
 
 from snh.models.twittermodel import *
 from snh.models.facebookmodel import *
@@ -68,12 +70,19 @@ def fb_user_detail(request, harvester_id, username):
 def fb_userfid_detail(request, harvester_id, userfid):
     facebook_harvesters = FacebookHarvester.objects.all()
     user = get_list_or_404(FBUser, fid=userfid)[0]
+    base = facebook_harvesters[0].harvest_window_from.date()
+    dateList = [ base + dt.timedelta(days=x) for x in range(0,60) ]
+    graph = []
+    for date in dateList:
+        c = FBPost.objects.filter(user=user).filter(created_time__year=date.year,created_time__month=date.month,created_time__day=date.day).count()
+        graph.append({"date":date, "val1":c, "val2":0,})
+
     return  render_to_response(u'snh/facebook_detail.html',{
                                                     u'fb_selected':True,
                                                     u'all_harvesters':facebook_harvesters,
                                                     u'harvester_id':harvester_id,
                                                     u'user':user,
-                                                  })
+                                                    u'graph':graph,                                                  })
 
 @login_required(login_url=u'/login/')
 def fb_post_detail(request, harvester_id, post_id):
@@ -116,7 +125,7 @@ def get_fb_list(request, harvester_id):
     return get_datatables_records(request, querySet, columnIndexNameMap)
 
 @login_required(login_url=u'/login/')
-def get_fb_post_list(request, username):
+def get_fb_post_list(request, call_type, username):
     querySet = None
     #columnIndexNameMap is required for correct sorting behavior
 
@@ -145,7 +154,7 @@ def get_fb_post_list(request, username):
     except ObjectDoesNotExist:
         pass
     #call to generic function from utils
-    return get_datatables_records(request, querySet, columnIndexNameMap)
+    return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 
 @login_required(login_url=u'/login/')
 def get_fb_otherpost_list(request, userfid):

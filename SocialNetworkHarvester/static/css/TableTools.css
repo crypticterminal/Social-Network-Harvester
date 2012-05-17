@@ -42,10 +42,11 @@ div.DTTT_container {
 button.DTTT_button {
 	position: relative;
 	float: left;
-	height: 30px;
+	height: 21px;
 	margin-right: 3px;
+	margin-top: 7px;
 	padding: 3px 5px;
-	border: 1px solid #d0d0d0;
+	border: 0px solid #d0d0d0;
 	background-color: #fff;
 	cursor: pointer;
 	*cursor: hand;
@@ -64,13 +65,13 @@ button.DTTT_button::-moz-focus-inner {
 
 button.DTTT_button_csv {
 	padding-right: 30px;
-	background: url(../images/csv.png) no-repeat center right;
+	background: #608995 url(../images/csv.png) no-repeat center right;
 }
 
 button.DTTT_button_csv_hover {
 	padding-right: 30px;
-	border: 1px solid #999;
-	background: #f0f0f0 url(../images/csv_hover.png) no-repeat center right;
+	border: 0px solid #999;
+	background: #608995 url(../images/csv_hover.png) no-repeat center right;
 }
 
 

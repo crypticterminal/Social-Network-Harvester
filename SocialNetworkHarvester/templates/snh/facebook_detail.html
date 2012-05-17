@@ -1,6 +1,53 @@
 {% extends "snh/snh_base.html" %}
 {% block extrahead %}
+<script type="text/javascript" src="http://www.google.com/jsapi"></script>
+<script type="text/javascript">
+    google.load('visualization', '1', {packages: ['annotatedtimeline']});
+    function drawVisualization() {
+  var data = new google.visualization.DataTable();
+  data.addColumn('date', 'Date');
+  data.addColumn('number', 'Sold Pencils');
+  data.addRows([{% for entry in graph %}
+    [new Date({{entry.date.year}},{{entry.date.month}} ,{{entry.date.day}}), {{entry.val1}}],
+    {% endfor %}
+    ]
+   );
+
+  var annotatedtimeline = new google.visualization.AnnotatedTimeLine(
+      document.getElementById('chart_div'));
+  annotatedtimeline.draw(data, {'displayAnnotations': false});
+}
+    google.setOnLoadCallback(drawVisualization);
+</script>
 <script type="text/javascript" charset="utf-8">
+        TableTools.BUTTONS.download = {
+            "sAction": "text",
+            "sFieldBoundary": "",
+            "sFieldSeperator": "\t",
+            "sNewLine": "<br>",
+            "sToolTip": "Download csv",
+            "sButtonClass": "DTTT_button_csv",
+            "sButtonClassHover": "DTTT_button_csv_hover",
+            "sButtonText": "Download",
+            "mColumns": "all",
+            "bHeader": true,
+            "bFooter": true,
+            "sDiv": "",
+            "fnMouseover": null,
+            "fnMouseout": null,
+            "fnClick": function( nButton, oConfig ) {
+                var oParams = this.s.dt.oApi._fnAjaxParameters( this.s.dt );
+                var iframe = document.createElement('iframe');
+                iframe.style.height = "0px";
+                iframe.style.width = "0px";
+                iframe.src = oConfig.sUrl+"?"+$.param(oParams);
+                document.body.appendChild( iframe );
+             },
+            "fnSelect": null,
+            "fnComplete": null,
+            "fnInit": null
+        };
+
         var postfunc = function( nRow, aData, iDisplayIndex ) {
 
             function _wordwrap($text, $size){
@@ -15,7 +62,7 @@
             }
             
             //created_time
-            ($('td:eq(0)', nRow).html() == "None") ? post_time = aData[13] : post_time = aData[0];
+            ($('td:eq(0)', nRow).html() == "None") ? post_time = "UP " + aData[0] : post_time = aData[0];
             $('td:eq(0)', nRow).html( post_time );
 
             //fb_post_detail
@@ -43,16 +90,19 @@
             ($('td:eq(12)', nRow).html() == "None") ? app = "" : app = aData[12]
             $('td:eq(12)', nRow).html( app );
 
-            for (i in aData){
-                aData[i] = aData[i] == "None" ? "" : "dd"//aData[i];
+            ($('td:eq(3)', nRow).html() == "None") ? $('td:eq(3)', nRow).html( "DDD" ): app = aData[4]
+            
+
+            for (i=0; i < 12; i++){
+                (aData[i] == "None") ? $('td:eq('+i+')', nRow).html( "#!#" ) : content = "2";
             }
             //$('td:eq('+0+')', nRow).html("kkk");
         }
 
         var iDisplayLength = 10 
         var sPaginationType = "full_numbers";
-        var sDom = 'p<"clear">lfrtip';
-        var aaSorting = [[ 0, "desc" ]];
+        var sDom = 'Tp<"clear">lfrtip';
+        var aaSorting = [[ 0, "desc" ],[ 13, "desc" ],];
         var bAutoWidth = false
         var bServerSide = true; 
         var aoColumnDefs = [ 
@@ -90,10 +140,18 @@
                 "aaSorting": aaSorting,
                 "bAutoWidth": bAutoWidth,
 		        "bServerSide": bServerSide, 
-		        "sAjaxSource": "{% url snh.views.get_fb_post_list user.username  %}",
+		        "sAjaxSource": "{% url snh.views.get_fb_post_list 'web' user.username %}",
                 "fnRowCallback": postfunc,
                 "aoColumnDefs": aoColumnDefs,
 		        "aoColumns": aoColumns,
+                "oTableTools": {
+                  "aButtons": [ {
+                    "sExtends": "download",
+                    "sButtonText": "Download CSV",
+                    "sUrl": "{% url snh.views.get_fb_post_list 'csv' user.username %}",
+                    "sSwfPath": "/static/swf/copy_cvs_xls_pdf.swf"
+                  } ]
+                },
             });
 		var oTable2 = $('#other_post_table').dataTable(
             {
@@ -105,6 +163,14 @@
 		        "bServerSide": bServerSide, 
 		        "sAjaxSource": "{% url snh.views.get_fb_otherpost_list user.fid  %}",
                 "fnRowCallback": postfunc,
+                "oTableTools": {
+                  "aButtons": [ {
+                    "sExtends": "download",
+                    "sButtonText": "Download CSV",
+                    "sUrl": "/generate_csv.php",
+                    "sSwfPath": "/static/swf/copy_cvs_xls_pdf.swf"
+                  } ]
+                },
                 "aoColumnDefs": aoColumnDefs,
 		        "aoColumns": aoColumns,
             });
@@ -126,6 +192,14 @@
                     $('td:eq(2)', nRow).html(  '<a href="/fb_user_detail/{{ harvester_id }}/fid/'+aData[10]+'">'+aData[2]+'</a>' );
                     //post
                     $('td:eq(3)', nRow).html(  '<a href="/fb_post_detail/{{ harvester_id }}/'+aData[3]+'">'+aData[3]+'</a>' );
+                },
+                "oTableTools": {
+                  "aButtons": [ {
+                    "sExtends": "download",
+                    "sButtonText": "Download CSV",
+                    "sUrl": "/generate_csv.php",
+                    "sSwfPath": "/static/swf/copy_cvs_xls_pdf.swf"
+                  } ]
                 },
 		        "aoColumns": [ 
                     { "bVisible":    true },    //0 : u'created_time/updated_time',
@@ -162,6 +236,7 @@
 {% endblock %}
 
 {% block content %}
+<div  id='chart_div' style='width: 1024px; height: 240px;'></div>
 <h3>{{ user.name }} </h3>
 <table id="user_table" class="pretty">
     <thead>
