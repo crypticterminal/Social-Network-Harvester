@@ -8,7 +8,7 @@
   data.addColumn('date', 'Date');
   data.addColumn('number', 'Sold Pencils');
   data.addRows([{% for entry in graph %}
-    [new Date({{entry.date.year}},{{entry.date.month}} ,{{entry.date.day}}), {{entry.val1}}],
+    [new Date({{entry.date.year}},{{entry.date.month}}-1 ,{{entry.date.day}}), {{entry.val1}}],
     {% endfor %}
     ]
    );
@@ -236,7 +236,7 @@
 {% endblock %}
 
 {% block content %}
-<div  id='chart_div' style='width: 1024px; height: 240px;'></div>
+<div  id='chart_div' style='margin:0 auto; width: 1024px; height: 240px;'></div>
 <h3>{{ user.name }} </h3>
 <table id="user_table" class="pretty">
     <thead>

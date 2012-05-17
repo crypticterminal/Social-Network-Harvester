@@ -71,7 +71,9 @@ def fb_userfid_detail(request, harvester_id, userfid):
     facebook_harvesters = FacebookHarvester.objects.all()
     user = get_list_or_404(FBUser, fid=userfid)[0]
     base = facebook_harvesters[0].harvest_window_from.date()
-    dateList = [ base + dt.timedelta(days=x) for x in range(0,60) ]
+    to = facebook_harvesters[0].harvest_window_to.date()
+    days = (to - base).days
+    dateList = [ base + dt.timedelta(days=x) for x in range(0,days) ]
     graph = []
     for date in dateList:
         c = FBPost.objects.filter(user=user).filter(created_time__year=date.year,created_time__month=date.month,created_time__day=date.day).count()
