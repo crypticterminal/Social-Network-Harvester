@@ -93,10 +93,10 @@ def get_comment_paging(page):
 def update_user_statuses(harvester, statuses):
     for res in statuses:
         status = eval(res.result)
-        snhuser = FBUser.objects.get(fid__exact=res.parent)
+        snhuser = FBUser.objects.get(fid=res.parent)
         try:
             try:
-                fb_status = FBPost.objects.get(fid__exact=status["id"])
+                fb_status = FBPost.objects.get(fid=status["id"])
             except ObjectDoesNotExist:
                 fb_status = FBPost(user=snhuser)
                 fb_status.save()
@@ -305,9 +305,23 @@ def update_user_feed_from_batch(harvester, snhuser, fbfeed_page):
                         break
                 except ObjectDoesNotExist:
                     pass
+                
+                if feed["type"] == "link":
+                    if feed["link"].startswith("https://www.facebook.com/notes") or feed["link"].startswith("http://www.facebook.com/notes"):
+                        spliturl = feed["link"].split("/")
+                        lid = spliturl[len(spliturl)-1]
+                        d = {"method": "GET", "relative_url": u"%s" % unicode(lid)}
+                        next_bman.append({"snh_obj":snhuser, "retry":0, "request":d, "callback":update_user_status_from_batch})
 
-                d = {"method": "GET", "relative_url": u"%s" % unicode(feed["id"])}
-                next_bman.append({"snh_obj":snhuser, "retry":0, "request":d, "callback":update_user_status_from_batch})
+                        d = {"method": "GET", "relative_url": u"%s/comments?limit=240%s" % (unicode(lid), lc_param)}
+                        next_bman.append({"snh_obj":str(lid),"retry":0,"request":d, "callback":update_user_comments_from_batch})
+
+                        if harvester.update_likes:
+                            d = {"method": "GET", "relative_url": u"%s/likes?limit=240%s" % (unicode(lid), lc_param)}
+                            next_bman.append({"snh_obj":str(lid),"retry":0,"request":d, "callback":update_likes_from_batch})
+
+
+                update_user_status_from_batch(harvester, snhuser, feed)
 
                 d = {"method": "GET", "relative_url": u"%s/comments?limit=240%s" % (unicode(feed["id"]), lc_param)}
                 next_bman.append({"snh_obj":str(feed["id"]),"retry":0,"request":d, "callback":update_user_comments_from_batch})
@@ -348,10 +362,10 @@ def update_user_statuses_batch(harvester):
 def update_user_comments(harvester, fbcomments):
     for fbresult in fbcomments:
         fbcomment = eval(fbresult.result)
-        status = FBPost.objects.get(fid__exact=fbresult.parent)
+        status = FBPost.objects.get(fid=fbresult.parent)
         try:
             try:
-                snh_comment = FBComment.objects.get(fid__exact=fbcomment["id"])
+                snh_comment = FBComment.objects.get(fid=fbcomment["id"])
             except ObjectDoesNotExist:
                 snh_comment = FBComment()
                 snh_comment.save()
@@ -362,6 +376,8 @@ def update_user_comments(harvester, fbcomments):
 
 def update_user_comments_from_batch(harvester, statusid, fbcomments_page):
     next_bman = []
+    if "data" not in fbcomments_page:
+        logger.debug("DEVED: %s: %s" % (statusid, fbcomments_page))
     comment_count = len(fbcomments_page["data"])
 
     if comment_count:
@@ -422,11 +438,13 @@ class ThreadStatus(threading.Thread):
         while True: 
             try:
                 fid = self.queue.get()
-                fbpost = FBResult.objects.filter(fid__exact=fid)[0]
-                user = FBUser.objects.filter(fid__exact=fbpost.parent)[0]
+                fbpost = FBResult.objects.filter(fid=fid).filter(ftype="FBPost")[0]
+                user = FBUser.objects.get(fid=fbpost.parent)
                 rez = eval(fbpost.result)
                 snh_status = self.update_user_status(rez,user)
                 #signals to queue job is done
+            except ObjectDoesNotExist:
+                logger.exception("DEVED %s %s" % (fbpost.parent, fbpost.ftype))
             except Queue.Empty:
                 logger.info(u"ThreadStatus %s. Queue is empty." % self)
                 break;
@@ -442,17 +460,17 @@ class ThreadStatus(threading.Thread):
         snh_status = None
         try:
             try:
-                snh_status = FBPost.objects.get(fid__exact=fbstatus["id"])
+                snh_status = FBPost.objects.get(fid=fbstatus["id"])
             except ObjectDoesNotExist:
                 snh_status = FBPost(user=user)
                 snh_status.save()
             snh_status.update_from_facebook(fbstatus,user)
-            #likes_list = FBResult.objects.filter(fid__startswith=fbstatus["id"]).filter(ftype__exact="FBPost.likes")
-            #for likes in likes_list:
-            #    snh_status.update_likes_from_facebook(eval(likes.result))
+            likes_list = FBResult.objects.filter(ftype="FBPost.likes").filter(parent=fbstatus["id"])
+            for likes in likes_list:
+                snh_status.update_likes_from_facebook(eval(likes.result))
         except IntegrityError:
             try:
-                snh_status = FBPost.objects.get(fid__exact=fbstatus["id"])
+                snh_status = FBPost.objects.get(fid=fbstatus["id"])
                 snh_status.update_from_facebook(fbstatus, user)
             except ObjectDoesNotExist:
                 msg = u"ERROR! Post already exist but not found %s for %s" % (unicode(fbstatus), user.fid if user.fid else "0")
@@ -474,8 +492,8 @@ class ThreadComment(threading.Thread):
             try:
                 fid = self.queue.get()
                 if fid:
-                    fbcomment = FBResult.objects.filter(fid__exact=fid)[0]
-                    post = FBPost.objects.get(fid__exact=fbcomment.parent)
+                    fbcomment = FBResult.objects.filter(fid=fid)[0]
+                    post = FBPost.objects.get(fid=fbcomment.parent)
                     self.update_comment_status(eval(fbcomment.result), post)
                 else:
                     logger.error(u"ThreadComment %s. fid is none! %s." % (self, fid))
@@ -495,11 +513,18 @@ class ThreadComment(threading.Thread):
         fbcomment = None
         try:
             try:
-                fbcomment = FBComment.objects.get(fid__exact=comment["id"])
+                fbcomment = FBComment.objects.get(fid=comment["id"])
             except ObjectDoesNotExist:
                 fbcomment = FBComment(post=post)
                 fbcomment.save()
             fbcomment.update_from_facebook(comment,post)
+        except IntegrityError:
+            try:
+                fbcomment = FBComment.objects.get(fid=comment["id"])
+                fbcomment.update_from_facebook(comment,post)
+            except ObjectDoesNotExist:
+                msg = u"ERROR! Comments already exist but not found%s for %s" % (unicode(comment), post.fid if post.fid else "0")
+                logger.exception(msg) 
         except:
             msg = u"Cannot update comment %s for %s" % (unicode(comment), post.fid if post.fid else "0")
             logger.exception(msg) 
@@ -508,7 +533,7 @@ class ThreadComment(threading.Thread):
 def compute_new_post(harvester):
     global queue
     queue = Queue.Queue()
-    all_posts = FBResult.objects.filter(ftype__exact="FBPost").values("fid")
+    all_posts = FBResult.objects.filter(ftype="FBPost").values("fid")
     for post in all_posts:
         queue.put(post["fid"])
 
@@ -523,7 +548,7 @@ def compute_new_comment(harvester):
     global commentqueue
     commentqueue = Queue.Queue()
 
-    all_comments = FBResult.objects.filter(ftype__exact="FBComment").values("fid")
+    all_comments = FBResult.objects.filter(ftype="FBComment").values("fid")
     for comment in all_comments:
         commentqueue.put(comment["fid"])
 
