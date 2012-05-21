@@ -127,7 +127,7 @@ def get_fb_list(request, harvester_id):
     return get_datatables_records(request, querySet, columnIndexNameMap)
 
 @login_required(login_url=u'/login/')
-def get_fb_post_list(request, call_type, username):
+def get_fb_post_list(request, call_type, userfid):
     querySet = None
     #columnIndexNameMap is required for correct sorting behavior
 
@@ -151,7 +151,7 @@ def get_fb_post_list(request, call_type, username):
                             16: u'ffrom__fid',
                             }
     try:
-        user = get_list_or_404(FBUser, username=username)[0]
+        user = get_list_or_404(FBUser, fid=userfid)[0]
         querySet = FBPost.objects.filter(user=user)
     except ObjectDoesNotExist:
         pass

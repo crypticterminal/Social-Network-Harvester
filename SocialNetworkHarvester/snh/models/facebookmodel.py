@@ -351,6 +351,7 @@ class FBPost(models.Model):
                             u"name":u"name",
                             u"caption":u"caption",
                             u"description":u"description",
+                            u"description":u"subject",
                             u"properties_raw":u"properties",
                             u"privacy_raw":u"privacy",
                             u"ftype":u"type",
@@ -378,11 +379,19 @@ class FBPost(models.Model):
 
         for prop in subitem_to_check:
             subprop = subitem_to_check[prop]
+            #logger.debug("DEVED:%s, %s, %s" % (prop, subprop, facebook))
             if subprop[0] in facebook_model and \
+                    type(facebook_model[subprop[0]]) is dict and \
                     subprop[1] in facebook_model[subprop[0]] and \
                     self.__dict__[prop] != facebook_model[subprop[0]][subprop[1]]:
                 self.__dict__[prop] = facebook_model[subprop[0]][subprop[1]]
                 model_changed = True
+            elif prop == "likes_count" and \
+                    "likes" in facebook_model and \
+                    type(facebook_model["likes"]) is int:
+                self.__dict__["likes_count"] = facebook_model[subprop[0]]
+                model_changed = True
+                
 
         for prop in date_to_check:
             if prop in facebook_model:

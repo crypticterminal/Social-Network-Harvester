@@ -1,12 +1,12 @@
 {% extends "snh/snh_base.html" %}
 {% block extrahead %}
-<script type="text/javascript" src="http://www.google.com/jsapi"></script>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <script type="text/javascript">
     google.load('visualization', '1', {packages: ['annotatedtimeline']});
     function drawVisualization() {
   var data = new google.visualization.DataTable();
   data.addColumn('date', 'Date');
-  data.addColumn('number', 'Sold Pencils');
+  data.addColumn('number', 'Post count');
   data.addRows([{% for entry in graph %}
     [new Date({{entry.date.year}},{{entry.date.month}}-1 ,{{entry.date.day}}), {{entry.val1}}],
     {% endfor %}
@@ -20,116 +20,68 @@
     google.setOnLoadCallback(drawVisualization);
 </script>
 <script type="text/javascript" charset="utf-8">
-        TableTools.BUTTONS.download = {
-            "sAction": "text",
-            "sFieldBoundary": "",
-            "sFieldSeperator": "\t",
-            "sNewLine": "<br>",
-            "sToolTip": "Download csv",
-            "sButtonClass": "DTTT_button_csv",
-            "sButtonClassHover": "DTTT_button_csv_hover",
-            "sButtonText": "Download",
-            "mColumns": "all",
-            "bHeader": true,
-            "bFooter": true,
-            "sDiv": "",
-            "fnMouseover": null,
-            "fnMouseout": null,
-            "fnClick": function( nButton, oConfig ) {
-                var oParams = this.s.dt.oApi._fnAjaxParameters( this.s.dt );
-                var iframe = document.createElement('iframe');
-                iframe.style.height = "0px";
-                iframe.style.width = "0px";
-                iframe.src = oConfig.sUrl+"?"+$.param(oParams);
-                document.body.appendChild( iframe );
-             },
-            "fnSelect": null,
-            "fnComplete": null,
-            "fnInit": null
-        };
+    var postfunc = function( nRow, aData, iDisplayIndex ) {
+        
+        //created_time
+        //($('td:eq(0)', nRow).html() == "None") ? post_time = "UP " + aData[0] : post_time = aData[0];
+        //$('td:eq(0)', nRow).html( post_time );
 
-        var postfunc = function( nRow, aData, iDisplayIndex ) {
+        //fb_post_detail
+        $('td:eq(1)', nRow).html( '<a href="/fb_post_detail/{{ harvester_id }}/'+aData[1]+'">'+_wordwrap(aData[1])+'</a>' );
 
-            function _wordwrap($text, $size){
-                $size = typeof $size !== 'undefined' ? $size : 10;
-                final = "";
-                var re = new RegExp(".{1,"+$size+"}","g");
-                splitted = $text.match(re);
-                for (i in splitted){
-                    final += splitted[i] + "&#8203;"
-                }
-                return final;
-            }
-            
-            //created_time
-            ($('td:eq(0)', nRow).html() == "None") ? post_time = "UP " + aData[0] : post_time = aData[0];
-            $('td:eq(0)', nRow).html( post_time );
+        //from
+        ($('td:eq(2)', nRow).html() == "None") ? from = aData[15] : from = aData[2];
+        $('td:eq(2)', nRow).html(  '<a href="/fb_user_detail/{{ harvester_id }}/fid/'+aData[16]+'">'+_wordwrap(from)+'</a>' );
 
-            //fb_post_detail
-            $('td:eq(1)', nRow).html( '<a href="/fb_post_detail/{{ harvester_id }}/'+aData[1]+'">'+_wordwrap(aData[1])+'</a>' );
+        //name
+        //$('td:eq(3)', nRow).html( _wordwrap(aData[3]) );
 
-            //from
-            ($('td:eq(2)', nRow).html() == "None") ? from = aData[15] : from = aData[2];
-            $('td:eq(2)', nRow).html(  '<a href="/fb_user_detail/{{ harvester_id }}/fid/'+aData[16]+'">'+_wordwrap(from)+'</a>' );
+        //description
+        //$('td:eq(4)', nRow).html( _wordwrap(aData[4],120) );
 
-            //name
-            $('td:eq(3)', nRow).html( _wordwrap(aData[3]) );
+        //message
+        //($('td:eq(6)', nRow).html() == "None") ? msg = aData[14] : msg = aData[6];
+        //$('td:eq(6)', nRow).html( _wordwrap(msg) );
 
-            //description
-            $('td:eq(4)', nRow).html( _wordwrap(aData[4],120) );
+        //longlink
+        //($('td:eq(7)', nRow).html() == "None") ? link = "" : link = '<a href="'+aData[7]+'">'+ _wordwrap(aData[7]) +'</a>';
+        //$('td:eq(7)', nRow).html( link );
+        
+        //longlink
+        //($('td:eq(12)', nRow).html() == "None") ? app = "" : app = aData[12]
+        //$('td:eq(12)', nRow).html( app );
 
-            //message
-            ($('td:eq(6)', nRow).html() == "None") ? msg = aData[14] : msg = aData[6];
-            $('td:eq(6)', nRow).html( _wordwrap(msg) );
+        //for (i=0; i < 12; i++){
+        //    cont = $('td:eq('+i+')', nRow).html();
+        //    (cont == "None") ? $('td:eq('+i+')', nRow).html( "#!#" ) : content = "2";
+        //}
 
-            //longlink
-            ($('td:eq(7)', nRow).html() == "None") ? link = "" : link = '<a href="'+aData[7]+'">'+ _wordwrap(aData[7]) +'</a>';
-            $('td:eq(7)', nRow).html( link );
-            
-            //longlink
-            ($('td:eq(12)', nRow).html() == "None") ? app = "" : app = aData[12]
-            $('td:eq(12)', nRow).html( app );
+    }
 
-            ($('td:eq(3)', nRow).html() == "None") ? $('td:eq(3)', nRow).html( "DDD" ): app = aData[4]
-            
-
-            for (i=0; i < 12; i++){
-                (aData[i] == "None") ? $('td:eq('+i+')', nRow).html( "#!#" ) : content = "2";
-            }
-            //$('td:eq('+0+')', nRow).html("kkk");
+    var aoColumnDefs_cust= [ 
+        { 
+            "bSearchable": false, "aTargets": [ 0, 13 ],
         }
-
-        var iDisplayLength = 10 
-        var sPaginationType = "full_numbers";
-        var sDom = 'Tp<"clear">lfrtip';
-        var aaSorting = [[ 0, "desc" ],[ 13, "desc" ],];
-        var bAutoWidth = false
-        var bServerSide = true; 
-        var aoColumnDefs = [ 
-            { 
-                "bSearchable": false, "aTargets": [ 0, 13 ],
-            }
-        ];
-        var aoColumns = [ 
-            { "bVisible":    true },    //0 : u'created_time/updated_time',
-            { "bVisible":    true },    //1 : u'fid',
-            { "bVisible":    true },    //2 : u'ffrom__username',
-            { "bVisible":    true },    //3 : u'name',
-            { "bVisible":    true },    //4 : u'description',
-            { "bVisible":    true },    //5 : u'caption',
-            { "bVisible":    true },    //6 : u'message/story',
-            { "bVisible":    true },    //7 : u'link__original_url',
-            { "bVisible":    true },    //8 : u'ftype',
-            { "bVisible":    true },    //9 : u'likes_count',
-            { "bVisible":    true },    //10: u'shares_count',
-            { "bVisible":    true },    //11: u'comments_count',
-            { "bVisible":    true },    //12: u'application_raw',
-            { "bVisible":    false },    //13: u'updated_time',
-            { "bVisible":    false },    //14: u'story',
-            { "bVisible":    false },    //15: u'ffrom__name',
-            { "bVisible":    false },    //16: u'ffrom__fid',
-        ];
-
+    ];
+    var aoColumns = [ 
+        { "bVisible":    true },    //0 : u'created_time/updated_time',
+        { "bVisible":    true },    //1 : u'fid',
+        { "bVisible":    true },    //2 : u'ffrom__username',
+        { "bVisible":    true },    //3 : u'name',
+        { "bVisible":    true },    //4 : u'description',
+        { "bVisible":    true },    //5 : u'caption',
+        { "bVisible":    true },    //6 : u'message/story',
+        { "bVisible":    true },    //7 : u'link__original_url',
+        { "bVisible":    true },    //8 : u'ftype',
+        { "bVisible":    true },    //9 : u'likes_count',
+        { "bVisible":    true },    //10: u'shares_count',
+        { "bVisible":    true },    //11: u'comments_count',
+        { "bVisible":    true },    //12: u'application_raw',
+        { "bVisible":    false },    //13: u'updated_time',
+        { "bVisible":    false },    //14: u'story',
+        { "bVisible":    false },    //15: u'ffrom__name',
+        { "bVisible":    false },    //16: u'ffrom__fid',
+    ];
 
 	$(document).ready(function() {
 		var oTable1 = $('#post_table').dataTable(
@@ -140,9 +92,9 @@
                 "aaSorting": aaSorting,
                 "bAutoWidth": bAutoWidth,
 		        "bServerSide": bServerSide, 
-		        "sAjaxSource": "{% url snh.views.get_fb_post_list 'web' user.username %}",
+		        "sAjaxSource": "{% url snh.views.get_fb_post_list 'web' user.fid %}",
                 "fnRowCallback": postfunc,
-                "aoColumnDefs": aoColumnDefs,
+                "aoColumnDefs": aoColumnDefs_cust,
 		        "aoColumns": aoColumns,
                 "oTableTools": {
                   "aButtons": [ {
@@ -155,13 +107,16 @@
             });
 		var oTable2 = $('#other_post_table').dataTable(
             {
+
                 "iDisplayLength": iDisplayLength, 
                 "sPaginationType": sPaginationType,
                 "sDom": sDom,
                 "aaSorting": aaSorting,
                 "bAutoWidth": bAutoWidth,
-		        "bServerSide": bServerSide, 
-		        "sAjaxSource": "{% url snh.views.get_fb_otherpost_list user.fid  %}",
+		        //"bServerSide": bServerSide, 
+		        //"sAjaxSource": "{% url snh.views.get_fb_otherpost_list user.fid  %}",
+                "aoColumnDefs": aoColumnDefs_cust,
+		        "aoColumns": aoColumns,
                 "fnRowCallback": postfunc,
                 "oTableTools": {
                   "aButtons": [ {
@@ -171,8 +126,6 @@
                     "sSwfPath": "/static/swf/copy_cvs_xls_pdf.swf"
                   } ]
                 },
-                "aoColumnDefs": aoColumnDefs,
-		        "aoColumns": aoColumns,
             });
 
 		var oTable3 = $('#comments_table').dataTable(
@@ -182,8 +135,9 @@
                 "sDom": sDom,
                 "aaSorting": aaSorting,
                 "bAutoWidth": bAutoWidth,
-		        "bServerSide": bServerSide, 
-		        "sAjaxSource": "{% url snh.views.get_fb_comment_list user.fid  %}",
+		        //"bServerSide": bServerSide, 
+                "aoColumnDefs": aoColumnDefs,
+		        //"sAjaxSource": "{% url snh.views.get_fb_comment_list user.fid  %}",
                 "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
                     //from
                     ($('td:eq(1)', nRow).html() == "None") ? from = aData[8] : from = aData[1];
@@ -192,14 +146,6 @@
                     $('td:eq(2)', nRow).html(  '<a href="/fb_user_detail/{{ harvester_id }}/fid/'+aData[10]+'">'+aData[2]+'</a>' );
                     //post
                     $('td:eq(3)', nRow).html(  '<a href="/fb_post_detail/{{ harvester_id }}/'+aData[3]+'">'+aData[3]+'</a>' );
-                },
-                "oTableTools": {
-                  "aButtons": [ {
-                    "sExtends": "download",
-                    "sButtonText": "Download CSV",
-                    "sUrl": "/generate_csv.php",
-                    "sSwfPath": "/static/swf/copy_cvs_xls_pdf.swf"
-                  } ]
                 },
 		        "aoColumns": [ 
                     { "bVisible":    true },    //0 : u'created_time/updated_time',
@@ -214,12 +160,14 @@
                     { "bVisible":    false },    //9 : u'ffrom__fid',
                     { "bVisible":    false },    //10: u'post__ffrom__fid',
                 ],
-                "aoColumnDefs": [ 
-                    { 
-                        "bSearchable": false, "aTargets": [ 0 ],
-                    }
-                ],
-
+                "oTableTools": {
+                  "aButtons": [ {
+                    "sExtends": "download",
+                    "sButtonText": "Download CSV",
+                    "sUrl": "/generate_csv.php",
+                    "sSwfPath": "/static/swf/copy_cvs_xls_pdf.swf"
+                  } ]
+                },
             });
 	} );
 </script>

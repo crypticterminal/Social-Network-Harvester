@@ -109,7 +109,8 @@ def get_datatables_records(request, querySet, columnIndexNameMap, call_type='web
     if outputQ: querySet = querySet.filter(outputQ)
         
     iTotalRecords = iTotalDisplayRecords = querySet.count() #count how many records match the final criteria
-    querySet = querySet[startRecord:endRecord] #get the slice
+    if call_type != "csv":
+        querySet = querySet[startRecord:endRecord] #get the slice
     sEcho = int(request.GET.get('sEcho',0)) # required echo response
     
     if jsonTemplatePath:

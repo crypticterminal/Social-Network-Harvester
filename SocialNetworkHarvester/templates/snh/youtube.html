@@ -2,24 +2,15 @@
 {% block extrahead %}
 <script type="text/javascript" charset="utf-8">
 	$(document).ready(function() {
-        function _wordwrap($text, $size){
-            $size = typeof $size !== 'undefined' ? $size : 10;
-            final = "";
-            var re = new RegExp(".{1,"+$size+"}","g");
-            splitted = $text.match(re);
-            for (i in splitted){
-                final += splitted[i] + "&#8203;"
-            }
-            return final;
-        }
 
 		$('#user_table').dataTable(
             {
-                "iDisplayLength": 50, 
-                "sPaginationType": "full_numbers",
-                "sDom": '<"clear">lfrtip',
-                "bAutoWidth": false,
-		        "bServerSide": true, 
+                "iDisplayLength": iDisplayLength, 
+                "sPaginationType": sPaginationType,
+                "sDom": sDom,
+                "aaSorting": aaSorting,
+                "bAutoWidth": bAutoWidth,
+		        "bServerSide": bServerSide, 
 		        "sAjaxSource": "{% url snh.views.get_yt_list harvester_id %}",
                 "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
                     $('td:eq(0)', nRow).html( '<a href="/yt_user_detail/'+{{harvester_id}}+'/fid/'+aData[0]+'">'+aData[0]+'</a>' );

@@ -6,11 +6,12 @@
 
 		var oTable3 = $('#comments_table').dataTable(
             {
-                "iDisplayLength": 10, 
-                "sPaginationType": "full_numbers",
-                "sDom": '<"clear">lfrtip',
-                "bAutoWidth": false,
-		        "bServerSide": true, 
+                "iDisplayLength": iDisplayLength, 
+                "sPaginationType": sPaginationType,
+                "sDom": sDom,
+                "aaSorting": aaSorting,
+                "bAutoWidth": bAutoWidth,
+		        "bServerSide": bServerSide, 
 		        "sAjaxSource": "{% url snh.views.get_yt_videocomment_list video.fid  %}",
                 "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
                     //from

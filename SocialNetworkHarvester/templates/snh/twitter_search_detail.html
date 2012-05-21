@@ -4,11 +4,12 @@
 	$(document).ready(function() {
 		var oTable2 = $('#search_table').dataTable(
             {
-                "iDisplayLength": 25, 
-                "sPaginationType": "full_numbers",
-                "sDom": '<"clear">lfrtip',
-                "bAutoWidth": false,
-		        "bServerSide": true, 
+                "iDisplayLength": iDisplayLength, 
+                "sPaginationType": sPaginationType,
+                "sDom": sDom,
+                "aaSorting": aaSorting,
+                "bAutoWidth": bAutoWidth,
+		        "bServerSide": bServerSide, 
 		        "sAjaxSource": "{% url snh.views.get_tw_searchdetail_list search.pmk_id  %}",
                 "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
                     $('td:eq(1)', nRow).html( '<a href="/tw_status_detail/{{ harvester_id }}/'+aData[1]+'">'+aData[1]+'</a>' );
@@ -21,12 +22,6 @@
                 ],
             });
 
-          $(window).bind('load', function () {
-            oTable2.fnAdjustColumnSizing();
-          } );
-          $(window).bind('resize', function () {
-            oTable2.fnAdjustColumnSizing();
-          } );
 	} );
 </script>
 {% endblock %}
