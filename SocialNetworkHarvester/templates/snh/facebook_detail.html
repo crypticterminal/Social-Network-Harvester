@@ -1,31 +1,8 @@
 {% extends "snh/snh_base.html" %}
 {% block extrahead %}
-<script type="text/javascript" src="https://www.google.com/jsapi"></script>
-<script type="text/javascript">
-    google.load('visualization', '1', {packages: ['annotatedtimeline']});
-    function drawVisualization() {
-  var data = new google.visualization.DataTable();
-  data.addColumn('date', 'Date');
-  data.addColumn('number', 'Post count');
-  data.addRows([{% for entry in graph %}
-    [new Date({{entry.date.year}},{{entry.date.month}}-1 ,{{entry.date.day}}), {{entry.val1}}],
-    {% endfor %}
-    ]
-   );
-
-  var annotatedtimeline = new google.visualization.AnnotatedTimeLine(
-      document.getElementById('chart_div'));
-  annotatedtimeline.draw(data, {'displayAnnotations': false});
-}
-    google.setOnLoadCallback(drawVisualization);
-</script>
 <script type="text/javascript" charset="utf-8">
     var postfunc = function( nRow, aData, iDisplayIndex ) {
         
-        //created_time
-        //($('td:eq(0)', nRow).html() == "None") ? post_time = "UP " + aData[0] : post_time = aData[0];
-        //$('td:eq(0)', nRow).html( post_time );
-
         //fb_post_detail
         $('td:eq(1)', nRow).html( '<a href="/fb_post_detail/{{ harvester_id }}/'+aData[1]+'">'+_wordwrap(aData[1])+'</a>' );
 
@@ -34,28 +11,22 @@
         $('td:eq(2)', nRow).html(  '<a href="/fb_user_detail/{{ harvester_id }}/fid/'+aData[16]+'">'+_wordwrap(from)+'</a>' );
 
         //name
-        //$('td:eq(3)', nRow).html( _wordwrap(aData[3]) );
+        $('td:eq(3)', nRow).html( _wordwrap(aData[3]) );
 
         //description
-        //$('td:eq(4)', nRow).html( _wordwrap(aData[4],120) );
+        $('td:eq(4)', nRow).html( _wordwrap(aData[4],120) );
 
         //message
-        //($('td:eq(6)', nRow).html() == "None") ? msg = aData[14] : msg = aData[6];
-        //$('td:eq(6)', nRow).html( _wordwrap(msg) );
+        ($('td:eq(6)', nRow).html() == "None") ? msg = aData[14] : msg = aData[6];
+        $('td:eq(6)', nRow).html( _wordwrap(msg) );
 
         //longlink
-        //($('td:eq(7)', nRow).html() == "None") ? link = "" : link = '<a href="'+aData[7]+'">'+ _wordwrap(aData[7]) +'</a>';
-        //$('td:eq(7)', nRow).html( link );
+        ($('td:eq(7)', nRow).html() == "None") ? link = "" : link = '<a href="'+aData[7]+'">'+ _wordwrap(aData[7]) +'</a>';
+        $('td:eq(7)', nRow).html( link );
         
         //longlink
-        //($('td:eq(12)', nRow).html() == "None") ? app = "" : app = aData[12]
-        //$('td:eq(12)', nRow).html( app );
-
-        //for (i=0; i < 12; i++){
-        //    cont = $('td:eq('+i+')', nRow).html();
-        //    (cont == "None") ? $('td:eq('+i+')', nRow).html( "#!#" ) : content = "2";
-        //}
-
+        ($('td:eq(12)', nRow).html() == "None") ? app = "" : app = aData[12]
+        $('td:eq(12)', nRow).html( app );
     }
 
     var aoColumnDefs_cust= [ 
@@ -99,9 +70,7 @@
                 "oTableTools": {
                   "aButtons": [ {
                     "sExtends": "download",
-                    "sButtonText": "Download CSV",
-                    "sUrl": "{% url snh.views.get_fb_post_list 'csv' user.username %}",
-                    "sSwfPath": "/static/swf/copy_cvs_xls_pdf.swf"
+                    "sUrl": "{% url snh.views.get_fb_post_list 'csv' user.fid %}",
                   } ]
                 },
             });
@@ -113,17 +82,15 @@
                 "sDom": sDom,
                 "aaSorting": aaSorting,
                 "bAutoWidth": bAutoWidth,
-		        //"bServerSide": bServerSide, 
-		        //"sAjaxSource": "{% url snh.views.get_fb_otherpost_list user.fid  %}",
+		        "bServerSide": bServerSide, 
+		        "sAjaxSource": "{% url snh.views.get_fb_otherpost_list 'web' user.fid  %}",
                 "aoColumnDefs": aoColumnDefs_cust,
 		        "aoColumns": aoColumns,
                 "fnRowCallback": postfunc,
                 "oTableTools": {
                   "aButtons": [ {
                     "sExtends": "download",
-                    "sButtonText": "Download CSV",
-                    "sUrl": "/generate_csv.php",
-                    "sSwfPath": "/static/swf/copy_cvs_xls_pdf.swf"
+                    "sUrl": "{% url snh.views.get_fb_otherpost_list 'csv' user.fid  %}",
                   } ]
                 },
             });
@@ -135,9 +102,9 @@
                 "sDom": sDom,
                 "aaSorting": aaSorting,
                 "bAutoWidth": bAutoWidth,
-		        //"bServerSide": bServerSide, 
+		        "bServerSide": bServerSide, 
+		        "sAjaxSource": "{% url snh.views.get_fb_comment_list 'web' user.fid  %}",
                 "aoColumnDefs": aoColumnDefs,
-		        //"sAjaxSource": "{% url snh.views.get_fb_comment_list user.fid  %}",
                 "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
                     //from
                     ($('td:eq(1)', nRow).html() == "None") ? from = aData[8] : from = aData[1];
@@ -163,11 +130,10 @@
                 "oTableTools": {
                   "aButtons": [ {
                     "sExtends": "download",
-                    "sButtonText": "Download CSV",
-                    "sUrl": "/generate_csv.php",
-                    "sSwfPath": "/static/swf/copy_cvs_xls_pdf.swf"
+                    "sUrl": "{% url snh.views.get_fb_comment_list 'csv' user.fid  %}",
                   } ]
                 },
+
             });
 	} );
 </script>
@@ -184,7 +150,6 @@
 {% endblock %}
 
 {% block content %}
-<div  id='chart_div' style='margin:0 auto; width: 1024px; height: 240px;'></div>
 <h3>{{ user.name }} </h3>
 <table id="user_table" class="pretty">
     <thead>

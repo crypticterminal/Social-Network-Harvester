@@ -1,6 +1,6 @@
 var iDisplayLength = 10 
 var sPaginationType = "full_numbers";
-var sDom = 'p<"clear">lfrtip';
+var sDom = 'Tp<"clear">lfrtip';
 var aaSorting = [[ 0, "desc" ]];
 var bAutoWidth = false
 var bServerSide = true; 
@@ -47,7 +47,10 @@ TableTools.BUTTONS.download = {
      },
     "fnSelect": null,
     "fnComplete": null,
-    "fnInit": null
+    "fnInit": null,
+    "sButtonText": "CSV",
+    "sSwfPath": "/static/swf/copy_cvs_xls_pdf.swf",
+
 };
 
 

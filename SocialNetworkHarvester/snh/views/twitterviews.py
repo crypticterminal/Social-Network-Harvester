@@ -69,7 +69,7 @@ def tw_status_detail(request, harvester_id, status_id):
 # TWITTER AJAX
 #
 @login_required(login_url=u'/login/')
-def get_tw_list(request, harvester_id):
+def get_tw_list(request, call_type, harvester_id):
     querySet = None
 
     if harvester_id == "0":
@@ -89,10 +89,10 @@ def get_tw_list(request, harvester_id):
                             6 : u'listed_count',
                             }
     #call to generic function from utils
-    return get_datatables_records(request, querySet, columnIndexNameMap)
+    return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 
 @login_required(login_url=u'/login/')
-def get_twsearch_list(request, harvester_id):
+def get_twsearch_list(request, call_type, harvester_id):
     querySet = None
 
     if harvester_id == "0":
@@ -107,10 +107,10 @@ def get_twsearch_list(request, harvester_id):
                             1 : u'term',
                             }
     #call to generic function from utils
-    return get_datatables_records(request, querySet, columnIndexNameMap)
+    return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 
 @login_required(login_url=u'/login/')
-def get_tw_status_list(request, screen_name):
+def get_tw_status_list(request, call_type, screen_name):
     querySet = None
     #columnIndexNameMap is required for correct sorting behavior
     columnIndexNameMap = {
@@ -128,10 +128,10 @@ def get_tw_status_list(request, screen_name):
         pass
 
     #call to generic function from utils
-    return get_datatables_records(request, querySet, columnIndexNameMap)
+    return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 
 @login_required(login_url=u'/login/')
-def get_tw_statussearch_list(request, screen_name):
+def get_tw_statussearch_list(request, call_type, screen_name):
     querySet = None
     #columnIndexNameMap is required for correct sorting behavior
     columnIndexNameMap = {
@@ -139,22 +139,19 @@ def get_tw_statussearch_list(request, screen_name):
                             1 : u'fid',
                             2 : u'user__screen_name',
                             3 : u'text',
-                            #4 : u'retweet_count',
-                            #5 : u'retweeted',
-                            #6 : u'source',
                             4 : u'source',
                             }
     try:
         search = TWSearch.objects.get(term__exact="@%s" % screen_name)
-        querySet = search.status_list.all()#.values(*columnIndexNameMap.values())
+        querySet = search.status_list.all()
     except ObjectDoesNotExist:
         pass
 
     #call to generic function from utils
-    return get_datatables_records(request, querySet, columnIndexNameMap)
+    return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 
 @login_required(login_url=u'/login/')
-def get_tw_searchdetail_list(request, search_id):
+def get_tw_searchdetail_list(request, call_type, search_id):
     querySet = None
     #columnIndexNameMap is required for correct sorting behavior
     columnIndexNameMap = {
@@ -162,18 +159,15 @@ def get_tw_searchdetail_list(request, search_id):
                             1 : u'fid',
                             2 : u'user__screen_name',
                             3 : u'text',
-                            #4 : u'retweet_count',
-                            #5 : u'retweeted',
-                            #6 : u'source',
                             4 : u'source',
                             }
     try:
         search = TWSearch.objects.get(pmk_id=search_id)
-        querySet = search.status_list.all()#.values(*columnIndexNameMap.values())
+        querySet = search.status_list.all()
     except ObjectDoesNotExist:
         pass
 
     #call to generic function from utils
-    return get_datatables_records(request, querySet, columnIndexNameMap)
+    return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 
 

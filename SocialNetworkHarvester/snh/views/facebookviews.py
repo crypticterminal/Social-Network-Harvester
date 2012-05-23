@@ -102,7 +102,7 @@ def fb_post_detail(request, harvester_id, post_id):
 # Facebook AJAX
 #
 @login_required(login_url=u'/login/')
-def get_fb_list(request, harvester_id):
+def get_fb_list(request, call_type, harvester_id):
     querySet = None
 
     if harvester_id == "0":
@@ -124,7 +124,7 @@ def get_fb_list(request, harvester_id):
                             8 : u'talking_about_count',
                             }
     #call to generic function from utils
-    return get_datatables_records(request, querySet, columnIndexNameMap)
+    return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 
 @login_required(login_url=u'/login/')
 def get_fb_post_list(request, call_type, userfid):
@@ -159,7 +159,7 @@ def get_fb_post_list(request, call_type, userfid):
     return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 
 @login_required(login_url=u'/login/')
-def get_fb_otherpost_list(request, userfid):
+def get_fb_otherpost_list(request, call_type, userfid):
     querySet = None
     #columnIndexNameMap is required for correct sorting behavior
 
@@ -188,10 +188,10 @@ def get_fb_otherpost_list(request, userfid):
     except ObjectDoesNotExist:
         pass
     #call to generic function from utils
-    return get_datatables_records(request, querySet, columnIndexNameMap)
+    return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 
 @login_required(login_url=u'/login/')
-def get_fb_comment_list(request, userfid):
+def get_fb_comment_list(request, call_type, userfid):
     querySet = None
     #columnIndexNameMap is required for correct sorting behavior
 
@@ -214,10 +214,10 @@ def get_fb_comment_list(request, userfid):
     except ObjectDoesNotExist:
         pass
     #call to generic function from utils
-    return get_datatables_records(request, querySet, columnIndexNameMap)
+    return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 
 @login_required(login_url=u'/login/')
-def get_fb_postcomment_list(request, postfid):
+def get_fb_postcomment_list(request, call_type, postfid):
     querySet = None
     #columnIndexNameMap is required for correct sorting behavior
 
@@ -238,10 +238,10 @@ def get_fb_postcomment_list(request, postfid):
     except ObjectDoesNotExist:
         pass
     #call to generic function from utils
-    return get_datatables_records(request, querySet, columnIndexNameMap)
+    return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 
 @login_required(login_url=u'/login/')
-def get_fb_likes_list(request, postfid):
+def get_fb_likes_list(request, call_type, postfid):
     querySet = None
     #columnIndexNameMap is required for correct sorting behavior
 
@@ -255,5 +255,5 @@ def get_fb_likes_list(request, postfid):
     except ObjectDoesNotExist:
         pass
     #call to generic function from utils
-    return get_datatables_records(request, querySet, columnIndexNameMap)
+    return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 

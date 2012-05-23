@@ -2,13 +2,6 @@
 {% block extrahead %}
 <script type="text/javascript" charset="utf-8">
 	$(document).ready(function() {
-        var iDisplayLength = 10 
-        var sPaginationType = "full_numbers";
-        var sDom = 'p<"clear">lfrtip';
-        var aaSorting = [[ 0, "desc" ]];
-        var bAutoWidth = false
-        var bServerSide = true; 
-
 		var oTable1 = $('#comments_table').dataTable(
             {
                 "iDisplayLength": iDisplayLength, 
@@ -17,7 +10,7 @@
                 "aaSorting": aaSorting,
                 "bAutoWidth": bAutoWidth,
 		        "bServerSide": bServerSide, 
-		        "sAjaxSource": "{% url snh.views.get_fb_postcomment_list post.fid  %}",
+		        "sAjaxSource": "{% url snh.views.get_fb_postcomment_list 'web' post.fid  %}",
                 "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
                     //from
                     ($('td:eq(1)', nRow).html() == "None") ? from = aData[6] : from = aData[1];
@@ -41,7 +34,12 @@
                         "bSearchable": false, "aTargets": [ 0 ],
                     }
                 ],
-
+                "oTableTools": {
+                  "aButtons": [ {
+                    "sExtends": "download",
+                    "sUrl": "{% url snh.views.get_fb_postcomment_list 'csv' post.fid  %}",
+                  } ]
+                },
             });
 
 		var oTable2 = $('#likes_table').dataTable(
@@ -52,7 +50,7 @@
                 "aaSorting": aaSorting,
                 "bAutoWidth": bAutoWidth,
 		        "bServerSide": bServerSide, 
-		        "sAjaxSource": "{% url snh.views.get_fb_likes_list post.fid  %}",
+		        "sAjaxSource": "{% url snh.views.get_fb_likes_list 'web' post.fid  %}",
                 "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
                     //fid
                     $('td:eq(0)', nRow).html(  '<a href="/fb_user_detail/{{ harvester_id }}/fid/'+aData[0]+'">'+aData[0]+'</a>' );
@@ -63,6 +61,13 @@
                     { "bVisible":    true },    //0 : u'fid',
                     { "bVisible":    true },    //1 : u'username',
                 ],
+                "oTableTools": {
+                  "aButtons": [ {
+                    "sExtends": "download",
+                    "sUrl": "{% url snh.views.get_fb_likes_list 'csv' post.fid  %}",
+                  } ]
+                },
+
             });
 
           $(window).bind('load', function () {
