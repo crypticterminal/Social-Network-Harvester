@@ -68,6 +68,16 @@ def get_datatables_records(request, querySet, columnIndexNameMap, call_type='web
     keys.sort()
     colitems = [columnIndexNameMap[key] for key in keys]
     sColumns = ",".join(map(unicode,colitems))
+
+    if querySet is None:
+        response_dict = {}
+        response_dict.update({'aaData':[]})
+        response_dict.update({'sEcho': int(request.GET.get('sEcho',0)), 'iTotalRecords': 0, 'iTotalDisplayRecords':0, 'sColumns':sColumns})
+        response =  HttpResponse(simplejson.dumps(response_dict), mimetype='application/javascript')
+        #prevent from caching datatables result
+        add_never_cache_headers(response)
+        return response
+
     
     # Ordering data
     iSortingCols =  int(request.GET.get('iSortingCols',0))

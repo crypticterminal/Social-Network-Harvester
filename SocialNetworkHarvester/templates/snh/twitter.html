@@ -12,6 +12,7 @@
 		        "bServerSide": bServerSide, 
 		        "sAjaxSource": "{% url snh.views.get_tw_list harvester_id %}",
                 "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
+                    $('td:eq(0)', nRow).html( '<a href="/tw_user_detail/'+{{harvester_id}}+'/'+aData[1]+'">'+aData[0]+'</a>' );
                     $('td:eq(1)', nRow).html( '<a href="/tw_user_detail/'+{{harvester_id}}+'/'+aData[1]+'">'+aData[1]+'</a>' );
                 },
             });
@@ -85,4 +86,5 @@
     <tbody>
     </tbody>
 </table>
+
 {% endblock %}
