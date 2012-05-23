@@ -306,7 +306,7 @@ def update_user_feed_from_batch(harvester, snhuser, fbfeed_page):
                 except ObjectDoesNotExist:
                     pass
                 
-                if feed["type"] == "link":
+                if "link" in feed:
                     if feed["link"].startswith("https://www.facebook.com/notes") or feed["link"].startswith("http://www.facebook.com/notes"):
                         spliturl = feed["link"].split("/")
                         lid = spliturl[len(spliturl)-1]
