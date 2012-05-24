@@ -188,6 +188,10 @@ INSTALLED_APPS = (
     # 'django.contrib.admindocs',
 )
 
+GRAPPELLI_ADMIN_TITLE = "<a href='/admin'>SNH Admin</a> | <a href='/'>Consultation</a> | <a href='/test_fb_token'>Test Facebook token</a>"
+
+LOGIN_REDIRECT_URL = "/"
+
 TEMPLATE_CONTEXT_PROCESSORS = (
     "django.contrib.auth.context_processors.auth",
     "django.core.context_processors.request",
@@ -198,8 +202,6 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 GRAPPELLI_INDEX_DASHBOARD = {
     'django.contrib.admin.site': 'snh.dashboard.CustomIndexDashboard',
 }
-
-LOGIN_REDIRECT_URL = "/"
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
