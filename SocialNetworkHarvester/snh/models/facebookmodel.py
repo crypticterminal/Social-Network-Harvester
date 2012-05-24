@@ -72,6 +72,9 @@ class FBUser(models.Model):
 
     def __unicode__(self):
         return unicode(self.username)
+
+    def related_label(self):
+        return u"%s (%s)" % (self.username, self.pmk_id)
    
     pmk_id =  models.AutoField(primary_key=True)
 

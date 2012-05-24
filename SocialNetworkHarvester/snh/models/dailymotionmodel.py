@@ -152,6 +152,9 @@ class DMUser(models.Model):
     def __unicode__(self):
         return self.username
 
+    def related_label(self):
+        return u"%s (%s)" % (self.username, self.pmk_id)
+
     pmk_id =  models.AutoField(primary_key=True)
 
     fid = models.CharField(max_length=255, null=True)
