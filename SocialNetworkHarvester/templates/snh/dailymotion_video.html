@@ -12,7 +12,7 @@
                 "aaSorting": aaSorting,
                 "bAutoWidth": bAutoWidth,
 		        "bServerSide": bServerSide, 
-		        "sAjaxSource": "{% url snh.views.get_dm_videocomment_list video.fid  %}",
+		        "sAjaxSource": "{% url snh.views.get_dm_videocomment_list 'web' video.fid  %}",
                 "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
                     //from
                     ($('td:eq(1)', nRow).html() == "None") ? from = aData[8] : from = aData[1];
@@ -37,7 +37,12 @@
                         "bSearchable": false, "aTargets": [ 0 ],
                     }
                 ],
-
+                "oTableTools": {
+                  "aButtons": [ {
+                    "sExtends": "download",
+                    "sUrl": "{% url snh.views.get_dm_videocomment_list 'csv' video.fid  %}",
+                  } ]
+                },
             });
     });
 </script>

@@ -11,7 +11,7 @@
                 "aaSorting": aaSorting,
                 "bAutoWidth": bAutoWidth,
 		        "bServerSide": bServerSide, 
-		        "sAjaxSource": "{% url snh.views.get_yt_list harvester_id %}",
+		        "sAjaxSource": "{% url snh.views.get_yt_list 'web' harvester_id %}",
                 "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
                     $('td:eq(0)', nRow).html( '<a href="/yt_user_detail/'+{{harvester_id}}+'/fid/'+aData[0]+'">'+aData[0]+'</a>' );
                     $('td:eq(1)', nRow).html( '<a href="/yt_user_detail/'+{{harvester_id}}+'/fid/'+aData[0]+'">'+aData[1]+'</a>' );
@@ -35,6 +35,12 @@
                             //11 : u'subscriber_count',
                             //12 : u'video_watch_count',
                             //13 : u'view_count',
+                },
+                "oTableTools": {
+                  "aButtons": [ {
+                    "sExtends": "download",
+                    "sUrl": "{% url snh.views.get_yt_list 'csv' harvester_id %}",
+                  } ]
                 },
             });
 	} );

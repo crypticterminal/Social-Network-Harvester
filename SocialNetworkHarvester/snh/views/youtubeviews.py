@@ -66,7 +66,7 @@ def yt_video_detail(request, harvester_id, videoid):
 # Youtube AJAX
 #
 @login_required(login_url=u'/login/')
-def get_yt_list(request, harvester_id):
+def get_yt_list(request, call_type, harvester_id):
     querySet = None
 
     if harvester_id == "0":
@@ -93,10 +93,10 @@ def get_yt_list(request, harvester_id):
                             13 : u'view_count',
                             }
     #call to generic function from utils
-    return get_datatables_records(request, querySet, columnIndexNameMap)
+    return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 
 @login_required(login_url=u'/login/')
-def get_yt_video_list(request, userfid):
+def get_yt_video_list(request, call_type, userfid):
     querySet = None
     #columnIndexNameMap is required for correct sorting behavior
 
@@ -116,10 +116,10 @@ def get_yt_video_list(request, userfid):
     except ObjectDoesNotExist:
         pass
     #call to generic function from utils
-    return get_datatables_records(request, querySet, columnIndexNameMap)
+    return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 
 @login_required(login_url=u'/login/')
-def get_yt_comment_list(request, userfid):
+def get_yt_comment_list(request, call_type, userfid):
     querySet = None
     #columnIndexNameMap is required for correct sorting behavior
 
@@ -138,10 +138,10 @@ def get_yt_comment_list(request, userfid):
     except ObjectDoesNotExist:
         pass
     #call to generic function from utils
-    return get_datatables_records(request, querySet, columnIndexNameMap)
+    return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 
 @login_required(login_url=u'/login/')
-def get_yt_videocomment_list(request, videofid):
+def get_yt_videocomment_list(request, call_type, videofid):
     querySet = None
     #columnIndexNameMap is required for correct sorting behavior
     columnIndexNameMap = {
@@ -159,5 +159,5 @@ def get_yt_videocomment_list(request, videofid):
     except ObjectDoesNotExist:
         pass
     #call to generic function from utils
-    return get_datatables_records(request, querySet, columnIndexNameMap)
+    return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 

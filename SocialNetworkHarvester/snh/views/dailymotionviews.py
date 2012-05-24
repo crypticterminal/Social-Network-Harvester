@@ -66,7 +66,7 @@ def dm_video_detail(request, harvester_id, videoid):
 # DailyMotion AJAX
 #
 @login_required(login_url=u'/login/')
-def get_dm_list(request, harvester_id):
+def get_dm_list(request, call_type, harvester_id):
     querySet = None
 
     if harvester_id == "0":
@@ -92,10 +92,10 @@ def get_dm_list(request, harvester_id):
 
                             }
     #call to generic function from utils
-    return get_datatables_records(request, querySet, columnIndexNameMap)
+    return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 
 @login_required(login_url=u'/login/')
-def get_dm_video_list(request, userfid):
+def get_dm_video_list(request, call_type, userfid):
     querySet = None
     #columnIndexNameMap is required for correct sorting behavior
 
@@ -120,10 +120,10 @@ def get_dm_video_list(request, userfid):
     except ObjectDoesNotExist:
         pass
     #call to generic function from utils
-    return get_datatables_records(request, querySet, columnIndexNameMap)
+    return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 
 @login_required(login_url=u'/login/')
-def get_dm_comment_list(request, userfid):
+def get_dm_comment_list(request, call_type, userfid):
     querySet = None
     #columnIndexNameMap is required for correct sorting behavior
     columnIndexNameMap = {
@@ -142,10 +142,10 @@ def get_dm_comment_list(request, userfid):
     except ObjectDoesNotExist:
         pass
     #call to generic function from utils
-    return get_datatables_records(request, querySet, columnIndexNameMap)
+    return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 
 @login_required(login_url=u'/login/')
-def get_dm_videocomment_list(request, videofid):
+def get_dm_videocomment_list(request, call_type, videofid):
     querySet = None
     #columnIndexNameMap is required for correct sorting behavior
     columnIndexNameMap = {
@@ -164,11 +164,11 @@ def get_dm_videocomment_list(request, videofid):
     except ObjectDoesNotExist:
         pass
     #call to generic function from utils
-    return get_datatables_records(request, querySet, columnIndexNameMap)
+    return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 
 
 @login_required(login_url=u'/login/')
-def get_dm_fans_list(request, userfid):
+def get_dm_fans_list(request, call_type, userfid):
     querySet = None
     #columnIndexNameMap is required for correct sorting behavior
 
@@ -191,10 +191,10 @@ def get_dm_fans_list(request, userfid):
     except ObjectDoesNotExist:
         pass
     #call to generic function from utils
-    return get_datatables_records(request, querySet, columnIndexNameMap)
+    return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 
 @login_required(login_url=u'/login/')
-def get_dm_friends_list(request, userfid):
+def get_dm_friends_list(request, call_type, userfid):
     querySet = None
     #columnIndexNameMap is required for correct sorting behavior
 
@@ -217,10 +217,10 @@ def get_dm_friends_list(request, userfid):
     except ObjectDoesNotExist:
         pass
     #call to generic function from utils
-    return get_datatables_records(request, querySet, columnIndexNameMap)
+    return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 
 @login_required(login_url=u'/login/')
-def get_dm_following_list(request, userfid):
+def get_dm_following_list(request, call_type, userfid):
     querySet = None
     #columnIndexNameMap is required for correct sorting behavior
 
@@ -243,7 +243,7 @@ def get_dm_following_list(request, userfid):
     except ObjectDoesNotExist:
         pass
     #call to generic function from utils
-    return get_datatables_records(request, querySet, columnIndexNameMap)
+    return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 
 ### OLD VIEWS
 

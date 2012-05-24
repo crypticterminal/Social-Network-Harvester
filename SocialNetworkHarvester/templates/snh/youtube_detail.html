@@ -16,7 +16,7 @@
                 "aaSorting": aaSorting,
                 "bAutoWidth": bAutoWidth,
 		        "bServerSide": bServerSide, 
-		        "sAjaxSource": "{% url snh.views.get_yt_video_list user.fid  %}",
+		        "sAjaxSource": "{% url snh.views.get_yt_video_list 'web' user.fid  %}",
                 "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
                     $('td:eq(1)', nRow).html( '<a href="/yt_video_detail/'+{{harvester_id}}+'/'+aData[1]+'">'+aData[1]+'</a>' );
                 },
@@ -31,6 +31,13 @@
                     { "bVisible":    true },//7: u'favorite_count',
                 ],
                 "aoColumnDefs":aoColumnDefs,
+                "oTableTools": {
+                  "aButtons": [ {
+                    "sExtends": "download",
+                    "sUrl": "{% url snh.views.get_yt_video_list 'csv' user.fid  %}",
+                  } ]
+                },
+
             });
 
 		var oTable3 = $('#comments_table').dataTable(
@@ -41,7 +48,7 @@
                 "aaSorting": aaSorting,
                 "bAutoWidth": bAutoWidth,
 		        "bServerSide": bServerSide, 
-		        "sAjaxSource": "{% url snh.views.get_yt_comment_list user.fid  %}",
+		        "sAjaxSource": "{% url snh.views.get_yt_comment_list 'web' user.fid  %}",
                 "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
                     //from
                     ($('td:eq(1)', nRow).html() == "None") ? from = aData[8] : from = aData[1];
@@ -65,7 +72,12 @@
                         "bSearchable": false, "aTargets": [ 0 ],
                     }
                 ],
-
+                "oTableTools": {
+                  "aButtons": [ {
+                    "sExtends": "download",
+                    "sUrl": "{% url snh.views.get_yt_comment_list 'csv' user.fid  %}",
+                  } ]
+                },
             });
 	} );
 </script>
