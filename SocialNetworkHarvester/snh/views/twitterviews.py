@@ -7,6 +7,10 @@ from django.core.exceptions import ObjectDoesNotExist
 from django import template
 from django.template.defaultfilters import stringfilter
 
+import gviz_api
+import datetime as dt
+from django.http import HttpResponse
+
 from snh.models.twittermodel import *
 from snh.models.facebookmodel import *
 from snh.models.youtubemodel import *
@@ -170,4 +174,67 @@ def get_tw_searchdetail_list(request, call_type, search_id):
     #call to generic function from utils
     return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 
+@login_required(login_url=u'/login/')
+def get_status_chart(request, harvester_id, screen_name):
+
+    user = get_list_or_404(TWUser, screen_name=screen_name)[0]
+    count = TWStatus.objects.filter(user=user).count()
+
+    if harvester_id == "0":
+        fromto = TWStatus.objects.filter(user=user).order_by(u"created_at")
+        base = fromto[0].created_at
+        to = fromto[count-1].created_at
+    else:
+        harvester = FacebookHarvester.objects.get(pmk_id__exact=harvester_id)
+        base = harvester.harvest_window_from.date()
+        to = harvester.harvest_window_to.date()
+
+    days = (to - base).days
+    dateList = [ base + dt.timedelta(days=x) for x in range(0,days) ]
+    description = {"date_val": ("date", "Date"),
+                   "status_count": ("number", "Status count"),
+                  }
+    data = []
+    for date in dateList:
+        c = TWStatus.objects.filter(user=user).filter(created_at__year=date.year,created_at__month=date.month,created_at__day=date.day).count()
+        data.append({"date_val":date, "status_count":c})
+
+    data_table = gviz_api.DataTable(description)
+    data_table.LoadData(data)
+    logger.debug(data_table.ToJSon())
+
+    response =  HttpResponse(data_table.ToJSon(), mimetype='application/javascript')
+    return response
+
+@login_required(login_url=u'/login/')
+def get_at_chart(request, harvester_id, screen_name):
+
+    search = TWSearch.objects.get(term__exact="@%s" % screen_name)
+    count = search.status_list.all().count()
+
+    if harvester_id == "0":
+        fromto = search.status_list.all().order_by(u"created_at")
+        base = fromto[0].created_at
+        to = fromto[count-1].created_at
+    else:
+        harvester = FacebookHarvester.objects.get(pmk_id__exact=harvester_id)
+        base = harvester.harvest_window_from.date()
+        to = harvester.harvest_window_to.date()
+
+    days = (to - base).days
+    dateList = [ base + dt.timedelta(days=x) for x in range(0,days) ]
+    description = {"date_val": ("date", "Date"),
+                   "status_count": ("number", "Status count"),
+                  }
+    data = []
+    for date in dateList:
+        c = search.status_list.all().filter(created_at__year=date.year,created_at__month=date.month,created_at__day=date.day).count()
+        data.append({"date_val":date, "status_count":c})
+
+    data_table = gviz_api.DataTable(description)
+    data_table.LoadData(data)
+    logger.debug(data_table.ToJSon())
+
+    response =  HttpResponse(data_table.ToJSon(), mimetype='application/javascript')
+    return response
 

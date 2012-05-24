@@ -19,6 +19,9 @@ urlpatterns = patterns('snh.views',
     (r'^get_tw_statussearch_list/(?P<call_type>[\w\.]+)/(?P<screen_name>\w+)/$', 'get_tw_statussearch_list'),
     (r'^get_tw_searchdetail_list/(?P<call_type>[\w\.]+)/(?P<search_id>\d+)/$', 'get_tw_searchdetail_list'),
 
+    (r'^get_status_chart/(?P<harvester_id>\d+)/(?P<screen_name>\w+)/$', 'get_status_chart'),
+    (r'^get_at_chart/(?P<harvester_id>\d+)/(?P<screen_name>\w+)/$', 'get_at_chart'),
+
     #FACEBOOK
     (r'^request_fb_token$', 'request_fb_token'),
     (r'^test_fb_token$', 'test_fb_token'),
@@ -36,6 +39,8 @@ urlpatterns = patterns('snh.views',
 
     (r'^get_wall_chart/(?P<harvester_id>\d+)/(?P<userfid>[\w\.]+)/$', 'get_wall_chart'),
     (r'^get_otherwall_chart/(?P<harvester_id>\d+)/(?P<userfid>[\w\.]+)/$', 'get_otherwall_chart'),
+    (r'^get_comment_chart/(?P<harvester_id>\d+)/(?P<userfid>[\w\.]+)/$', 'get_comment_chart'),
+    (r'^get_commentpost_chart/(?P<harvester_id>\d+)/(?P<postfid>[\w\.]+)/$', 'get_commentpost_chart'),
 
     #DAILYMOTION
     (r'^dm/(?P<harvester_id>\d+)$', 'dm'),

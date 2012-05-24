@@ -105,6 +105,7 @@
 
 </table>
 <h3>Statuses</h3>
+<div  id='status_chart' style='margin:0 auto; width: 1024px; height: 240px;'></div>
 <table id="status_table" class="pretty">
     <thead>
         <tr>
@@ -121,6 +122,7 @@
 </table>
 
 <h3>Search results for @{{ user.screen_name }} </h3>
+<div  id='at_chart' style='margin:0 auto; width: 1024px; height: 240px;'></div>
 <table id="search_table" class="pretty">
     <thead>
         <tr>
@@ -134,5 +136,27 @@
     <tbody>
     </tbody>
 </table>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript">
+    function buildChart($url_to_get, $dest_tag){
+
+        var jsonData = $.ajax({
+            url: $url_to_get,
+            dataType:"json",
+            async: true,
+            success: function(html){
+                    // Succesful, load visualization API and send data      
+                    var data = new google.visualization.DataTable(html);
+                    var annotatedtimeline = new google.visualization.AnnotatedTimeLine(document.getElementById($dest_tag));
+                    annotatedtimeline.draw(data, {'displayAnnotations': false});
+                    google.setOnLoadCallback(drawData(html));                                                   
+                }
+              });
+    }
+
+    google.load('visualization', '1', {packages: ['annotatedtimeline']});
+    buildChart("{% url snh.views.get_status_chart harvester_id user.screen_name %}", 'status_chart')
+    buildChart("{% url snh.views.get_at_chart harvester_id user.screen_name %}", 'at_chart')
+</script>
 
 {% endblock %}
