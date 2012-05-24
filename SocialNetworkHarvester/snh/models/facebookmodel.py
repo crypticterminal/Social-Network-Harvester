@@ -71,10 +71,10 @@ class FBUser(models.Model):
         app_label = "snh"
 
     def __unicode__(self):
-        return unicode(self.username)
+        return unicode(self.username if self.username else self.name)
 
     def related_label(self):
-        return u"%s (%s)" % (self.username, self.pmk_id)
+        return u"%s (%s)" % (self.username if self.username else self.name, self.pmk_id)
    
     pmk_id =  models.AutoField(primary_key=True)
 
