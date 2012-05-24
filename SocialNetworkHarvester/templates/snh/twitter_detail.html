@@ -149,7 +149,6 @@
                     var data = new google.visualization.DataTable(html);
                     var annotatedtimeline = new google.visualization.AnnotatedTimeLine(document.getElementById($dest_tag));
                     annotatedtimeline.draw(data, {'displayAnnotations': false});
-                    google.setOnLoadCallback(drawData(html));                                                   
                 }
               });
     }

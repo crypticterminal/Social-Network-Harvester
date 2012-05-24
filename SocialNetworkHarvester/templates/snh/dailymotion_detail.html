@@ -197,6 +197,7 @@
 </table>
 
 <h3>{{ user.screenname }}'s video</h3>
+<div  id='dmvideo_chart' style='margin:0 auto; width: 1024px; height: 240px;'></div>
 <table id="video_table" class="pretty">
     <thead>
         <tr>
@@ -220,6 +221,7 @@
 </table>
 
 <h3>{{ user.name }} comments</h3>
+<div  id='dmcomment_chart' style='margin:0 auto; width: 1024px; height: 240px;'></div>
 <table id="comments_table" class="pretty">
     <thead>
         <tr>
@@ -297,5 +299,26 @@
     <tbody>
     </tbody>
 </table>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript">
+    function buildChart($url_to_get, $dest_tag){
+
+        var jsonData = $.ajax({
+            url: $url_to_get,
+            dataType:"json",
+            async: true,
+            success: function(html){
+                    // Succesful, load visualization API and send data      
+                    var data = new google.visualization.DataTable(html);
+                    var annotatedtimeline = new google.visualization.AnnotatedTimeLine(document.getElementById($dest_tag));
+                    annotatedtimeline.draw(data, {'displayAnnotations': false});
+                }
+              });
+    }
+
+    google.load('visualization', '1', {packages: ['annotatedtimeline']});
+    buildChart("{% url snh.views.get_dmvideo_chart harvester_id user.fid %}", 'dmvideo_chart')
+    buildChart("{% url snh.views.get_dmcomment_chart harvester_id user.fid %}", 'dmcomment_chart')
+</script>
 
 {% endblock %}

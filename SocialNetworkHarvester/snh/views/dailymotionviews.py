@@ -10,6 +10,10 @@ from django.template.defaultfilters import stringfilter
 from fandjango.decorators import facebook_authorization_required
 from fandjango.models import User as FanUser
 
+import gviz_api
+import datetime as dt
+from django.http import HttpResponse
+
 from snh.models.twittermodel import *
 from snh.models.facebookmodel import *
 from snh.models.youtubemodel import *
@@ -245,210 +249,100 @@ def get_dm_following_list(request, call_type, userfid):
     #call to generic function from utils
     return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 
-### OLD VIEWS
+@login_required(login_url=u'/login/')
+def get_dmvideo_chart(request, harvester_id, userfid):
 
-##
-## FACEBOOK
-##
-#@login_required(login_url=u'/login/')
-#def fb(request, harvester_id):
-#    facebook_harvesters = FacebookHarvester.objects.all()
-#
-#    return  render_to_response(u'snh/facebook.html',{
-#                                                    u'fb_selected':True,
-#                                                    u'all_harvesters':facebook_harvesters,
-#                                                    u'harvester_id':harvester_id,
-#                                                  })
-#
-#@login_required(login_url=u'/login/')
-#def fb_user_detail(request, harvester_id, username):
-#    facebook_harvesters = FacebookHarvester.objects.all()
-#    user = get_list_or_404(FBUser, username=username)[0]
-#    return  render_to_response(u'snh/facebook_detail.html',{
-#                                                    u'fb_selected':True,
-#                                                    u'all_harvesters':facebook_harvesters,
-#                                                    u'harvester_id':harvester_id,
-#                                                    u'user':user,
-#                                                  })
-#@login_required(login_url=u'/login/')
-#def fb_userfid_detail(request, harvester_id, userfid):
-#    facebook_harvesters = FacebookHarvester.objects.all()
-#    user = get_list_or_404(FBUser, fid=userfid)[0]
-#    return  render_to_response(u'snh/facebook_detail.html',{
-#                                                    u'fb_selected':True,
-#                                                    u'all_harvesters':facebook_harvesters,
-#                                                    u'harvester_id':harvester_id,
-#                                                    u'user':user,
-#                                                  })
-#
-#@login_required(login_url=u'/login/')
-#def fb_post_detail(request, harvester_id, post_id):
-#    facebook_harvesters = FacebookHarvester.objects.all()
-#    post = get_object_or_404(FBPost, fid=post_id)
-#    return  render_to_response(u'snh/facebook_post.html',{
-#                                                    u'fb_selected':True,
-#                                                    u'all_harvesters':facebook_harvesters,
-#                                                    u'harvester_id':harvester_id,
-#                                                    u'user':post.user,
-#                                                    u'post':post,
-#                                                  })
-#
-##
-## Facebook AJAX
-##
-#@login_required(login_url=u'/login/')
-#def get_fb_list(request, harvester_id):
-#    querySet = None
-#
-#    if harvester_id == "0":
-#        querySet = FBUser.objects.all()
-#    else:
-#        harvester = FacebookHarvester.objects.get(pmk_id__exact=harvester_id)
-#        querySet = harvester.fbusers_to_harvest.all()
-#
-#    #columnIndexNameMap is required for correct sorting behavior
-#    columnIndexNameMap = {
-#                            0 : u'fid',
-#                            1 : u'name',
-#                            2 : u'username',
-#                            3 : u'category',
-#                            4 : u'likes',
-#                            5 : u'about',
-#                            6 : u'phone',
-#                            7 : u'checkins',
-#                            8 : u'talking_about_count',
-#                            }
-#    #call to generic function from utils
-#    return get_datatables_records(request, querySet, columnIndexNameMap)
-#
-#@login_required(login_url=u'/login/')
-#def get_fb_post_list(request, username):
-#    querySet = None
-#    #columnIndexNameMap is required for correct sorting behavior
-#
-#    columnIndexNameMap = {
-#                            0 : u'created_time',
-#                            1 : u'fid',
-#                            2 : u'ffrom__username',
-#                            3 : u'name',
-#                            4 : u'description',
-#                            5 : u'caption',
-#                            6 : u'message',
-#                            7 : u'link__original_url',
-#                            8 : u'ftype',
-#                            9 : u'likes_count',
-#                            10: u'shares_count',
-#                            11: u'comments_count',
-#                            12: u'application_raw',
-#                            13: u'updated_time',
-#                            14: u'story',
-#                            15: u'ffrom__name',
-#                            16: u'ffrom__fid',
-#                            }
-#    try:
-#        user = get_list_or_404(FBUser, username=username)[0]
-#        querySet = FBPost.objects.filter(user=user)
-#    except ObjectDoesNotExist:
-#        pass
-#    #call to generic function from utils
-#    return get_datatables_records(request, querySet, columnIndexNameMap)
-#
-#@login_required(login_url=u'/login/')
-#def get_fb_otherpost_list(request, userfid):
-#    querySet = None
-#    #columnIndexNameMap is required for correct sorting behavior
-#
-#    columnIndexNameMap = {
-#                            0 : u'created_time',
-#                            1 : u'fid',
-#                            2 : u'user__username',
-#                            3 : u'name',
-#                            4 : u'description',
-#                            5 : u'caption',
-#                            6 : u'message',
-#                            7 : u'link__original_url',
-#                            8 : u'ftype',
-#                            9 : u'likes_count',
-#                            10: u'shares_count',
-#                            11: u'comments_count',
-#                            12: u'application_raw',
-#                            13: u'updated_time',
-#                            14: u'story',
-#                            15: u'user__name',
-#                            16: u'user__fid',
-#                            }
-#    try:
-#        user = get_list_or_404(FBUser, fid=userfid)[0]
-#        querySet = FBPost.objects.filter(ffrom=user).exclude(user=user).order_by(u"created_time")
-#    except ObjectDoesNotExist:
-#        pass
-#    #call to generic function from utils
-#    return get_datatables_records(request, querySet, columnIndexNameMap)
-#
-#@login_required(login_url=u'/login/')
-#def get_fb_comment_list(request, userfid):
-#    querySet = None
-#    #columnIndexNameMap is required for correct sorting behavior
-#
-#    columnIndexNameMap = {
-#                            0 : u'created_time',
-#                            1 : u'ffrom__username',
-#                            2 : u'post__ffrom__name',
-#                            3 : u'post__fid',
-#                            4 : u'message',
-#                            5 : u'likes',
-#                            6: u'user_likes',
-#                            7: u'ftype',
-#                            8: u'ffrom__name',
-#                            9: u'ffrom__fid',
-#                            10: u'post__ffrom__fid',
-#                            }
-#    try:
-#        user = get_list_or_404(FBUser, fid=userfid)[0]
-#        querySet = FBComment.objects.filter(ffrom=user)
-#    except ObjectDoesNotExist:
-#        pass
-#    #call to generic function from utils
-#    return get_datatables_records(request, querySet, columnIndexNameMap)
-#
-#@login_required(login_url=u'/login/')
-#def get_fb_postcomment_list(request, postfid):
-#    querySet = None
-#    #columnIndexNameMap is required for correct sorting behavior
-#
-#    columnIndexNameMap = {
-#                            0 : u'created_time',
-#                            1 : u'ffrom__username',
-#                            2 : u'message',
-#                            3 : u'likes',
-#                            4: u'user_likes',
-#                            5: u'ftype',
-#                            6: u'ffrom__name',
-#                            7: u'ffrom__fid',
-#                            8: u'post__fid',
-#                            }
-#    try:
-#        post = get_list_or_404(FBPost, fid=postfid)[0]
-#        querySet = FBComment.objects.filter(post=post)
-#    except ObjectDoesNotExist:
-#        pass
-#    #call to generic function from utils
-#    return get_datatables_records(request, querySet, columnIndexNameMap)
-#
-#@login_required(login_url=u'/login/')
-#def get_fb_likes_list(request, postfid):
-#    querySet = None
-#    #columnIndexNameMap is required for correct sorting behavior
-#
-#    columnIndexNameMap = {
-#                            0 : u'fid',
-#                            1 : u'name',
-#                            }
-#    try:
-#        post = get_list_or_404(FBPost, fid=postfid)[0]
-#        querySet = post.likes_from.all()
-#    except ObjectDoesNotExist:
-#        pass
-#    #call to generic function from utils
-#    return get_datatables_records(request, querySet, columnIndexNameMap)
-#
+    user = get_list_or_404(DMUser, fid=userfid)[0]
+    count = DMVideo.objects.filter(user=user).count()
+
+    if harvester_id == "0":
+        fromto = DMVideo.objects.filter(user=user).order_by(u"created_time")
+        base = fromto[0].created_time if count != 0 else dt.datetime.now()
+        to = fromto[count-1].created_time if count != 0 else dt.datetime.now()
+    else:
+        harvester = DailyMotionHarvester.objects.get(pmk_id__exact=harvester_id)
+        base = harvester.harvest_window_from.date()
+        to = harvester.harvest_window_to.date()
+
+    days = (to - base).days
+    dateList = [ base + dt.timedelta(days=x) for x in range(0,days) ]
+    description = {"date_val": ("date", "Date"),
+                   "post_count": ("number", "Post count"),
+                  }
+    data = []
+    for date in dateList:
+        c = DMVideo.objects.filter(user=user).filter(created_time__year=date.year,created_time__month=date.month,created_time__day=date.day).count()
+        data.append({"date_val":date, "post_count":c})
+
+    data_table = gviz_api.DataTable(description)
+    data_table.LoadData(data)
+    logger.debug(data_table.ToJSon())
+
+    response =  HttpResponse(data_table.ToJSon(), mimetype='application/javascript')
+    return response
+
+@login_required(login_url=u'/login/')
+def get_dmcomment_chart(request, harvester_id, userfid):
+
+    user = get_list_or_404(DMUser, fid=userfid)[0]
+    count = DMComment.objects.filter(user=user).count()
+
+    if harvester_id == "0":
+        fromto = DMComment.objects.filter(user=user).order_by(u"created_time")
+        base = fromto[0].created_time if count != 0 else dt.datetime.now()
+        to = fromto[count-1].created_time if count != 0 else dt.datetime.now()
+    else:
+        harvester = DailyMotionHarvester.objects.get(pmk_id__exact=harvester_id)
+        base = harvester.harvest_window_from.date()
+        to = harvester.harvest_window_to.date()
+
+    days = (to - base).days
+    dateList = [ base + dt.timedelta(days=x) for x in range(0,days) ]
+    description = {"date_val": ("date", "Date"),
+                   "post_count": ("number", "Post count"),
+                  }
+    data = []
+    for date in dateList:
+        c = DMComment.objects.filter(user=user).filter(created_time__year=date.year,created_time__month=date.month,created_time__day=date.day).count()
+        data.append({"date_val":date, "post_count":c})
+
+    data_table = gviz_api.DataTable(description)
+    data_table.LoadData(data)
+    logger.debug(data_table.ToJSon())
+
+    response =  HttpResponse(data_table.ToJSon(), mimetype='application/javascript')
+    return response
+
+@login_required(login_url=u'/login/')
+def get_dmvideocomment_chart(request, harvester_id, videofid):
+
+    logger.debug(videofid)
+    video = get_list_or_404(DMVideo, fid=videofid)[0]
+    count = DMComment.objects.filter(video=video).count()
+
+    if harvester_id == "0":
+        fromto = DMComment.objects.filter(video=video).order_by(u"created_time")
+        base = fromto[0].created_time if count != 0 else dt.datetime.now()
+        to = fromto[count-1].created_time if count != 0 else dt.datetime.now()
+    else:
+        harvester = DailyMotionHarvester.objects.get(pmk_id__exact=harvester_id)
+        base = harvester.harvest_window_from.date()
+        to = harvester.harvest_window_to.date()
+
+    days = (to - base).days
+    dateList = [ base + dt.timedelta(days=x) for x in range(0,days) ]
+    description = {"date_val": ("date", "Date"),
+                   "post_count": ("number", "Post count"),
+                  }
+    data = []
+    for date in dateList:
+        c = DMComment.objects.filter(video=video).filter(created_time__year=date.year,created_time__month=date.month,created_time__day=date.day).count()
+        data.append({"date_val":date, "post_count":c})
+
+    data_table = gviz_api.DataTable(description)
+    data_table.LoadData(data)
+    logger.debug(data_table.ToJSon())
+
+    response =  HttpResponse(data_table.ToJSon(), mimetype='application/javascript')
+    return response
+

@@ -258,8 +258,8 @@ def get_wall_chart(request, harvester_id, userfid):
 
     if harvester_id == "0":
         fromto = FBPost.objects.filter(user=user).order_by(u"created_time")
-        base = fromto[0].created_time
-        to = fromto[count-1].created_time
+        base = fromto[0].created_time if count != 0 else dt.datetime.now()
+        to = fromto[count-1].created_time if count != 0 else dt.datetime.now()
     else:
         harvester = FacebookHarvester.objects.get(pmk_id__exact=harvester_id)
         base = harvester.harvest_window_from.date()
@@ -290,8 +290,8 @@ def get_otherwall_chart(request, harvester_id, userfid):
 
     if harvester_id == "0":
         fromto = FBPost.objects.filter(ffrom=user).exclude(user=user).order_by(u"created_time")
-        base = fromto[0].created_time
-        to = fromto[count-1].created_time
+        base = fromto[0].created_time if count != 0 else dt.datetime.now()
+        to = fromto[count-1].created_time if count != 0 else dt.datetime.now()
     else:
         harvester = FacebookHarvester.objects.get(pmk_id__exact=harvester_id)
         base = harvester.harvest_window_from.date()
@@ -322,8 +322,8 @@ def get_comment_chart(request, harvester_id, userfid):
 
     if harvester_id == "0":
         fromto = FBComment.objects.filter(ffrom=user).order_by(u"created_time")
-        base = fromto[0].created_time
-        to = fromto[count-1].created_time
+        base = fromto[0].created_time if count != 0 else dt.datetime.now()
+        to = fromto[count-1].created_time if count != 0 else dt.datetime.now()
     else:
         harvester = FacebookHarvester.objects.get(pmk_id__exact=harvester_id)
         base = harvester.harvest_window_from.date()
@@ -354,8 +354,8 @@ def get_commentpost_chart(request, harvester_id, postfid):
 
     if harvester_id == "0":
         fromto = FBComment.objects.filter(post=post).order_by(u"created_time")
-        base = fromto[0].created_time
-        to = fromto[count-1].created_time
+        base = fromto[0].created_time if count != 0 else dt.datetime.now()
+        to = fromto[count-1].created_time if count != 0 else dt.datetime.now()
     else:
         harvester = FacebookHarvester.objects.get(pmk_id__exact=harvester_id)
         base = harvester.harvest_window_from.date()

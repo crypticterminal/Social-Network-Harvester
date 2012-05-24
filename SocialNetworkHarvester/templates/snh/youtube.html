@@ -3,6 +3,11 @@
 <script type="text/javascript" charset="utf-8">
 	$(document).ready(function() {
 
+        var aoColumnDefs = [ 
+            { 
+                "bSearchable": false, "aTargets": [ 10 ],
+            }
+        ];
 		$('#user_table').dataTable(
             {
                 "iDisplayLength": iDisplayLength, 
@@ -10,6 +15,7 @@
                 "sDom": sDom,
                 "aaSorting": aaSorting,
                 "bAutoWidth": bAutoWidth,
+                "aoColumnDefs":aoColumnDefs,
 		        "bServerSide": bServerSide, 
 		        "sAjaxSource": "{% url snh.views.get_yt_list 'web' harvester_id %}",
                 "fnRowCallback": function( nRow, aData, iDisplayIndex ) {

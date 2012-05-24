@@ -55,6 +55,10 @@ urlpatterns = patterns('snh.views',
     (r'^get_dm_comment_list/(?P<call_type>[\w\.]+)/(?P<userfid>[\w\.]+)/$', 'get_dm_comment_list'),
     (r'^get_dm_videocomment_list/(?P<call_type>[\w\.]+)/(?P<videofid>[\w\.\*]+)/$', 'get_dm_videocomment_list'),
 
+    (r'^get_dmvideo_chart/(?P<harvester_id>\d+)/(?P<userfid>[\w\.]+)/$', 'get_dmvideo_chart'),
+    (r'^get_dmcomment_chart/(?P<harvester_id>\d+)/(?P<userfid>[\w\.]+)/$', 'get_dmcomment_chart'),
+    (r'^get_dmvideocomment_chart/(?P<harvester_id>\d+)/(?P<videofid>[\w\.]+)/$', 'get_dmvideocomment_chart'),
+
     #YOUTUBE
     (r'^yt/(?P<harvester_id>\d+)$', 'yt'),
     (r'^yt_user_detail/(?P<harvester_id>\d+)/fid/(?P<userfid>.*)/$', 'yt_user_detail'),
@@ -65,6 +69,9 @@ urlpatterns = patterns('snh.views',
     (r'^get_yt_comment_list/(?P<call_type>[\w\.]+)/(?P<userfid>.*)/$', 'get_yt_comment_list'),
     (r'^get_yt_videocomment_list/(?P<call_type>[\w\.]+)/(?P<videofid>.*)/$', 'get_yt_videocomment_list'),
 
+    (r'^get_ytvideo_chart/(?P<harvester_id>\d+)/fid/(?P<userfid>.*)/$', 'get_ytvideo_chart'),
+    (r'^get_ytcomment_chart/(?P<harvester_id>\d+)/fid/(?P<userfid>.*)/$', 'get_ytcomment_chart'),
+    (r'^get_ytvideocomment_chart/(?P<harvester_id>\d+)/fid/(?P<videofid>.*)/$', 'get_ytvideocomment_chart'),
 
     #(r'^$', 'index'),
     #(r'^reset_fb_token$', 'reset_fb_token'),

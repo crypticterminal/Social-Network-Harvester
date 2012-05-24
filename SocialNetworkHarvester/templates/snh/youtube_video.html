@@ -135,6 +135,7 @@
 </script>
 </center>
 <h3>Comments</h3>
+<div  id='ytvideocomment_chart' style='margin:0 auto; width: 1024px; height: 240px;'></div>
 <table id="comments_table" class="pretty">
     <thead>
         <tr>
@@ -148,5 +149,24 @@
     <tbody>
     </tbody>
 </table>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript">
+    function buildChart($url_to_get, $dest_tag){
 
+        var jsonData = $.ajax({
+            url: $url_to_get,
+            dataType:"json",
+            async: true,
+            success: function(html){
+                    // Succesful, load visualization API and send data      
+                    var data = new google.visualization.DataTable(html);
+                    var annotatedtimeline = new google.visualization.AnnotatedTimeLine(document.getElementById($dest_tag));
+                    annotatedtimeline.draw(data, {'displayAnnotations': false});
+                }
+              });
+    }
+
+    google.load('visualization', '1', {packages: ['annotatedtimeline']});
+    buildChart("{% url snh.views.get_ytvideocomment_chart harvester_id video.fid %}", 'ytvideocomment_chart')
+</script>
 {% endblock %}

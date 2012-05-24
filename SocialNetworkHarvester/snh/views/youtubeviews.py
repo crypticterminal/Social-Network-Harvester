@@ -10,6 +10,10 @@ from django.template.defaultfilters import stringfilter
 from fandjango.decorators import facebook_authorization_required
 from fandjango.models import User as FanUser
 
+import gviz_api
+import datetime as dt
+from django.http import HttpResponse
+
 from snh.models.twittermodel import *
 from snh.models.facebookmodel import *
 from snh.models.youtubemodel import *
@@ -161,3 +165,98 @@ def get_yt_videocomment_list(request, call_type, videofid):
     #call to generic function from utils
     return get_datatables_records(request, querySet, columnIndexNameMap, call_type)
 
+@login_required(login_url=u'/login/')
+def get_ytvideo_chart(request, harvester_id, userfid):
+
+    user = get_list_or_404(YTUser, fid=userfid)[0]
+    count = YTVideo.objects.filter(user=user).count()
+
+    if harvester_id == "0":
+        fromto = YTVideo.objects.filter(user=user).order_by(u"published")
+        base = fromto[0].published if count != 0 else dt.datetime.now()
+        to = fromto[count-1].published if count != 0 else dt.datetime.now()
+    else:
+        harvester = DailyMotionHarvester.objects.get(pmk_id__exact=harvester_id)
+        base = harvester.harvest_window_from.date()
+        to = harvester.harvest_window_to.date()
+
+    days = (to - base).days
+    dateList = [ base + dt.timedelta(days=x) for x in range(0,days) ]
+    description = {"date_val": ("date", "Date"),
+                   "post_count": ("number", "Post count"),
+                  }
+    data = []
+    for date in dateList:
+        c = YTVideo.objects.filter(user=user).filter(published__year=date.year,published__month=date.month,published__day=date.day).count()
+        data.append({"date_val":date, "post_count":c})
+
+    data_table = gviz_api.DataTable(description)
+    data_table.LoadData(data)
+    logger.debug(data_table.ToJSon())
+
+    response =  HttpResponse(data_table.ToJSon(), mimetype='application/javascript')
+    return response
+
+@login_required(login_url=u'/login/')
+def get_ytcomment_chart(request, harvester_id, userfid):
+
+    user = get_list_or_404(YTUser, fid=userfid)[0]
+    count = YTComment.objects.filter(user=user).count()
+
+    if harvester_id == "0":
+        fromto = YTComment.objects.filter(user=user).order_by(u"published")
+        base = fromto[0].published if count != 0 else dt.datetime.now()
+        to = fromto[count-1].published if count != 0 else dt.datetime.now()
+    else:
+        harvester = DailyMotionHarvester.objects.get(pmk_id__exact=harvester_id)
+        base = harvester.harvest_window_from.date()
+        to = harvester.harvest_window_to.date()
+
+    days = (to - base).days
+    dateList = [ base + dt.timedelta(days=x) for x in range(0,days) ]
+    description = {"date_val": ("date", "Date"),
+                   "post_count": ("number", "Post count"),
+                  }
+    data = []
+    for date in dateList:
+        c = YTComment.objects.filter(user=user).filter(published__year=date.year,published__month=date.month,published__day=date.day).count()
+        data.append({"date_val":date, "post_count":c})
+
+    data_table = gviz_api.DataTable(description)
+    data_table.LoadData(data)
+    logger.debug(data_table.ToJSon())
+
+    response =  HttpResponse(data_table.ToJSon(), mimetype='application/javascript')
+    return response
+
+@login_required(login_url=u'/login/')
+def get_ytvideocomment_chart(request, harvester_id, videofid):
+
+    video = get_list_or_404(YTVideo, fid=videofid)[0]
+    count = YTComment.objects.filter(video=video).count()
+
+    if harvester_id == "0":
+        fromto = YTComment.objects.filter(video=video).order_by(u"published")
+        base = fromto[0].published if count != 0 else dt.datetime.now()
+        to = fromto[count-1].published if count != 0 else dt.datetime.now()
+    else:
+        harvester = DailyMotionHarvester.objects.get(pmk_id__exact=harvester_id)
+        base = harvester.harvest_window_from.date()
+        to = harvester.harvest_window_to.date()
+
+    days = (to - base).days
+    dateList = [ base + dt.timedelta(days=x) for x in range(0,days) ]
+    description = {"date_val": ("date", "Date"),
+                   "post_count": ("number", "Post count"),
+                  }
+    data = []
+    for date in dateList:
+        c = YTComment.objects.filter(video=video).filter(published__year=date.year,published__month=date.month,published__day=date.day).count()
+        data.append({"date_val":date, "post_count":c})
+
+    data_table = gviz_api.DataTable(description)
+    data_table.LoadData(data)
+    logger.debug(data_table.ToJSon())
+
+    response =  HttpResponse(data_table.ToJSon(), mimetype='application/javascript')
+    return response
