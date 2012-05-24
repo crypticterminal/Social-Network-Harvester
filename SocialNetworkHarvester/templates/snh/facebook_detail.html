@@ -1,5 +1,26 @@
 {% extends "snh/snh_base.html" %}
 {% block extrahead %}
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript">
+    function buildChart($url_to_get, $dest_tag){
+        var jsonData = $.ajax({
+              url: $url_to_get,
+              dataType:"json",
+              async: false
+              }).responseText;
+        var data = new google.visualization.DataTable(jsonData);
+        var annotatedtimeline = new google.visualization.AnnotatedTimeLine(document.getElementById($dest_tag));
+        annotatedtimeline.draw(data, {'displayAnnotations': false});
+    }
+    
+    function drawVisualization() {
+        buildChart("{% url snh.views.get_wall_chart harvester_id user.fid %}", 'wall_chart')
+        buildChart("{% url snh.views.get_otherwall_chart harvester_id user.fid %}", 'otherwall_chart')
+    }
+    google.load('visualization', '1', {packages: ['annotatedtimeline']});
+    google.setOnLoadCallback(drawVisualization);
+
+</script>
 <script type="text/javascript" charset="utf-8">
     var postfunc = function( nRow, aData, iDisplayIndex ) {
         
@@ -188,8 +209,8 @@
     </tr>
     </tbody>
 </table>
-
 <h3>{{ user.name }}'s wall</h3>
+<div  id='wall_chart' style='margin:0 auto; width: 1024px; height: 240px;'></div>
 <table id="post_table" class="pretty">
     <thead>
         <tr>
@@ -211,8 +232,8 @@
     <tbody>
     </tbody>
 </table>
-
 <h3>{{ user.name }} posts on other's wall</h3>
+<div  id='otherwall_chart' style='margin:0 auto; width: 1024px; height: 240px;'></div>
 <table id="other_post_table" class="pretty">
     <thead>
         <tr>

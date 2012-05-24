@@ -34,6 +34,9 @@ urlpatterns = patterns('snh.views',
     (r'^get_fb_postcomment_list/(?P<call_type>[\w\.]+)/(?P<postfid>[\w\.]+)/$', 'get_fb_postcomment_list'),
     (r'^get_fb_likes_list/(?P<call_type>[\w\.]+)/(?P<postfid>[\w\.]+)/$', 'get_fb_likes_list'),
 
+    (r'^get_wall_chart/(?P<harvester_id>\d+)/(?P<userfid>[\w\.]+)/$', 'get_wall_chart'),
+    (r'^get_otherwall_chart/(?P<harvester_id>\d+)/(?P<userfid>[\w\.]+)/$', 'get_otherwall_chart'),
+
     #DAILYMOTION
     (r'^dm/(?P<harvester_id>\d+)$', 'dm'),
     (r'^dm_user_detail/(?P<harvester_id>\d+)/fid/(?P<userfid>[\w\.]+)/$', 'dm_user_detail'),
