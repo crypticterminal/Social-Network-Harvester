@@ -21,6 +21,8 @@ def t2p(twitter_time):
 
 class TwitterHarvester(AbstractHaverster):
 
+    harvester_type = "Twitter"
+
     client = None
     tt_client = None
 

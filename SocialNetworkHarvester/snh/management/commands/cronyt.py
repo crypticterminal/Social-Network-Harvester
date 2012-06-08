@@ -1,7 +1,6 @@
 # coding=UTF-8
 
-#import sys
-#import os
+from tendo import singleton
 
 from django.core.management.base import BaseCommand, CommandError
 from django.core.exceptions import ObjectDoesNotExist
@@ -16,6 +15,9 @@ class Command(BaseCommand):
     #help = 'Closes the specified poll for voting'
 
     def handle(self, *args, **options):
+
+        me = singleton.SingleInstance(flavor_id="cronyt")
+
         try:
             logger.info("Will run the Youtube harvesters.")
             youtubech.run_youtube_harvester()

@@ -332,8 +332,9 @@ class FBPost(models.Model):
                             user_like.update_from_facebook(fbuser)
                         else:
                             logger.debug(u">>>>CRITICAL CANT UPDATED DUPLICATED USER %s" % fbuser["id"])
-                    user_like.update_from_facebook(fbuser)
-                    user_like.save()
+
+                user_like.update_from_facebook(fbuser)
+
                 if user_like not in self.likes_from.all():
                     self.likes_from.add(user_like)
                     model_changed = True
@@ -429,37 +430,10 @@ class FBPost(models.Model):
             self.ffrom = self_prop
             model_changed = True
 
-        #if "to" in facebook_model:
-        #    prop_val = facebook_model["to"]
-        #   
-        #    for fbuser in prop_val["data"]:
-        #        if fbuser:
-        #            touser = None
-        #            try:
-        #                touser = FBUser.objects.filter(fid=fbuser["id"])[0]
-        #            except:
-        #                pass#
-        #
-        #            if touser is None:
-        #                touser = FBUser(fid=fbuser["id"])
-        #                touser.update_from_facebook(fbuser)
-        #                touser.save()
-        #                self.to.add(touser)
-        #                model_changed = True
-        #            else:
-        #                if touser not in self.to.all():
-        #                    self.to.add(touser)
-        #                    model_changed = True     
-                #else:
-                #    print "user is none!!!",  prop_val, facebook_model
-
         if model_changed:
             self.model_update_date = datetime.utcnow()
             self.error_on_update = False
-            #logger.debug(u"FBPost exist and changed! %s" % (self.fid))
             self.save()
-        #else:
-        #    logger.debug(u">>>>>>>>>>>>>>>>>>>FBPost exist and unchanged! %s" % (self.fid))
    
         return model_changed
         
@@ -544,7 +518,6 @@ class FBComment(models.Model):
         
         for prop in date_to_check:
             fb_val = facebook_model[prop]
-            logger.debug("PROP:%s DATE: %s" % (prop, fb_val))
             date_val = datetime.strptime(fb_val,'%Y-%m-%dT%H:%M:%S+0000')
             if self.__dict__[prop] != date_val:
                 self.__dict__[prop] = date_val

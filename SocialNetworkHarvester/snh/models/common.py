@@ -10,7 +10,10 @@ class AbstractHaverster(models.Model):
         abstract = True
 
     def __unicode__(self):
-        return u"%s/%s" % (unicode(self.harvester_type),unicode(self.harvester_name))
+        return u"%s" % unicode(self.harvester_name)
+
+    def harvester_type_func():
+        return "AbstractHaverster"
 
     pmk_id = models.AutoField(primary_key=True)
 

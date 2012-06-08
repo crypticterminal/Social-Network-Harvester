@@ -17,6 +17,8 @@ logger = snhlogger.init_logger(__name__, "dailymotion.log")
 
 class DailyMotionHarvester(AbstractHaverster):
 
+    harvester_type = "DailyMotion"
+
     base = 'https://api.dailymotion.com/json'
     oauth = 'https://api.dailymotion.com/oauth/token'
 

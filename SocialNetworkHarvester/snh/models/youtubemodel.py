@@ -11,6 +11,8 @@ from snh.models.common import *
 
 class YoutubeHarvester(AbstractHaverster):
 
+    harvester_type = "Youtube"
+
     ytusers_to_harvest = models.ManyToManyField('YTUser', related_name='ytusers_to_harvest')
 
     last_harvested_user = models.ForeignKey('YTUser',  related_name='last_harvested_user', null=True)
