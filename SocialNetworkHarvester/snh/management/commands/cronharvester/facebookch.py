@@ -15,16 +15,17 @@ from snh.models.facebookmodel import *
 import snhlogger
 logger = snhlogger.init_logger(__name__, "facebook.log")
 
-E_DNEXIST = 1
-E_PATH = 2
-E_FALSE = 3
-E_UNMAN = 4
-E_UNEX = 5
-E_QUOTA = 6
-E_GRAPH = 7
-E_MAX_RETRY = 8
+E_DNEXIST = "E_DNEXIST"
+E_PATH = "E_PATH"
+E_FALSE = "E_FALSE"
+E_UNMAN = "E_UNMAN"
+E_UNEX = "E_UNEX"
+E_USER_QUOTA = "E_USER_QUOTA"
+E_QUOTA = "E_QUOTA"
+E_GRAPH = "E_GRAPH"
+E_MAX_RETRY = "E_MAX_RETRY"
 
-E_CRITICALS = [E_DNEXIST, E_PATH, E_FALSE, E_UNMAN]
+E_CRITICALS = [E_DNEXIST, E_PATH, E_FALSE, E_UNMAN, E_USER_QUOTA]
 
 def run_facebook_harvester():
     harvester_list = FacebookHarvester.objects.all()
@@ -37,7 +38,7 @@ def run_facebook_harvester():
         if harvester.is_active:
             run_harvester_v3(harvester)
 
-def gbp_error_man(bman, fbobj):
+def gbp_error_man(bman_obj, fbobj):
 
     e_code = E_UNMAN
     error = None
@@ -45,49 +46,55 @@ def gbp_error_man(bman, fbobj):
     if fbobj:
         error = unicode(fbobj).split(":")[1].strip()
     else:
-        msg = u"fobj is None!! bman:%s" % bman
+        msg = u"fbobj is None!! bman:%s" % bman_obj
         logger.error(msg)
 
     if error:
-        e_code = gbp_facepyerror_man(error)
+        e_code = gbp_facepyerror_man(error, fbobj)
 
-    bman["retry"] += 1
+    bman_obj["retry"] += 1
 
     return e_code
 
-def gbp_facepyerror_man(fex):
+def gbp_facepyerror_man(fex, src_obj=None):
 
     e_code = E_UNMAN
     if unicode(fex).startswith(u"(#803)"):
         e_code = E_DNEXIST
     elif unicode(fex).startswith("(#613)"):
         e_code = E_QUOTA
+    elif unicode(fex).startswith("(#4) User request limit reached"):
+        e_code = E_USER_QUOTA
     elif unicode(fex).startswith("GraphMethodException"):
         e_code = E_GRAPH
     elif unicode(fex).startswith("Error: An unexpected error has occurred"):
+        e_code = E_UNEX
+    elif unicode(fex).startswith("An unknown error occurred"):
         e_code = E_UNEX
     elif unicode(fex).startswith("Unknown path components"):
         e_code = E_PATH
     elif unicode(fex).startswith("false"):
         e_code = E_FALSE
-    elif unicode(fex).startswith("HTTPError: Max retries exceeded for url"):
+    elif unicode(fex).startswith("Max retries exceeded for url:"):
         e_code = E_MAX_RETRY
     else:
         e_code = E_UNMAN
 
-    msg = "e_code:%s, msg:%s" % (e_code, fex)
+    msg = "e_code:%s, msg:%s src:%s" % (e_code, fex, src_obj)
     logger.error(msg)
 
     return e_code
 
-def gbp_core(harvester, bman, error_map, next_bman_list, failed_list):
+def gbp_core(harvester, bman_chunk, error_map, next_bman_list, failed_list):
+
+    error = False
 
     try:
-        urlized_batch = [bman[j]["request"] for j in range(0, len(bman))]
+        urlized_batch = [bman_chunk[j]["request"] for j in range(0, len(bman_chunk))]
         batch_result = harvester.api_call("batch",{"requests":urlized_batch})
 
         for (counter, fbobj) in enumerate(batch_result):
-            bman_obj = bman[counter]
+            bman_obj = bman_chunk[counter]
     
             if type(fbobj) == dict:
                 next = bman_obj["callback"](harvester, bman_obj["snh_obj"], fbobj)
@@ -95,6 +102,8 @@ def gbp_core(harvester, bman, error_map, next_bman_list, failed_list):
                     next_bman_list += next
             else:
                 e_code = gbp_error_man(bman_obj, fbobj)
+                if e_code == E_UNEX:
+                    error = True
                 error_map[e_code] = error_map[e_code] + 1 if e_code in error_map else 0
 
                 if e_code in E_CRITICALS:
@@ -103,58 +112,75 @@ def gbp_core(harvester, bman, error_map, next_bman_list, failed_list):
                     next_bman_list.append(bman_obj)
 
     except FacepyError, fex:
-        e_code = gbp_facepyerror_man(fex)
+        e_code = gbp_facepyerror_man(fex, {"bman_chunk":bman_chunk})
+        if e_code == E_UNEX:
+            error = True
         error_map[e_code] = error_map[e_code] + 1 if e_code in error_map else 0
 
         if e_code in E_CRITICALS:
-            msg = u"CRITICAL gbp_core: Unmanaged FacepyError error:%s. Aborting a full bman." % (e_code)
+            msg = u"CRITICAL gbp_core: Unmanaged FacepyError error:%s. Aborting a full bman_chunk." % (e_code)
             logger.exception(msg)
-            failed_list += bman
+            failed_list += bman_chunk
         else:
-            next_bman_list += bman
+            next_bman_list += bman_chunk
 
     except:
-        msg = u"CRITICAL gbp_core: Unmanaged error. Aborting a full bman."
+        error = True
+        msg = u"CRITICAL gbp_core: Unmanaged error. Aborting a full bman_chunk."
         logger.exception(msg)
-        failed_list += bman
+        failed_list += bman_chunk
+
+    return error
 
 def generic_batch_processor_v2(harvester, bman_list):
 
     error_map = {}
     next_bman_list = []
     failed_list = []
-    step_size = 50 #full throttle!
+    max_step_size = 50
+    step_size = max_step_size #full throttle!
+    fail_ratio = 0.15
+    step_factor = 1.66
     lap_start = time.time()
+    bman_total = 1
+    error_sum = 0
 
     while bman_list:
         usage = resource.getrusage(resource.RUSAGE_SELF)
         logger.info(u"New batch. Size:%d for %s Mem:%s MB" % (len(bman_list), harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
 
-        if E_UNEX in error_map:
-            step_size = step_size / 2 if step_size > 1 else 1
-            error_map[E_UNEX] = None
+        if (E_UNEX in error_map and error_map[E_UNEX] / float(bman_total) > fail_ratio) or error_sum > 4:
+            step_size = int(step_size / step_factor) if int(step_size / step_factor) > 1 else 1
+            del error_map[E_UNEX]
         else:
-            step_size = step_size * 2 if step_size * 2 < 50 else 50
+            step_size = step_size * 2 if step_size * 2 < max_step_size else max_step_size
 
         split_bman = [bman_list[i:i+step_size] for i  in range(0, len(bman_list), step_size)]
         bman_total = len(split_bman)
 
-        for (counter, bman) in enumerate(split_bman,1):
-            usage = resource.getrusage(resource.RUSAGE_SELF)
-            logger.info(u"New bman(%d/%d) len:%s InQueue:%d Mem:%s KB" % (counter, bman_total, len(bman), len(next_bman_list), getattr(usage, "ru_maxrss")/(1024.0)))
+        for (counter, bman_chunk) in enumerate(split_bman,1):
             
-            if E_QUOTA in error_map:
-                logger.info("Quota error, waiting for 10 minutes")
-                error_map[E_QUOTA] = None
-                time.sleep(10*60)
-            
-            if (time.time() - lap_start) < 1:
-                logger.info(u"Speed too fast. will wait 1 sec")
-                time.sleep(1)
+            if not(E_UNEX in error_map and error_map[E_UNEX] / float(bman_total) > fail_ratio):
+                actual_fail_ratio = error_map[E_UNEX] / float(bman_total) if E_UNEX in error_map else 0
+                usage = resource.getrusage(resource.RUSAGE_SELF)
+                logger.info(u"bman_chunk (%d/%d) chunk_total:%s InQueue:%d fail_ratio:%s > %s Mem:%s KB" % (counter, bman_total, len(bman_chunk), len(next_bman_list), actual_fail_ratio, fail_ratio, getattr(usage, "ru_maxrss")/(1024.0)))
 
-            lap_start = time.time()
-            gbp_core(harvester, bman, error_map, next_bman_list, failed_list)
-            logger.info(u"gbp_core: len(next_bman_list): %s" % len(next_bman_list))
+                if E_QUOTA in error_map:
+                    logger.info("Quota error, waiting for 10 minutes")
+                    del error_map[E_QUOTA]
+                    time.sleep(10*60)
+                
+                if (time.time() - lap_start) < 1:
+                    logger.info(u"Speed too fast. will wait 1 sec")
+                    time.sleep(1)
+
+                lap_start = time.time()
+                error = gbp_core(harvester, bman_chunk, error_map, next_bman_list, failed_list)
+                error_sum = error_sum + 1 if error else 0
+                logger.info(u"gbp_core: len(next_bman_list): %s" % len(next_bman_list))
+            else:
+                logger.info("bman(%d/%d) Failed ratio too high. Retrying with smaller batch" % (counter, bman_total))
+                next_bman_list += bman_chunk
 
         bman_list = next_bman_list
         next_bman_list = []
@@ -247,13 +273,6 @@ def update_user_feed_from_batch(harvester, snhuser, fbfeed_page):
             if feed_time > harvester.harvest_window_from and \
                     feed_time < harvester.harvest_window_to:
                 lc_param = ""
-                #try:
-                #    latest_comments = FBComment.objects.filter(fid__startswith=feed["id"]).order_by("-created_time")
-                #    for comment in latest_comments:
-                #        lc_param = "&__after_id=%s" % comment.fid
-                #        break
-                #except ObjectDoesNotExist:
-                #    pass
                 
                 if "link" in feed:
                     if feed["link"].startswith("https://www.facebook.com/notes") or feed["link"].startswith("http://www.facebook.com/notes"):
@@ -268,7 +287,6 @@ def update_user_feed_from_batch(harvester, snhuser, fbfeed_page):
                         if harvester.update_likes:
                             d = {"method": "GET", "relative_url": u"%s/likes?limit=300%s" % (unicode(lid), lc_param)}
                             next_bman.append({"snh_obj":str(lid),"retry":0,"request":d, "callback":update_likes_from_batch})
-
 
                 update_user_status_from_batch(harvester, snhuser, feed)
 
@@ -288,6 +306,8 @@ def update_user_feed_from_batch(harvester, snhuser, fbfeed_page):
         if not too_old and new_page:
             d = {"method": "GET", "relative_url": u"%s/feed?limit=300&%s=%s" % (unicode(snhuser.fid), paging[0], paging[1])}
             next_bman.append({"snh_obj":snhuser, "retry":0, "request":d, "callback":update_user_feed_from_batch})
+    #else:
+    #    logger.debug(u"Empty feed!! %s" % (fbfeed_page))
 
     return next_bman
 
@@ -350,7 +370,9 @@ def update_user_comments_from_batch(harvester, statusid, fbcomments_page):
         if new_page:
             d = {"method": "GET", "relative_url": u"%s/comments?limit=300&%s" % (statusid, paging)}
             next_bman.append({"snh_obj":statusid,"retry":0,"request":d,"callback":update_user_comments_from_batch})
-        
+    #else:
+    #    logger.debug("Empty comment page!! %s" % fbcomments_page)
+
     return next_bman
 
 def update_likes_from_batch(harvester, statusid, fblikes_page):
@@ -374,6 +396,8 @@ def update_likes_from_batch(harvester, statusid, fblikes_page):
         if new_page:
             d = {"method": "GET", "relative_url": u"%s/likes?limit=300&%s" % (statusid, paging)}
             next_bman.append({"snh_obj":statusid,"retry":0,"request":d,"callback":update_likes_from_batch})
+    #else:
+    #    logger.debug(u"Empty likes page!! %s" % fblikes_page)
 
     return next_bman
 
