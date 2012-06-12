@@ -359,6 +359,7 @@ def run_harvester_v2(harvester):
 def run_harvester_search(harvester):
             
     if True:
+        harvester.start_new_harvest()
         logger.info(u"START SEARCH API: %s Stats:%s" % (harvester,unicode(harvester.get_stats())))
         try:
             all_twsearch = harvester.twsearch_to_harvest.all()
@@ -367,6 +368,7 @@ def run_harvester_search(harvester):
             msg = u"ERROR for %s" % twsearch.term
             logger.exception(msg)    
         finally:
+            harvester.end_current_harvest()
             logger.info(u"End SEARCH API: %s Stats:%s" % (harvester,unicode(harvester.get_stats())))
         
     logger.info(u"End: %s Stats:%s" % (harvester,unicode(harvester.get_stats())))
