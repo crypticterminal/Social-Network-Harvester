@@ -53,9 +53,10 @@ def dm_video_detail(request, harvester_id, videoid):
     dailymotion_harvesters = DailyMotionHarvester.objects.all()
     video = get_object_or_404(DMVideo, fid=videoid)
     video_url = ""
-    path_split = video.video_file_path.split(PROJECT_PATH)
-    if video.video_file_path and len(path_split) > 1:
-        video_url = path_split[1]
+    if video.video_file_path:
+        path_split = video.video_file_path.split(PROJECT_PATH)
+        if len(path_split) > 1:
+            video_url = path_split[1]
 
     return  render_to_response(u'snh/dailymotion_video.html',{
                                                     u'dm_selected':True,

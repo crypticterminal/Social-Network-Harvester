@@ -54,9 +54,11 @@ def yt_video_detail(request, harvester_id, videoid):
     youtube_harvesters = YoutubeHarvester.objects.all()
     video = get_object_or_404(YTVideo, fid=videoid)
     video_url = ""
-    path_split = video.video_file_path.split(PROJECT_PATH)
-    if video.video_file_path and len(path_split) > 1:
-        video_url = path_split[1]
+    if video.video_file_path:
+        path_split = video.video_file_path.split(PROJECT_PATH)
+        if len(path_split) > 1:
+            video_url = path_split[1]
+
     return  render_to_response(u'snh/youtube_video.html',{
                                                     u'yt_selected':True,
                                                     u'all_harvesters':youtube_harvesters,
