@@ -79,7 +79,7 @@ def update_user(harvester, userid):
             logger.exception(msg)
     except:
         msg = u"Cannot update user %s" % (userid)
-        logger.exception(msg) 
+        logger.exception(msg)
 
     return snh_user
 
@@ -132,7 +132,7 @@ def update_comment(harvester, snhvideo, ytcomment):
         logger.exception(msg)
 
     usage = resource.getrusage(resource.RUSAGE_SELF)
-    logger.info(u"Commment updated: comid:%s vidid:%s %s Mem:%s MB" % (snhcomment.fid,snhvideo.fid, harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
+    logger.debug(u"Commment updated: comid:%s vidid:%s %s Mem:%s MB" % (snhcomment.fid,snhvideo.fid, harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
 
     return snhcomment
 
@@ -155,7 +155,6 @@ def update_all_comment(harvester,snhvideo):
     usage = resource.getrusage(resource.RUSAGE_SELF)
     logger.info(u"Comment harvest completed for this video: %s %s Mem:%s MB" % (snhvideo.fid, harvester,unicode(getattr(usage, "ru_maxrss")/(1024.0))))
 
-
 def update_all_videos(harvester):
 
     all_users = harvester.ytusers_to_harvest.all()
@@ -163,6 +162,7 @@ def update_all_videos(harvester):
     for snhuser in all_users:
         out_of_window = False
         if not snhuser.error_triggered:
+            logger.info(u"Will update user: %s(%s)" % (unicode(snhuser), snhuser.fid if snhuser.fid else "0"))
             get_vid_url = 'http://gdata.youtube.com/feeds/api/users/%s/uploads?' % snhuser.username
             while get_vid_url and not out_of_window:
                 video_list = harvester.api_call("GetYouTubeVideoFeed",{"uri":get_vid_url})

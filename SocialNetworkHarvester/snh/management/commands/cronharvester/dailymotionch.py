@@ -188,7 +188,7 @@ def update_user(harvester, userid=None, username=None):
                             username=dmuser["username"],
                          )
             snh_user.save()
-            logger.info(u"New user created in status_from_search! %s", snh_user)
+            logger.debug(u"New user created in status_from_search! %s", snh_user)
 
         snh_user.update_from_dailymotion(dmuser)
     except:
@@ -607,7 +607,6 @@ def update_all_videos(harvester):
                     dmvideo = get_video(harvester, i["id"])
                     published =  datetime.fromtimestamp(float(dmvideo["created_time"]))
                     if published < harvester.harvest_window_to:
-                        logger.debug(u"---------vid:%s" % i["id"])
                         snh_video = update_video(harvester,snhuser,dmvideo)
                         update_all_comments(harvester, snh_video)
 
@@ -616,7 +615,6 @@ def update_all_videos(harvester):
                         break
 
                 has_more = result["result"]["has_more"]
-                logger.debug(u"---------page:%d" % page)
         else:
             logger.info(u"Skipping user update: %s(%s) because user has triggered the error flag." % (unicode(snhuser), snhuser.fid if snhuser.fid else "0"))
 
