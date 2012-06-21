@@ -160,7 +160,7 @@ def generic_batch_processor_v2(harvester, bman_list):
 
         for (counter, bman_chunk) in enumerate(split_bman,1):
             
-            if not(E_UNEX in error_map and error_map[E_UNEX] / float(bman_total) > fail_ratio):
+            if not(E_UNEX in error_map and error_map[E_UNEX] / float(bman_total) > fail_ratio) or not (E_QUOTA_USER in error_map):
                 actual_fail_ratio = error_map[E_UNEX] / float(bman_total) if E_UNEX in error_map else 0
                 usage = resource.getrusage(resource.RUSAGE_SELF)
                 logger.info(u"bman_chunk (%d/%d) chunk_total:%s InQueue:%d fail_ratio:%s > %s Mem:%s KB" % (counter, bman_total, len(bman_chunk), len(next_bman_list), actual_fail_ratio, fail_ratio, getattr(usage, "ru_maxrss")/(1024.0)))
@@ -178,6 +178,9 @@ def generic_batch_processor_v2(harvester, bman_list):
                 error = gbp_core(harvester, bman_chunk, error_map, next_bman_list, failed_list)
                 error_sum = error_sum + 1 if error else 0
                 logger.info(u"gbp_core: len(next_bman_list): %s" % len(next_bman_list))
+            elif E_QUOTA_USER in error_map:
+                logger.error("bman(%d/%d) User quota reached. Aborting the harvest!" % (counter, bman_total))
+                failed_list += bman_chunk
             else:
                 logger.info("bman(%d/%d) Failed ratio too high. Retrying with smaller batch" % (counter, bman_total))
                 next_bman_list += bman_chunk
@@ -418,6 +421,7 @@ class ThreadStatus(threading.Thread):
                 user = FBUser.objects.get(fid=fbpost.parent)
                 rez = eval(fbpost.result)
                 snh_status = self.update_user_status(rez,user)
+                fbpost.delete()
                 #signals to queue job is done
             except ObjectDoesNotExist:
                 logger.exception("DEVED %s %s" % (fbpost.parent, fbpost.ftype))
@@ -446,6 +450,7 @@ class ThreadStatus(threading.Thread):
             for likes in likes_list:
                 all_likes += eval(likes.result)
             snh_status.update_likes_from_facebook(all_likes)
+            likes_list.delete()
         except IntegrityError:
             try:
                 snh_status = FBPost.objects.get(fid=fbstatus["id"])
@@ -473,6 +478,7 @@ class ThreadComment(threading.Thread):
                     fbcomment = FBResult.objects.filter(fid=fid)[0]
                     post = FBPost.objects.get(fid=fbcomment.parent)
                     self.update_comment_status(eval(fbcomment.result), post)
+                    fbcomment.delete()
                 else:
                     logger.error(u"ThreadComment %s. fid is none! %s." % (self, fid))
                 #signals to queue job is done

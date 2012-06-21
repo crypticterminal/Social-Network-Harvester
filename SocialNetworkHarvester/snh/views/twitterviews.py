@@ -180,14 +180,9 @@ def get_status_chart(request, harvester_id, screen_name):
     user = get_list_or_404(TWUser, screen_name=screen_name)[0]
     count = TWStatus.objects.filter(user=user).count()
 
-    if harvester_id == "0":
-        fromto = TWStatus.objects.filter(user=user).order_by(u"created_at")
-        base = fromto[0].created_at if count != 0 else dt.datetime.now()
-        to = fromto[count-1].created_at if count != 0 else dt.datetime.now()
-    else:
-        harvester = TwitterHarvester.objects.get(pmk_id__exact=harvester_id)
-        base = harvester.harvest_window_from.date()
-        to = harvester.harvest_window_to.date()
+    fromto = TWStatus.objects.filter(user=user).order_by(u"created_at")
+    base = fromto[0].created_at if count != 0 else dt.datetime.now()
+    to = fromto[count-1].created_at if count != 0 else dt.datetime.now()
 
     days = (to - base).days
     dateList = [ base + dt.timedelta(days=x) for x in range(0,days) ]
@@ -222,14 +217,9 @@ def get_at_chart(request, harvester_id, screen_name):
 
     count = search.status_list.all().count()
 
-    if harvester_id == "0":
-        fromto = search.status_list.all().order_by(u"created_at")
-        base = fromto[0].created_at if count != 0 else dt.datetime.now()
-        to = fromto[count-1].created_at if count != 0 else dt.datetime.now()
-    else:
-        harvester = TwitterHarvester.objects.get(pmk_id__exact=harvester_id)
-        base = harvester.harvest_window_from.date()
-        to = harvester.harvest_window_to.date()
+    fromto = search.status_list.all().order_by(u"created_at")
+    base = fromto[0].created_at if count != 0 else dt.datetime.now()
+    to = fromto[count-1].created_at if count != 0 else dt.datetime.now()
 
     days = (to - base).days
     dateList = [ base + dt.timedelta(days=x) for x in range(0,days) ]

@@ -256,14 +256,9 @@ def get_dmvideo_chart(request, harvester_id, userfid):
     user = get_list_or_404(DMUser, fid=userfid)[0]
     count = DMVideo.objects.filter(user=user).count()
 
-    if harvester_id == "0":
-        fromto = DMVideo.objects.filter(user=user).order_by(u"created_time")
-        base = fromto[0].created_time if count != 0 else dt.datetime.now()
-        to = fromto[count-1].created_time if count != 0 else dt.datetime.now()
-    else:
-        harvester = DailyMotionHarvester.objects.get(pmk_id__exact=harvester_id)
-        base = harvester.harvest_window_from.date()
-        to = harvester.harvest_window_to.date()
+    fromto = DMVideo.objects.filter(user=user).order_by(u"created_time")
+    base = fromto[0].created_time if count != 0 else dt.datetime.now()
+    to = fromto[count-1].created_time if count != 0 else dt.datetime.now()
 
     days = (to - base).days
     dateList = [ base + dt.timedelta(days=x) for x in range(0,days) ]
@@ -288,14 +283,9 @@ def get_dmcomment_chart(request, harvester_id, userfid):
     user = get_list_or_404(DMUser, fid=userfid)[0]
     count = DMComment.objects.filter(user=user).count()
 
-    if harvester_id == "0":
-        fromto = DMComment.objects.filter(user=user).order_by(u"created_time")
-        base = fromto[0].created_time if count != 0 else dt.datetime.now()
-        to = fromto[count-1].created_time if count != 0 else dt.datetime.now()
-    else:
-        harvester = DailyMotionHarvester.objects.get(pmk_id__exact=harvester_id)
-        base = harvester.harvest_window_from.date()
-        to = harvester.harvest_window_to.date()
+    fromto = DMComment.objects.filter(user=user).order_by(u"created_time")
+    base = fromto[0].created_time if count != 0 else dt.datetime.now()
+    to = fromto[count-1].created_time if count != 0 else dt.datetime.now()
 
     days = (to - base).days
     dateList = [ base + dt.timedelta(days=x) for x in range(0,days) ]
@@ -321,14 +311,9 @@ def get_dmvideocomment_chart(request, harvester_id, videofid):
     video = get_list_or_404(DMVideo, fid=videofid)[0]
     count = DMComment.objects.filter(video=video).count()
 
-    if harvester_id == "0":
-        fromto = DMComment.objects.filter(video=video).order_by(u"created_time")
-        base = fromto[0].created_time if count != 0 else dt.datetime.now()
-        to = fromto[count-1].created_time if count != 0 else dt.datetime.now()
-    else:
-        harvester = DailyMotionHarvester.objects.get(pmk_id__exact=harvester_id)
-        base = harvester.harvest_window_from.date()
-        to = harvester.harvest_window_to.date()
+    fromto = DMComment.objects.filter(video=video).order_by(u"created_time")
+    base = fromto[0].created_time if count != 0 else dt.datetime.now()
+    to = fromto[count-1].created_time if count != 0 else dt.datetime.now()
 
     days = (to - base).days
     dateList = [ base + dt.timedelta(days=x) for x in range(0,days) ]

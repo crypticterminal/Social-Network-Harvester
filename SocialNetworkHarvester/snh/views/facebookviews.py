@@ -256,14 +256,9 @@ def get_wall_chart(request, harvester_id, userfid):
     user = get_list_or_404(FBUser, fid=userfid)[0]
     count = FBPost.objects.filter(user=user).count()
 
-    if harvester_id == "0":
-        fromto = FBPost.objects.filter(user=user).order_by(u"created_time")
-        base = fromto[0].created_time if count != 0 else dt.datetime.now()
-        to = fromto[count-1].created_time if count != 0 else dt.datetime.now()
-    else:
-        harvester = FacebookHarvester.objects.get(pmk_id__exact=harvester_id)
-        base = harvester.harvest_window_from.date()
-        to = harvester.harvest_window_to.date()
+    fromto = FBPost.objects.filter(user=user).order_by(u"created_time")
+    base = fromto[0].created_time if count != 0 else dt.datetime.now()
+    to = fromto[count-1].created_time if count != 0 else dt.datetime.now()
 
     days = (to - base).days
     dateList = [ base + dt.timedelta(days=x) for x in range(0,days) ]
@@ -288,14 +283,9 @@ def get_otherwall_chart(request, harvester_id, userfid):
     user = get_list_or_404(FBUser, fid=userfid)[0]
     count = FBPost.objects.filter(ffrom=user).exclude(user=user).count()
 
-    if harvester_id == "0":
-        fromto = FBPost.objects.filter(ffrom=user).exclude(user=user).order_by(u"created_time")
-        base = fromto[0].created_time if count != 0 else dt.datetime.now()
-        to = fromto[count-1].created_time if count != 0 else dt.datetime.now()
-    else:
-        harvester = FacebookHarvester.objects.get(pmk_id__exact=harvester_id)
-        base = harvester.harvest_window_from.date()
-        to = harvester.harvest_window_to.date()
+    fromto = FBPost.objects.filter(ffrom=user).exclude(user=user).order_by(u"created_time")
+    base = fromto[0].created_time if count != 0 else dt.datetime.now()
+    to = fromto[count-1].created_time if count != 0 else dt.datetime.now()
 
     days = (to - base).days
     dateList = [ base + dt.timedelta(days=x) for x in range(0,days) ]
@@ -320,14 +310,9 @@ def get_comment_chart(request, harvester_id, userfid):
     user = get_list_or_404(FBUser, fid=userfid)[0]
     count = FBComment.objects.filter(ffrom=user).count()
 
-    if harvester_id == "0":
-        fromto = FBComment.objects.filter(ffrom=user).order_by(u"created_time")
-        base = fromto[0].created_time if count != 0 else dt.datetime.now()
-        to = fromto[count-1].created_time if count != 0 else dt.datetime.now()
-    else:
-        harvester = FacebookHarvester.objects.get(pmk_id__exact=harvester_id)
-        base = harvester.harvest_window_from.date()
-        to = harvester.harvest_window_to.date()
+    fromto = FBComment.objects.filter(ffrom=user).order_by(u"created_time")
+    base = fromto[0].created_time if count != 0 else dt.datetime.now()
+    to = fromto[count-1].created_time if count != 0 else dt.datetime.now()
 
     days = (to - base).days
     dateList = [ base + dt.timedelta(days=x) for x in range(0,days) ]
@@ -352,14 +337,9 @@ def get_commentpost_chart(request, harvester_id, postfid):
     post = get_list_or_404(FBPost, fid=postfid)[0]
     count = FBComment.objects.filter(post=post).count()
 
-    if harvester_id == "0":
-        fromto = FBComment.objects.filter(post=post).order_by(u"created_time")
-        base = fromto[0].created_time if count != 0 else dt.datetime.now()
-        to = fromto[count-1].created_time if count != 0 else dt.datetime.now()
-    else:
-        harvester = FacebookHarvester.objects.get(pmk_id__exact=harvester_id)
-        base = harvester.harvest_window_from.date()
-        to = harvester.harvest_window_to.date()
+    fromto = FBComment.objects.filter(post=post).order_by(u"created_time")
+    base = fromto[0].created_time if count != 0 else dt.datetime.now()
+    to = fromto[count-1].created_time if count != 0 else dt.datetime.now()
 
     days = (to - base).days
     dateList = [ base + dt.timedelta(days=x) for x in range(0,days) ]

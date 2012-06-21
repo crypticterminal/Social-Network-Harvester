@@ -26,20 +26,24 @@ class Command(BaseCommand):
 
             videos = YTVideo.objects.all()
             for vid in videos:
+                logger.info("Video: %s" % vid.swf_url)
+                logger.info("User: %s" % vid.user)
                 userfid = vid.user.fid
                 if vid.video_file_path is None:
-                    try:
-                        logger.info("will extract: %s" % vid.swf_url)
-                        filename = subprocess.check_output(["youtube-dl","-oyoutube_%s_%s" % (userfid, "%(id)s.%(ext)s"), "--get-filename", "%s" % vid.swf_url])
-                        filepath = os.path.join(MEDIA_ROOT,filename.strip("\n"))
-                        output = subprocess.check_output(["youtube-dl","-o%s" % filepath, "%s" % vid.swf_url])
-                        vid.video_file_path = filepath
-                        vid.save()
-                    except TypeError:
-                        logger.exception("TypeError! %s" % vid if vid else "None")
-                    except subprocess.CalledProcessError:
-                        logger.exception(u"cannot download video %s for user %s" % (vid.fid, vid.user))
-
+                    if vid.swf_url is not None:
+                        try:
+                            logger.info("will extract: %s" % vid.swf_url)
+                            filename = subprocess.check_output(["youtube-dl","-oyoutube_%s_%s" % (userfid, "%(id)s.%(ext)s"), "--get-filename", "%s" % vid.swf_url])
+                            filepath = os.path.join(MEDIA_ROOT,filename.strip("\n"))
+                            output = subprocess.check_output(["youtube-dl","-o%s" % filepath, "%s" % vid.swf_url])
+                            vid.video_file_path = filepath
+                            vid.save()
+                        except TypeError:
+                            logger.exception("TypeError! %s" % vid if vid else "None")
+                        except subprocess.CalledProcessError:
+                            logger.exception(u"cannot download video %s for user %s" % (vid.fid, vid.user))
+                    else:
+                        logger.error("Video URL is None!!: %s" % vid)
         except:
             msg = u"Highest exception for the youtube video downloader cron. Not good."
             logger.exception(msg)

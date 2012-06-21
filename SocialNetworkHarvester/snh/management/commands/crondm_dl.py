@@ -26,6 +26,8 @@ class Command(BaseCommand):
 
             videos = DMVideo.objects.all()
             for vid in videos:
+                logger.info("Video: %s" % vid.url)
+                logger.info("User: %s" % vid.user)
                 userfid = vid.user.fid
                 if vid.video_file_path is None:
                     try:
