@@ -184,7 +184,7 @@ def get_status_chart(request, harvester_id, screen_name):
     base = fromto[0].created_at if count != 0 else dt.datetime.now()
     to = fromto[count-1].created_at if count != 0 else dt.datetime.now()
 
-    days = (to - base).days
+    days = (to - base).days + 1
     dateList = [ base + dt.timedelta(days=x) for x in range(0,days) ]
     description = {"date_val": ("date", "Date"),
                    "status_count": ("number", "Status count"),
@@ -221,7 +221,7 @@ def get_at_chart(request, harvester_id, screen_name):
     base = fromto[0].created_at if count != 0 else dt.datetime.now()
     to = fromto[count-1].created_at if count != 0 else dt.datetime.now()
 
-    days = (to - base).days
+    days = (to - base).days + 1
     dateList = [ base + dt.timedelta(days=x) for x in range(0,days) ]
 
     for date in dateList:

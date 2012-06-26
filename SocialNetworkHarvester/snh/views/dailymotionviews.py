@@ -260,7 +260,7 @@ def get_dmvideo_chart(request, harvester_id, userfid):
     base = fromto[0].created_time if count != 0 else dt.datetime.now()
     to = fromto[count-1].created_time if count != 0 else dt.datetime.now()
 
-    days = (to - base).days
+    days = (to - base).days + 1
     dateList = [ base + dt.timedelta(days=x) for x in range(0,days) ]
     description = {"date_val": ("date", "Date"),
                    "post_count": ("number", "Post count"),
@@ -287,7 +287,7 @@ def get_dmcomment_chart(request, harvester_id, userfid):
     base = fromto[0].created_time if count != 0 else dt.datetime.now()
     to = fromto[count-1].created_time if count != 0 else dt.datetime.now()
 
-    days = (to - base).days
+    days = (to - base).days + 1
     dateList = [ base + dt.timedelta(days=x) for x in range(0,days) ]
     description = {"date_val": ("date", "Date"),
                    "post_count": ("number", "Post count"),
@@ -315,7 +315,7 @@ def get_dmvideocomment_chart(request, harvester_id, videofid):
     base = fromto[0].created_time if count != 0 else dt.datetime.now()
     to = fromto[count-1].created_time if count != 0 else dt.datetime.now()
 
-    days = (to - base).days
+    days = (to - base).days + 1
     dateList = [ base + dt.timedelta(days=x) for x in range(0,days) ]
     description = {"date_val": ("date", "Date"),
                    "post_count": ("number", "Post count"),
