@@ -160,7 +160,7 @@ def generic_batch_processor_v2(harvester, bman_list):
 
         for (counter, bman_chunk) in enumerate(split_bman,1):
             
-            if not(E_UNEX in error_map and error_map[E_UNEX] / float(bman_total) > fail_ratio) or not (E_QUOTA_USER in error_map):
+            if not(E_UNEX in error_map and error_map[E_UNEX] / float(bman_total) > fail_ratio) or not (E_USER_QUOTA in error_map):
                 actual_fail_ratio = error_map[E_UNEX] / float(bman_total) if E_UNEX in error_map else 0
                 usage = resource.getrusage(resource.RUSAGE_SELF)
                 logger.info(u"bman_chunk (%d/%d) chunk_total:%s InQueue:%d fail_ratio:%s > %s Mem:%s KB" % (counter, bman_total, len(bman_chunk), len(next_bman_list), actual_fail_ratio, fail_ratio, getattr(usage, "ru_maxrss")/(1024.0)))
@@ -178,7 +178,7 @@ def generic_batch_processor_v2(harvester, bman_list):
                 error = gbp_core(harvester, bman_chunk, error_map, next_bman_list, failed_list)
                 error_sum = error_sum + 1 if error else 0
                 logger.info(u"gbp_core: len(next_bman_list): %s" % len(next_bman_list))
-            elif E_QUOTA_USER in error_map:
+            elif E_USER_QUOTA in error_map:
                 logger.error("bman(%d/%d) User quota reached. Aborting the harvest!" % (counter, bman_total))
                 failed_list += bman_chunk
             else:
